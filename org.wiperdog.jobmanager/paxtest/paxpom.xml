@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+  <properties>
+  </properties>
+  <parent>
+  	<artifactId>pi</artifactId>
+  	<groupId>com.insight_tec</groupId>
+  	<version>1.0.3</version>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.insight_tec.pi</groupId>
+  <artifactId>paxtest</artifactId>
+  <version>1.0.0</version>
+  <name>paxtest</name>
+  <packaging>pom</packaging>
+  <dependencies>
+    <dependency>
+        <groupId>org.ops4j.pax.runner</groupId>
+        <artifactId>pax-runner</artifactId>
+        <version>1.7.5</version>
+    </dependency>
+  </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>test</phase>
+            <goals><goal>java</goal></goals>
+          </execution>
+        </executions>
+        <configuration>
+          <mainClass>org.ops4j.pax.runner.Run</mainClass>
+          <arguments>
+            <argument>bundlelist.txt</argument>
+          </arguments>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+

@@ -1,0 +1,9 @@
+--bundleStartLevel=4
+--systemPackages=javax.xml.ws.wsaddressing
+--workingDirectory=/home/kurohara/workspace/com.insight_tec.pi.directorywatcher/paxtest
+--vmOptions= -Dfelix.home=/home/kurohara/workspace/com.insight_tec.pi.directorywatcher/paxtest -Dfelix.fileinstall.dir=/home/kurohara/workspace/com.insight_tec.pi.directorywatcher/paxtest/etc -Dfelix.fileinstall.filter=.*\.cfg -Dfelix.fileinstall.noInitialDelay=true -Dfelix.fileinstall.poll=2000
+--platform=felix
+--version=2.0.5
+
+# -Dorg.ops4j.pax.url.mvn.repositories=http://192.168.10.50:8081/artifactory/libs-release-local/
+

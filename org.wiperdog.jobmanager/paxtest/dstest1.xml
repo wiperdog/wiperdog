@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<!DOCTYPE JobDefinition SYSTEM "jd2.dtd">
+<JobDefinition>
+  <Job name="job1" scriptPath="job1.sh"/>
+  <Trigger name="trigger1" forJobName="job1" at="1000"/>
+</JobDefinition>

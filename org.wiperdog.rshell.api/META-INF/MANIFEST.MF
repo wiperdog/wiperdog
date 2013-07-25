@@ -1,0 +1,11 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1374746021141
+Build-Jdk: 1.6.0_43
+Built-By: kurohara
+Bundle-ManifestVersion: 2
+Bundle-Name: org.wiperdog.rshell.api
+Bundle-SymbolicName: org.wiperdog.rshell.api
+Bundle-Version: 0.1.0
+Created-By: Apache Maven Bundle Plugin
+Export-Package: org.wiperdog.rshell.api;version="0.1.0"
+Tool: Bnd-2.1.0.20130426-122213
