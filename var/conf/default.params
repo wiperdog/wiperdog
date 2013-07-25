@@ -1,0 +1,35 @@
+[ 
+  dbconnstr: [ 
+    ORACLE: "jdbc:oracle:thin:@192.168.0.147:1521:piex",
+    SQLS: "jdbc:sqlserver://localhost:1433",
+    MYSQL: "jdbc:mysql://localhost:3307/information_schema",
+    POSTGRES: "jdbc:postgresql://localhost:5433/postgres"
+  ],
+  dest: [ [ http: "http://localhost:13111/spool/tfm_test" ] ],
+  //dest: [ [ file: "stdout" ] ],
+   datadirectory: [				
+    ORACLE: [default:"",getData:[sql:"",append:""]],				
+    SQLS: [default:"",getData:[sql:" declare @rc int, @dir nvarchar(4000) exec @rc = master.dbo.xp_instance_regread N'HKEY_LOCAL_MACHINE', N'Software\\Microsoft\\MSSQLServer\\Setup',N'SQLPath', @dir output, 'no_output'select @dir AS InstallationDirectory",append:"\\Data"]],	
+    MYSQL: [default:"C:/MySQL/data",getData:[sql:"SELECT @@datadir",append:""]],				
+    POSTGRES:[default:"",getData:[sql:"SELECT setting FROM pg_settings WHERE name = 'data_directory'",append:""]]				
+  ],				
+  programdirectory: [				
+    ORACLE: [default:"",getData:[sql:"",append:""]],				
+    SQLS: [default:"",getData:[sql:"declare @rc int, @dir nvarchar(4000) exec @rc = master.dbo.xp_instance_regread N'HKEY_LOCAL_MACHINE', N'Software\\Microsoft\\MSSQLServer\\Setup', N'SQLPath',  @dir output, 'no_output' select @dir AS 	InstallationDirectory" ,append:"\\Binn"]],		
+    MYSQL: [default:"" ,getData:[sql:"SELECT @@basedir",append:"usr/bin"]],
+    POSTGRES:[default:"",getData:[sql:"SELECT setting FROM pg_settings WHERE name = 'data_directory'",append:"bin"]] 
+  ],
+  dbmsversion: [
+    ORACLE: [default:"",getData:[sql:"",append:""]],
+    SQLS: [default:"",getData:[sql:"select @@version",append:""]],
+    MYSQL: [default:"",getData:[sql:"select @@VERSION",append:""]],
+    POSTGRES:[default:"",getData:[sql:"SELECT version()",append:""]]
+  ],
+  dblogdir:[
+	ORACLE: [default:"",getData:[sql:"",append:""]],
+    SQLS: [default:"",getData:[sql:"",append:""]],
+    MYSQL: [default:"",getData:[sql:"SELECT @@general_log_file;",append:""]],															
+    POSTGRES:[default:"",getData:[sql:"SELECT setting FROM pg_settings WHERE name = 'log_directory'",append:""]]
+
+  ]
+]

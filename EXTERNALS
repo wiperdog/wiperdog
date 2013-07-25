@@ -1,0 +1,11 @@
+The following files are part of Groovy language distribution
+(see http://groovy.codehaus.org/ )
+bin/groovy
+bin/groovy.bat
+bin/startGroovy
+bin/startGroovy.bat
+etc/groovy-starter.conf
+
+The following files are part of Jetty web server distribution
+(see http://www.eclipse.org/jetty )
+opt/jetty/**
