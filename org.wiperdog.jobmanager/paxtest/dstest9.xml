@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<!DOCTYPE JobDefinition SYSTEM "jd2.dtd">
+<JobDefinition>
+  <Job name="job9" scriptPath="job9.sh" stdout="stdout:.*ERROR.*"/>
+  <Trigger name="trigger1" forJobName="job9" at="1000"/>
+  <Job name="notifyjob1" scriptPath="notify1.sh">
+    <Arg>execution of job9 was succeeded</Arg>
+  </Job>
+  <Job name="notifyjob2" scriptPath="notify1.sh">
+    <Arg>pattern matched(ERROR)</Arg>
+  </Job>
+  <JobNet name="net1">
+  	<Operator type="or" name="or1">
+  		<Predecessors>
+	  		<Predecessor name="job9"/>
+  		</Predecessors>
+  	</Operator>
+  	<Operator type="or" name="or2">
+  		<Predecessors>
+  			<Predecessor name="job9_OUTPATTERN"/>
+  		</Predecessors>
+  	</Operator>
+   <Terminal type="force" forJobName="notifyjob1">
+    	<Predecessors>
+	      <Predecessor name="or1"/>
+		</Predecessors>
+    </Terminal>
+   <Terminal type="force" forJobName="notifyjob2">
+    	<Predecessors>
+	      <Predecessor name="or2"/>
+		</Predecessors>
+    </Terminal>
+  </JobNet>
+</JobDefinition>
+

@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<!DOCTYPE JobDefinition SYSTEM "jd2.dtd">
+<JobDefinition>
+  <Job name="job8" scriptPath="job8.sh" maxRunTime="3000" interrupted="interrupted"/>
+  <Trigger name="trigger1" forJobName="job8" at="1000"/>
+  <Job name="notifyjob1" scriptPath="notify1.sh">
+    <Arg>1</Arg>
+  </Job>
+  <Job name="notifyjob2" scriptPath="notify1.sh">
+    <Arg>2</Arg>
+  </Job>
+  <JobNet name="net1">
+  	<Operator type="or" name="or1">
+  		<Predecessors>
+	  		<Predecessor name="job8"/>
+  		</Predecessors>
+  	</Operator>
+  	<Operator type="or" name="or2">
+  		<Predecessors>
+  			<Predecessor name="job8_INTERRUPTED"/>
+  		</Predecessors>
+  	</Operator>
+   <Terminal type="force" forJobName="notifyjob1">
+    	<Predecessors>
+	      <Predecessor name="or1"/>
+		</Predecessors>
+    </Terminal>
+   <Terminal type="force" forJobName="notifyjob2">
+    	<Predecessors>
+	      <Predecessor name="or2"/>
+		</Predecessors>
+    </Terminal>
+  </JobNet>
+</JobDefinition>
+
