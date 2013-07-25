@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<!DOCTYPE JobDefinition SYSTEM "jd2.dtd">
+<JobDefinition>
+  <Job name="job1" scriptPath="job1.sh"/>
+  <Job name="job2" scriptPath="job2.sh"/>
+  <Job name="job3" scriptPath="job3.sh"/>
+  <Job name="job4" scriptPath="job4.sh"/>
+  <Trigger name="trigger1" forJobName="job1" at="2000"/>
+  <Trigger name="trigger2" forJobName="job2" at="3000"/>
+  <Trigger name="trigger3" forJobName="job3" at="4000"/>
+  <Trigger name="trigger4" forJobName="job4" at="5000"/>
+  <JobNet name="net1" enabled="true">
+  	<Operator type="and" name="and2">
+  		<Predecessors>
+	  		<Predecessor name="job1"/>
+	  		<Predecessor name="job2"/>
+  		</Predecessors>
+  	</Operator>
+  	<Operator type="and" name="and3">
+  		<Predecessors>
+  			<Predecessor name="and2"/>
+  			<Predecessor name="job3"/>
+  		</Predecessors>
+  	</Operator>
+   <Terminal type="prohibit" forJobName="job4">
+    	<Predecessors>
+    		<!-- 先行要素 "and2" へのリファレンス -->
+	      <Predecessor name="and3"/>
+		</Predecessors>
+    </Terminal>
+    <!-- "and1" ANDオペレータ -->
+  </JobNet>
+</JobDefinition>

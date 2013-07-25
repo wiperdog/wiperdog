@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<!DOCTYPE JobDefinition SYSTEM "jd2.dtd">
+<JobDefinition>
+  <Job name="job4" scriptPath="job4.sh"/>
+  <Trigger name="trigger4" forJobName="job4" at="5000"/>
+  <JobNet name="net2" enabled="true">
+  	<Terminal type="force" forJobName="job4" delay="5000">
+  		<Predecessors>
+  			<Predecessor name="not1"/>
+  		</Predecessors>
+  	</Terminal>
+  	<Operator type="not" name="not1">
+  		<Predecessors>
+  			<Predecessor name="job4"/>
+  		</Predecessors>
+  	</Operator>
+  </JobNet>
+</JobDefinition>
