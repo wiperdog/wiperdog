@@ -10,7 +10,6 @@
   	<artifactId>wiperdog</artifactId>
   	<groupId>org.wiperdog</groupId>
   	<version>0.1.0</version>
-  	<relativePath>../parent/pom.xml</relativePath>
   </parent>
 
   <modelVersion>4.0.0</modelVersion>
