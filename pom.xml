@@ -21,6 +21,7 @@
   <packaging>pom</packaging>
 
   <modules>
+    <module>parent</module>
     <module>org.wiperdog.configloader</module>
     <module>org.wiperdog.directorywatcher</module>
     <module>org.wiperdog.jobmanager</module>
