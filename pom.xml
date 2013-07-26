@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+  <properties>
+  </properties>
+
+  <parent>
+  	<groupId>org.wiperdog</groupId>
+  	<artifactId>wiperdog</artifactId>
+  	<version>0.1.0</version>
+  	<relativePath>parent/pom.xml</relativePath>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.wiperdog</groupId>
+  <artifactId>org.wiperdog.pom</artifactId>
+  <version>0.1.0</version>
+
+  <name>${bundle.symbolicName}</name>
+
+  <packaging>pom</packaging>
+
+  <modules>
+    <module>org.wiperdog.configloader</module>
+    <module>org.wiperdog.directorywatcher</module>
+    <module>org.wiperdog.jobmanager</module>
+    <module>org.wiperdog.rshell.api</module>
+    <module>org.wiperdog.scriptsupport.groovyrunner</module>
+  </modules>
+</project>
