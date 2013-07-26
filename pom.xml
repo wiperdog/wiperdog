@@ -5,12 +5,6 @@
   <properties>
   </properties>
 
-  <parent>
-  	<groupId>org.wiperdog</groupId>
-  	<artifactId>wiperdog</artifactId>
-  	<version>0.1.0</version>
-  	<relativePath>parent/pom.xml</relativePath>
-  </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.wiperdog</groupId>
   <artifactId>org.wiperdog.pom</artifactId>
