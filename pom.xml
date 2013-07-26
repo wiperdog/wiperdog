@@ -10,7 +10,7 @@
   <artifactId>wiperdog</artifactId>
   <version>0.1.0</version>
 
-  <name>${bundle.symbolicName}</name>
+  <name>wiperdog pom</name>
 
   <packaging>pom</packaging>
 
