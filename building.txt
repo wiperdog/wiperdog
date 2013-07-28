@@ -3,9 +3,11 @@ You need JDK (5 or lator) and apache maven to build source codes.
 
 Do the following sequence:
 
-1. in parent directory
+1. in ./parent directory
   mvn install
-2. in org.wiperdog.* directory
+2. in ./org.wiperdog.rshell.api directory
+  mvn install
+2. in other ./org.wiperdog.* directory
   mvn install
   
 
