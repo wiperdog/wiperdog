@@ -6,7 +6,7 @@
   <artifactId>wiperdog</artifactId>
   <version>0.1.0</version>
 
-  <name>wiperdog super pom</name>
+  <name>wiperdog parent pom</name>
 
   <packaging>pom</packaging>
 
