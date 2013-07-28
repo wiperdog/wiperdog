@@ -7,14 +7,15 @@
 
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.wiperdog</groupId>
-  <artifactId>wiperdog</artifactId>
+  <artifactId>buildaggregator</artifactId>
   <version>0.1.0</version>
 
-  <name>wiperdog pom</name>
+  <name>wiperdog aggregator pom</name>
 
   <packaging>pom</packaging>
 
   <modules>
+    <module>parent</module>
     <module>org.wiperdog.configloader</module>
     <module>org.wiperdog.directorywatcher</module>
     <module>org.wiperdog.jobmanager</module>
