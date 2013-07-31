@@ -1,0 +1,75 @@
+#!/bin/sh
+#############################################################################
+#   Copyright 2013 Insight technology,inc. All rights reserved.
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#############################################################################
+
+jobname=$1
+IST_HOME=`cd \`dirname $0\`/../;pwd`
+JOBDATA_DIR=${IST_HOME}/tmp/monitorjobdata
+LASTEXECUTION_DIR=${JOBDATA_DIR}/LastExecution
+PERSISTENTDATA_DIR=${JOBDATA_DIR}/PersistentData
+PREVOUTPUT_DATA=${JOBDATA_DIR}/PrevOUTPUT
+# create directory if not exist.
+if [ ! -d ${LASTEXECUTION_DIR} ];then
+  mkdir -p ${LASTEXECUTION_DIR} > /dev/null 2>&1
+fi
+
+if [ ! -d ${PERSISTENTDATA_DIR} ]; then
+  mkdir -p ${PERSISTENTDATA_DIR} > /dev/null 2>&1
+fi
+
+if [ ! -d ${PREVOUTPUT_DATA} ];then
+  mkdir -p ${PREVOUTPUT_DATA} > /dev/null 2>&1
+fi
+
+# if no jobname specified, list all jobs that have data file.
+if [ "$jobname" = "" ];then
+  echo No jobname specified, getting list.
+  lastexecution_data=`cd ${LASTEXECUTION_DIR};ls *.txt 2>/dev/null`
+  # It's enough to see only lastexecution directory, this directory should include all presense of other directory.
+  # But for safe, I check other directory.
+  persistentdata_data=`cd ${PERSISTENTDATA_DIR};ls *.txt 2>/dev/null`
+  prevoutput_data=`cd ${PREVOUTPUT_DATA};ls *.txt 2>/dev/null`
+  list=`(echo -e "${lastexecution_data}\n${persistentdata_data}\n${prevoutput_data}") | sort | uniq`
+  for fn in $list;do
+    echo $fn | sed -e 's/\.txt//'
+  done
+  exit
+fi
+
+# remove LastExecution files
+if [ -e ${LASTEXECUTION_DIR}/${jobname}.txt ];then
+   echo Removing LastExecution files of ${jobname}.
+   rm -f ${LASTEXECUTION_DIR}/${jobname}.txt 
+else
+   echo Nothing to do for LastExecution files of ${jobname}.
+fi
+
+# remove PersistentData files
+if [ -e ${PERSISTENTDATA_DIR}/${jobname}.txt ];then
+   echo Removing PersistentData files of ${jobname}.
+   rm -f ${PERSISTENTDATA_DIR}/${jobname}.txt
+else
+   echo Nothing to do for PersistentData files of ${jobname}.
+fi
+
+# remove PrevOUTPUT files
+if [ -e ${PREVOUTPUT_DATA}/${jobname}.txt ];then
+   echo Removing PrevOUTPUT files of ${jobname}.
+   rm -f ${PREVOUTPUT_DATA}/${jobname}.txt
+else
+   echo Nothing to do for PrevOUTPUT files of ${jobname}.
+fi
+
