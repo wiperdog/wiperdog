@@ -1,18 +1,3 @@
-/*
- *  Copyright 2013 Insight technology,inc. All rights reserved.
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
 import groovy.json.JsonOutput;
 import groovy.json.JsonSlurper;
 import groovy.transform.Synchronized;
@@ -183,7 +168,7 @@ public class StdoutSender implements Sender<String>{
  * HTTPSender Send data to host
  */
 public class HTTPSender implements Sender<Map>{
-	def logger = Logger.getLogger("com.insight_tec.pi.scriptsupport.groovyrunner")
+	def logger = Logger.getLogger("org.wiperdog.scriptsupport.groovyrunner")
 	def properties = MonitorJobConfigLoader.getProperties()
 	def messageMap = [:]
 	def destination
@@ -358,7 +343,7 @@ public class HTTPSender implements Sender<Map>{
  * Serializer date data before send
  */
 class DateSerializer extends JsonSerializer<Date> {
-	def logger = Logger.getLogger("com.insight_tec.pi.scriptsupport.groovyrunner")
+	def logger = Logger.getLogger("org.wiperdog.scriptsupport.groovyrunner")
 	def dateFormat = new SimpleDateFormat(ResourceConstants.DATEFORMAT)
 	
    	public void serialize(Date inputDate, JsonGenerator jgen, SerializerProvider provider) throws IOException, JsonProcessingException {

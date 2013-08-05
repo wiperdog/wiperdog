@@ -1,18 +1,3 @@
-/*
- *  Copyright 2013 Insight technology,inc. All rights reserved.
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
 import java.sql.SQLException;
 
 
@@ -23,15 +8,13 @@ import java.sql.SQLException;
 class ConnectionInit {    
 	/**
 	 * Get database connection
-	 * @param db instance of database connection
 	 * @param mapDBConnections contains all active connection
 	 * @param binding Jobs binding
-	 * @param strDbType database type as string
-	 * @param connectionString connection string
-	 * @param userString user name
+	 * @param iDBConnectionSource IDBConnectionSource object
+	 * @param dbInfo connect DB information
 	 * @return instance of database connection
 	 */
-	public Object getDbConnection(mapDBConnections, iDBConnectionSource, binding, strDbType, connectionString, userString){
+	public Object getDbConnection(mapDBConnections, iDBConnectionSource, binding, dbInfo){
 		def db = null
 		def params = binding.getVariable("parameters")
 		def datadir_params = params.datadirectory
@@ -39,6 +22,9 @@ class ConnectionInit {
 		def programdir_params = params.programdirectory
 		def logdir_params = params.dblogdir				
 		
+		def strDbType = dbInfo.strDbType
+		def userString = dbInfo.user
+		def connectionString = dbInfo.dbconnstr
 		//Check DB Connection
 		def listRemove = []
 		for (objConnect in mapDBConnections) {
@@ -54,17 +40,17 @@ class ConnectionInit {
 		mapDBConnections.removeAll(listRemove)
 		
 		if ((db == null) || (db.connection == null) || (db.connection.isClosed())) {
-					for(int i = 0; i < 20; i++){
-						db = iDBConnectionSource.newSqlInstance(strDbType, connectionString, null, userString,datadir_params,dbversion_params,programdir_params,logdir_params)
-						if (db != null) {
-							def objConnect = new DBConnections(strDbType, userString, connectionString)
-							objConnect.setConnection(db)
-							mapDBConnections.push(objConnect)
-							break
-						}
-						sleep(500)
-					}
+			for(int i = 0; i < 20; i++){
+				db = iDBConnectionSource.newSqlInstance(dbInfo, datadir_params,dbversion_params,programdir_params,logdir_params)
+				if (db != null) {
+					def objConnect = new DBConnections(strDbType, userString, connectionString)
+					objConnect.setConnection(db)
+					mapDBConnections.push(objConnect)
+					break
+				}
+				sleep(500)
 			}
+		}
 		return db
 	}
 	
@@ -76,7 +62,7 @@ class ConnectionInit {
 	 */
 	public boolean checkValidDbConnection(db, strDbType){
 		def connectionIsValid = true
-		if (strDbType == 'POSTGRES') {
+		if (strDbType == ResourceConstants.POSTGRES) {
 			try{
 				db.rows('SELECT 1')
 			} catch(SQLException e){

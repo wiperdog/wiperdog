@@ -1,19 +1,3 @@
-/*
- *  Copyright 2013 Insight technology,inc. All rights reserved.
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
-
 import org.osgi.framework.*;
 import org.osgi.service.startlevel.*;
 import java.io.*;
@@ -74,8 +58,10 @@ public class JobRunner{
         m_fwk.init();
         // Use the system bundle context to process the auto-deploy
         // and auto-install/auto-start properties.
-        AutoProcessor.process(configProps, m_fwk.getBundleContext());
+        AutoProcessor.processAuto(configProps, m_fwk.getBundleContext());
 		m_fwk.start();
+		//User for install jar which has need to be wrap
+		AutoProcessor.processCustom(configProps, m_fwk.getBundleContext());
 		// Wait for framework to stop to exit the VM.
         m_fwk.waitForStop(0);
 	}
@@ -286,17 +272,38 @@ public class JobRunner{
 	     * The property name prefix for the launcher's auto-start property.
 	    **/
 	    public static final String AUTO_START_PROP = "felix.auto.start";
-	    
+	    /**
+	     * The property name used to specify directory of jar which need to be wrap
+	    **/
+	    public static final String WRAP_JAR_DIR = "felix.wrapjarinstall.dir";
+	    /**
+	     * The property name used to specify action for each jar file which need to be wrap
+	    **/
+	    public static final String WRAP_JAR_ACTION = "felix.wrapjarinstall.action";
+	    /**
+	     * The property name used to specify list jar file which need to be wrap first
+	    **/
+	    public static final String WRAP_JAR_INSTALL_FIRST = "felix.wrapjarinstall.firststart"
 	    /**
 	     * Used to instigate auto-deploy directory process and auto-install/auto-start
 	     * configuration property processing during.
 	     * @param configMap Map of configuration properties.
 	     * @param context The system bundle context.
 	    **/
-	    public static void process(Map configMap, BundleContext context) {
+	    public static void processAuto(Map configMap, BundleContext context) {
 	        configMap = (configMap == null) ? new HashMap() : configMap;
 	        processAutoDeploy(configMap, context);
 	        processAutoProperties(configMap, context);
+	    }
+	    
+	    /**
+	     * Used to instigate wrap jar file and install
+	     * @param configMap Map of configuration properties.
+	     * @param context The system bundle context.
+	    **/
+	    public static void processCustom(Map configMap, BundleContext context) {
+	        configMap = (configMap == null) ? new HashMap() : configMap;
+	        processWrapJar(configMap, context);
 	    }
 	    
 	    /**
@@ -487,7 +494,143 @@ public class JobRunner{
 	            }
 	        }
 	    }
+		
+		/**
+	     * <p>
+	     * Processes wrap url jar file
+	     * starting each one as OSGI bundle.
+	     * </p>
+	     */
+	    private static void processWrapJar(Map configMap, BundleContext context) {
+	        // Determine if auto deploy actions to perform.
+	        String action = (String) configMap.get(WRAP_JAR_ACTION);
+	        action = (action == null) ? "" : action;
+	        List actionList = new ArrayList();
+	        StringTokenizer st = new StringTokenizer(action, ",");
+	        while (st.hasMoreTokens()) {
+	            String s = st.nextToken().trim().toLowerCase();
+	            if (s.equals(AUTO_DEPLOY_INSTALL_VALUE)
+	                || s.equals(AUTO_DEPLOY_START_VALUE)
+	                || s.equals(AUTO_DEPLOY_UPDATE_VALUE)
+	                || s.equals(AUTO_DEPLOY_UNINSTALL_VALUE)) {
+	                actionList.add(s);
+	            }
+	        }
+	        
+	        // Perform auto-deploy actions.
+	        if (actionList.size() > 0) {
+	        	// Install bundle JAR files and remember the bundle objects.
+	            final List startBundleList = new ArrayList();
+	            //Install and start the jar which is configed as first
+		        for (Iterator i = configMap.keySet().iterator(); i.hasNext(); ) {
+		            String key = ((String) i.next()).toLowerCase();
+		            if (key.startsWith(WRAP_JAR_INSTALL_FIRST)) {
+		                st = new StringTokenizer((String) configMap.get(key), "\" ", true);
+		                for (String location = nextLocation(st); location != null; location = nextLocation(st)) {
+		                    // Installing twice just returns the same bundle.
+		                    try {
+		                        def wrapStr = "wrap:" + location
+	                        	Bundle bfirst = context.installBundle(wrapStr);
+		                        startBundleList.add (bfirst)
+		                    } catch (Exception ex)  {
+		                        println("Auto-properties start: " + location + " ("
+		                            + ex + ((ex.getCause() != null) ? " - " + ex.getCause() : "") + ")");
+		                    }
+		                }
+		            }
+		        }
+	            
+	            
+	            // Get list of already installed bundles as a map.
+	            Map installedBundleMap = new HashMap();
+	            Bundle[] bundles = context.getBundles();
+	            for (int i = 0; i < bundles.length; i++) {
+	            	def locate = bundles[i].getLocation().replace("\\", "/");
+	            	if (!locate.contains("wrap:file:/")) {
+	            		locate = locate.replace("wrap:file:", "wrap:file:/")
+	            	}
+	                installedBundleMap.put(locate, bundles[i]);
+	            }
 
+	            // Get the wrap jar file directory.
+	            String wrapJarDir = (String) configMap.get(WRAP_JAR_DIR);
+	            // Look in the specified directory to create a list
+	            // of all JAR files to wrap and install.
+	            File[] files = new File(wrapJarDir).listFiles();
+	            List jarList = new ArrayList();
+	            if (files != null) {
+	                Arrays.sort(files);
+	                for (int i = 0; i < files.length; i++) {
+	                    if (files[i].getName().endsWith(".jar")) {
+	                        jarList.add(files[i]);
+	                    }
+	                }
+	            }
+				
+
+	            for (int i = 0; i < jarList.size(); i++) {
+	                // Look up the bundle by location, removing it from
+	                // the map of installed bundles so the remaining bundles
+	                // indicate which bundles may need to be uninstalled.
+	                def wrapStr = "wrap:" + ((File) jarList.get(i)).toURI().toString()
+	                Bundle b = (Bundle) installedBundleMap.remove(wrapStr);
+	                try {
+	                    // If the jar is not already installed, then install it
+	                    // if the 'install' action is present.
+	                    if ((b == null) && actionList.contains(AUTO_DEPLOY_INSTALL_VALUE)) {
+	                        b = context.installBundle(wrapStr);
+	                    }
+	                    // If the bundle is already installed, then update it
+	                    // if the 'update' action is present.
+	                    else if (actionList.contains(AUTO_DEPLOY_UPDATE_VALUE)) {
+	                        b.update();
+	                    }
+
+	                    // If we have found and/or successfully installed a bundle,
+	                    // then add it to the list of bundles to potentially start.
+	                    if (b != null) {
+	                        startBundleList.add(b);
+	                    }
+	                } catch (BundleException ex) {
+	                    println("Deploy wrap jar install: "
+	                        + ex + ((ex.getCause() != null) ? " - " + ex.getCause() : ""));
+	                }
+	            }
+
+	            // Uninstall all bundles not in the auto-deploy directory if
+	            // the 'uninstall' action is present.
+	            if (actionList.contains(AUTO_DEPLOY_UNINSTALL_VALUE)) {
+	                for (Iterator it = installedBundleMap.entrySet().iterator(); it.hasNext(); ) {
+	                    Map.Entry entry = (Map.Entry) it.next();
+	                    Bundle b = (Bundle) entry.getValue();
+	                    if (b.getBundleId() != 0) {
+	                        try {
+	                            b.uninstall();
+	                        } catch (BundleException ex) {
+	                         	println("Deploy wrap jar uninstall: "
+	                            	+ ex + ((ex.getCause() != null) ? " - " + ex.getCause() : ""));
+	                        }
+	                    }
+	                }
+	            }
+
+	            // Start all installed and/or updated bundles if the 'start'
+	            // action is present.
+	            if (actionList.contains(AUTO_DEPLOY_START_VALUE)) {
+	                for (int i = 0; i < startBundleList.size(); i++) {
+	                    try {
+	                        if (!isFragment((Bundle) startBundleList.get(i))) {
+	                            ((Bundle) startBundleList.get(i)).start();
+	                        }
+	                    } catch (BundleException ex) {
+	                        println("Deploy wrap jar start: "
+	                            + ex + ((ex.getCause() != null) ? " - " + ex.getCause() : ""));
+	                    }
+	                }
+	            }
+	        }
+	    }
+		
 	    private static String nextLocation(StringTokenizer st) {
 	        String retVal = null;
 	        if (st.countTokens() > 0) {

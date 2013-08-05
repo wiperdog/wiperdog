@@ -5,7 +5,7 @@
 // すること。
 //
 
-import com.insight_tec.pi.directorywatcher.Listener
+import org.wiperdog.directorywatcher.Listener
 import org.codehaus.groovy.tools.RootLoader;
 try {
 	def binding = new Binding();
@@ -26,6 +26,9 @@ try {
 
 	// Loaderに渡す為のGroovyShell
 	def shell = new GroovyShell(rootloader,binding)
+	
+	def jettyLoader = new JettyLoader(ctx)
+	
 	// IST_HOME/lib/groovy の直下のgroovyファイルを自動でロードするLoader
 	def loader = new DefaultLoader(ctx, shell)
 	// OSGi serviceに渡すproperty
