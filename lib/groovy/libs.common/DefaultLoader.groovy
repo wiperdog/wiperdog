@@ -1,22 +1,7 @@
-/*
- *  Copyright 2013 Insight technology,inc. All rights reserved.
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
 /**
  * 汎用Groovy script loader
  */
-import com.insight_tec.pi.directorywatcher.Listener
+import org.wiperdog.directorywatcher.Listener
 import org.apache.log4j.Logger;
 import org.osgi.framework.BundleContext
 import org.osgi.framework.FrameworkUtil;
@@ -44,7 +29,7 @@ class OSGiCompanionCategory {
  * log出力機能追加用Category
  */
 class LoggingCategory {
-	static def logger = Logger.getLogger("com.insight_tec.pi.scriptsupport.groovyrunner");
+	static def logger = Logger.getLogger("org.wiperdog.scriptsupport.groovyrunner");
 	static def error(Script self, msg, Throwable t) {
 		t != null ? logger.error(msg, t) : logger.error(msg)
 	}
@@ -92,7 +77,7 @@ class DefaultLoader implements Listener {
 	def shell
 	def dir
 	def interval
-	def logger = Logger.getLogger("com.insight_tec.pi.scriptsupport.groovyrunner");
+	def logger = Logger.getLogger("org.wiperdog.scriptsupport.groovyrunner");
 	def properties
 
 	public DefaultLoader(BundleContext context, GroovyShell shell) {

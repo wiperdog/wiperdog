@@ -1,12 +1,11 @@
 [ 
-  dbconnstr: [ 
-    ORACLE: "jdbc:oracle:thin:@192.168.0.147:1521:piex",
-    SQLS: "jdbc:sqlserver://localhost:1433",
-    MYSQL: "jdbc:mysql://localhost:3307/information_schema",
-    POSTGRES: "jdbc:postgresql://localhost:5433/postgres"
+  dbinfo: [
+   "@MYSQL": [dbconnstr: "jdbc:mysql://localhost:3306/information_schema", user: "root", dbHostId: "localhost", dbSid: "information_schema"],
+   "localhost-@MYSQL-information_schema": [dbconnstr: "jdbc:mysql://localhost:3306/information_schema", user: "root", dbHostId: "localhost", dbSid: "information_schema"],
+   "@PGSQL": [dbconnstr: "jdbc:postgresql://localhost:5432/postgres", user: "postgres", dbHostId: "localhost", dbSid: "postgres"],
+   "localhost-@PGSQL-postgres": [dbconnstr: "jdbc:postgresql://localhost:5432/postgres", user: "postgres", dbHostId: "localhost", dbSid: "postgres"]
   ],
-  dest: [ [ http: "http://localhost:13111/spool/tfm_test" ] ],
-  //dest: [ [ file: "stdout" ] ],
+  dest: [ [ file: "stdout" ] ],
    datadirectory: [				
     ORACLE: [default:"",getData:[sql:"",append:""]],				
     SQLS: [default:"",getData:[sql:" declare @rc int, @dir nvarchar(4000) exec @rc = master.dbo.xp_instance_regread N'HKEY_LOCAL_MACHINE', N'Software\\Microsoft\\MSSQLServer\\Setup',N'SQLPath', @dir output, 'no_output'select @dir AS InstallationDirectory",append:"\\Data"]],	

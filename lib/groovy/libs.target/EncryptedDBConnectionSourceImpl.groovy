@@ -1,18 +1,3 @@
-/*
- *  Copyright 2013 Insight technology,inc. All rights reserved.
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
 import groovy.sql.Sql
 import java.security.*;
 import javax.crypto.*;
@@ -27,7 +12,7 @@ import java.text.MessageFormat
 	
 public class EncryptedDBConnectionSourceImpl implements IDBConnectionSource{
 	
-	def logger = Logger.getLogger("com.insight_tec.pi.scriptsupport.groovyrunner")	
+	def logger = Logger.getLogger("org.wiperdog.scriptsupport.groovyrunner")	
 	
 	def properties = MonitorJobConfigLoader.getProperties()		
 	
@@ -37,28 +22,28 @@ public class EncryptedDBConnectionSourceImpl implements IDBConnectionSource{
 	
 	/**
 	* Get new instances sql
-	* @param dbtype
-	* @param connstr
-	* @param instanceId
-	* @param dbuser
+	* @param dbInfo
 	* @param datadir_params
 	* @param dbversion_params
 	* @param programdir_params
 	* @param logdir_params
 	* @return sql
 	*/
-	public Sql newSqlInstance(dbtype, connstr, instanceId, dbuser,datadir_params, dbversion_params, programdir_params,logdir_params){
+	public Sql newSqlInstance(dbInfo, datadir_params, dbversion_params, programdir_params,logdir_params){
 		def sql = null
-		def strDriver = null
 		def strPassword = null
+		
+		def connstr = dbInfo.dbconnstr
+		def dbuser = dbInfo.user
+		def dbtype = dbInfo.strDbType
+		def strDriver = dbInfo.strDbTypeDriver
+		
 		messageFile.each {
 			def toArray = it.split(" = ")
 			mapMessage[toArray[0]] = toArray[1]
 		}
-		// Get driver string
-		strDriver = getDriverString(dbtype)
 		// Get password
-		strPassword = getPassword(dbtype,dbuser)
+		strPassword = getPassword(dbInfo)
 		// Get decryptedPassword
 		def decryptedPassword = ""
 		try{
@@ -130,24 +115,23 @@ public class EncryptedDBConnectionSourceImpl implements IDBConnectionSource{
 
 	/**
 	* Get password
-	* @param dbtypeString type of DBMS
-	* @param dbuserString user name
+	* @param mapDbInfo connect DB information
 	* @return passwordString
 	*/
-	public String getPassword(dbtypeString,dbuserString) {
+	public String getPassword(mapDbInfo) {
 		def pwdFile = null
 		def map=[:]
 		def tempArray = [:]
 		def passwordString = null
 		try{
-			pwdFile = getPwdFile(dbtypeString)
+			pwdFile = getPwdFile(mapDbInfo)
 			if (pwdFile != null) {
 				pwdFile.eachLine {
 						tempArray = it.split(":")
 						map[tempArray[0]] = tempArray[1].trim()
 				}
 				map.each {it->
-					if (it.key == dbuserString) {
+					if (it.key == mapDbInfo.user) {
 						passwordString = it.value
 					}
 				}
@@ -167,17 +151,17 @@ public class EncryptedDBConnectionSourceImpl implements IDBConnectionSource{
 
 	/**
 	* If DB user haven't set, get default user
-	* @param strDBType type of DBMS
+	* @param mapDbInfo connect DB information
 	* @return strUserName
 	*/
-	public String getDefaultUser(strDBType)	{
+	public String getDefaultUser(mapDbInfo)	{
 		def strUserName = null
 		def pwdFile = null
 		def array=[:]
 		def map=[:]
 		def tempArray = [:]
 		try{
-			pwdFile = getPwdFile(strDBType)
+			pwdFile = getPwdFile(mapDbInfo)
 			if (pwdFile != null) {
 				pwdFile.eachLine {
 						tempArray = it.split(":")
@@ -347,27 +331,12 @@ public class EncryptedDBConnectionSourceImpl implements IDBConnectionSource{
 	
 	/**
 	* Get pwdFile
-	* @param dbtypeString
+	* @param mapDbInfo connect DB information
 	* @return pwdFileOutput password file
 	*/
-	public File getPwdFile(dbtypeString) {
-		def pwdFileOutput
-		switch (dbtypeString) {
-			case ResourceConstants.ORACLE:
-				pwdFileOutput = new File(properties.get(ResourceConstants.DBPASSWORD_FILE_DIRECTORY) + "/.dbpasswd_ORACLE")
-				break;
-			case ResourceConstants.MYSQL:
-				pwdFileOutput = new File(properties.get(ResourceConstants.DBPASSWORD_FILE_DIRECTORY) + "/.dbpasswd_MYSQL")
-				break;
-			case ResourceConstants.POSTGRES:
-				pwdFileOutput = new File(properties.get(ResourceConstants.DBPASSWORD_FILE_DIRECTORY) + "/.dbpasswd_POSTGRES")
-				break;
-			case ResourceConstants.SQLS:
-				pwdFileOutput = new File(properties.get(ResourceConstants.DBPASSWORD_FILE_DIRECTORY) + "/.dbpasswd_SQLS")
-				break;
-			default:
-				break;
-		}
+	public File getPwdFile(mapDbInfo) {
+		def pwdFileName = CommonUltis.getPasswdFileName(mapDbInfo.strDbType, mapDbInfo.dbHostId, mapDbInfo.dbSid)
+		File pwdFileOutput = new File(properties.get(ResourceConstants.DBPASSWORD_FILE_DIRECTORY) + "/" + pwdFileName)
 		return pwdFileOutput
 	}
 }

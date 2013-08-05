@@ -1,18 +1,3 @@
-/*
- *  Copyright 2013 Insight technology,inc. All rights reserved.
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
 import groovy.sql.Sql
 import java.lang.AssertionError
 import java.util.regex.Matcher
@@ -51,7 +36,7 @@ class DefaultJobCaller {
 	
 	static mapDBConnections = []
 	
-	def logger = Logger.getLogger("com.insight_tec.pi.scriptsupport.groovyrunner")
+	def logger = Logger.getLogger("org.wiperdog.scriptsupport.groovyrunner")
 	
 	//def messageFile = new File(System.getProperty("felix.home") + "/var/conf/message.properties")
 	def messageFile = new File(properties.get(ResourceConstants.MESSAGE_FILE_DIRECTORY) + "/message.properties")
@@ -61,6 +46,7 @@ class DefaultJobCaller {
 	def iDBConnectionSource = new EncryptedDBConnectionSourceImpl()
 	
 	static int RECORD_SEQ = 0
+	def dbInfo
 	
 	DefaultSender sender
 	
@@ -142,40 +128,38 @@ class DefaultJobCaller {
 	
 	/**
 	 * Run QUERY
-	 * @param connectionString Connection
-	 * @param driverString Driver string
-	 * @param userString Username
 	 * @param queryString Query string
 	 * @param strQueryVariable Query variables
-	 * @param strDbType Database's type
+	 * @param dbInfo connect DB information
 	 * @return resultData data after executing query
 	 */
-	def runQuery(connectionString, driverString, userString, queryString, strQueryVariable, strDbType) {	
-		List resultData = null		
+	def runQuery(queryString, strQueryVariable, dbInfo) {
+		List resultData = null
 		def binding = instanceJob.getBinding()
 				
 		def conInt = new ConnectionInit()
-		def db = conInt.getDbConnection(mapDBConnections, iDBConnectionSource, binding, strDbType, connectionString, userString)
-		
-		if (db != null) {
-			try {
-				//Get data
-				if (strQueryVariable == null) {
-					resultData = db.rows(queryString)
-				} else {
-					resultData = db.rows(queryString, strQueryVariable)
+		synchronized (mapDBConnections) {
+			def db = conInt.getDbConnection(mapDBConnections, iDBConnectionSource, binding, dbInfo)
+			
+			if (db != null) {
+				try {
+					//Get data
+					if (strQueryVariable == null) {
+						resultData = db.rows(queryString)
+					} else {
+						resultData = db.rows(queryString, strQueryVariable)
+					}
+				} catch (SQLException e) {
+					logger.info (MessageFormat.format(mapMessage['ERR002'], "'" + queryString + "'", e.getErrorCode(), e.getMessage()))
+					isJobFinishedSuccessfully = false
+					return null
 				}
-			} catch (SQLException e) {
-				logger.info (MessageFormat.format(mapMessage['ERR002'], "'" + queryString + "'", e.getErrorCode(), e.getMessage()))
+			
+			} else {
+				logger.info('after of 20 times of connections, connect to database falsed.')
 				isJobFinishedSuccessfully = false
-				return null
 			}
-		
-		} else {
-			logger.info('after of 20 times of connections, connect to database falsed.')
-			isJobFinishedSuccessfully = false
 		}
-		
 		return resultData
 	}
 	
@@ -230,7 +214,7 @@ class DefaultJobCaller {
 	}
 
 	//
-	// start method is called by GroovyScheduledJob.execute (<- com.insight_tec.pi.jobmanager) 
+	// start method is called by GroovyScheduledJob.execute (<- org.wiperdog.jobmanager) 
 	// 
 	def start(sccontext, senderList) {
 		try{
@@ -247,6 +231,8 @@ class DefaultJobCaller {
 			def strQueryVariable = null
 			def strCon = null
 			def strDbType = null
+			def strHostId = null
+			def strSid = null
 			def strDbTypeDriver = null
 			def strUser = null
 			def strPwd = null
@@ -269,10 +255,21 @@ class DefaultJobCaller {
 			strFinally = getVarFromBinding(binding, ResourceConstants.DEF_FINALLY)
 			//Get QUERY_VARIABLE
 			strQueryVariable = getVarFromBinding(binding, ResourceConstants.DEF_QUERY_VARIABLE)
-			//Get DBCONNSTR
-			strCon = getVarFromBinding(binding, ResourceConstants.DEF_DBCONNSTR)
 			//Get type of DB (ORACLE, MYSQL...)
 			strDbType = getVarFromBinding(binding, ResourceConstants.DEF_DBTYPE)
+			// Get params of job
+			def paramsJob = binding.getVariable('parameters')
+			
+			// Get DBHOSTID
+			strHostId = getVarFromBinding(binding, ResourceConstants.DBHOSTID)
+			if(strHostId == null) {
+				strHostId = paramsJob.dbHostId
+			}
+			// Get DBSID
+			strSid = getVarFromBinding(binding, ResourceConstants.DBSID)
+			if(strSid == null) {
+				strSid = paramsJob.dbSid
+			}
 			//Get driver based on type of DB
 			if(strDbType != null){
 				if(strDbType == ResourceConstants.ORACLE) {
@@ -288,11 +285,20 @@ class DefaultJobCaller {
 					strDbTypeDriver = ResourceConstants.DEF_SQLS_DRIVER
 				}
 			}
-			//Get DB user
-			strUser = getVarFromBinding(binding, ResourceConstants.DEF_DBUSER)
-			//If DB user haven't set, get default user
-			if (strUser == null && strDbType != null) {
-				strUser = iDBConnectionSource.getDefaultUser(strDbType)
+			// Get DBInfo
+			dbInfo = getDbInfo(paramsJob, strDbType, strHostId, strSid)
+			if (dbInfo != null) {
+				dbInfo['strDbType'] = strDbType
+				dbInfo['strDbTypeDriver'] = strDbTypeDriver
+				//Get DBCONNSTR
+				strCon = dbInfo.dbconnstr
+				//Get DB user
+				strUser = dbInfo.user
+				//If DB user haven't set, get default user
+				if (strUser == null && strDbType != null) {
+					strUser = iDBConnectionSource.getDefaultUser(dbInfo)
+					dbInfo.user = strUser
+				}
 			}
 			if (cFetchAction == null && strCommand != null) {
 				// start command
@@ -302,7 +308,7 @@ class DefaultJobCaller {
 			}
 			if (cFetchAction != null) {
 				logger.debug("fileName: " + fileName + " ---Start Process FetchAction---")
-				resultData = runFetchAction (cFetchAction, strCon, strUser, strDbType, strDbTypeDriver)
+				resultData = runFetchAction (cFetchAction, dbInfo)
 				logger.debug("fileName: " + fileName + " ---End Process FetchAction---")
 			}
 			if (cFetchAction == null && strQuery != null) {
@@ -310,7 +316,7 @@ class DefaultJobCaller {
 					logger.info (mapMessage['ERR006'])
 				} else {
 					logger.debug("fileName: " + fileName + " ---Start Process Query---")
-					resultData = runQuery(strCon, strDbTypeDriver, strUser, strQuery, strQueryVariable, strDbType)
+					resultData = runQuery(strQuery, strQueryVariable, dbInfo)
 					logger.debug("fileName: " + fileName + " ---End Process Query---")
 				}
 			}
@@ -411,48 +417,43 @@ class DefaultJobCaller {
 	/**
 	 * Run FETCHACTION closure
 	 * @param fetchActionString Fetchaction closure
-	 * @param connectionString Connection
-	 * @param userString Username
-	 * @param dbTypeString Database type
-	 * @param driverString Driver String
+	 * @param dbInfo connect DB information
 	 * @return resultData result after running FETCHACTION
 	 */
-	def runFetchAction (fetchActionString, connectionString, userString, dbTypeString, driverString) {
+	def runFetchAction (fetchActionString, dbInfo) {
 		def binding = instanceJob.getBinding()
 		def resultData = null
-		
-		//If has data for connect, create connection
-		if(userString == null) {
-			userString = iDBConnectionSource.getDefaultUser(dbTypeString)
-		}
-		if((connectionString != null) && (dbTypeString != null) && (userString != null)) {
-			def conInt = new ConnectionInit()				            
-			def db = conInt.getDbConnection(mapDBConnections, iDBConnectionSource, binding, dbTypeString, connectionString, userString)
-			if (db == null) {
-				logger.info(this.fileName + ': After of 20 times of connections, connect to database falsed.')
+		synchronized (mapDBConnections) {
+			//If has data for connect, create connection
+			if((dbInfo != null) &&(dbInfo.dbconnstr != null) && (dbInfo.strDbType != null) && (dbInfo.user != null)) {
+				def conInt = new ConnectionInit()
+				def db = conInt.getDbConnection(mapDBConnections, iDBConnectionSource, binding, dbInfo)
+				if (db == null) {
+					logger.info(this.fileName + ': After of 20 times of connections, connect to database falsed.')
+				}
+				binding.setVariable('sql', db)
 			}
-			binding.setVariable('sql', db)
-		}
-		
-		//Run FetchAction
-		try {
-			resultData = fetchActionString.call()
-		} catch (SQLException e) {
-			logger.info (MessageFormat.format(mapMessage['ERR003'], e.getErrorCode(), e.getMessage()))
-			isJobFinishedSuccessfully = false
-		} catch (Exception e) {
-			String stackTrace = org.apache.commons.lang.exception.ExceptionUtils.getFullStackTrace(e)
-			logger.info (MessageFormat.format(mapMessage['ERR008'],"FETCHACTION",stackTrace))
-			if(!(e instanceof JobControlException)){
+			
+			//Run FetchAction
+			try {
+				resultData = fetchActionString.call()
+			} catch (SQLException e) {
+				logger.info (MessageFormat.format(mapMessage['ERR003'], e.getErrorCode(), e.getMessage()))
 				isJobFinishedSuccessfully = false
-			}else{
-				throw e
+			} catch (Exception e) {
+				String stackTrace = org.apache.commons.lang.exception.ExceptionUtils.getFullStackTrace(e)
+				logger.info (MessageFormat.format(mapMessage['ERR008'],"FETCHACTION",stackTrace))
+				if(!(e instanceof JobControlException)){
+					isJobFinishedSuccessfully = false
+				}else{
+					throw e
+				}
+			} catch (AssertionError ae) {
+				String error_assertion = ae.getMessage()
+				String line_number_error = ae.getStackTrace()[2].getLineNumber()
+				logger.info(MessageFormat.format(mapMessage['ERR009'],this.fileName,line_number_error,error_assertion))	
+				isJobFinishedSuccessfully = false
 			}
-		} catch (AssertionError ae) {
-			String error_assertion = ae.getMessage()
-			String line_number_error = ae.getStackTrace()[2].getLineNumber()
-			logger.info(MessageFormat.format(mapMessage['ERR009'],this.fileName,line_number_error,error_assertion))	
-			isJobFinishedSuccessfully = false
 		}
 		return resultData
 	}
@@ -500,7 +501,7 @@ class DefaultJobCaller {
 		//Get type
 		envelopedResultData['type'] = getType(binding,resultData)
 		//Get sid
-		envelopedResultData['sid'] = getSid(binding)
+		envelopedResultData['sid'] = getSid()
 		//Get istIid
 		if(envelopedResultData['sid'] != null){
 			istIid = envelopedResultData['hostId'] + "-" + envelopedResultData['sid']
@@ -528,49 +529,12 @@ class DefaultJobCaller {
 	
 	/**
 	 * Process to get sid
-	 * @param binding Binding get from instanceJob
 	 * @return sid
 	 */
-	def getSid(binding){
-		def instanceName
+	def getSid(){
 		def sid
-		sid = binding.hasVariable(ResourceConstants.MONITORINGTYPE) ? binding.getVariable(ResourceConstants.MONITORINGTYPE): "@SYS"
-		if ('@DB'.equals(sid)) {
-			try{
-				def strDbType = binding.hasVariable(ResourceConstants.DBTYPE) ? binding.getVariable(ResourceConstants.DBTYPE) : null
-				def formatedSid
-				switch (strDbType) {
-					case ResourceConstants.ORACLE:
-						formatedSid = '@ORA'
-						break;
-					case ResourceConstants.MYSQL:
-						formatedSid = '@MYSQL'
-						break;
-					case ResourceConstants.POSTGRES:
-						formatedSid = '@PGSQL'
-						break;
-					case ResourceConstants.SQLS:
-						formatedSid = '@MSSQL'
-						break;
-					default:
-						break;
-				}
-				instanceName = binding.hasVariable(ResourceConstants.DBINSTANCE) ? binding.getVariable(ResourceConstants.DBINSTANCE) : null
-				def trimmedInstanceName = ""
-				if(instanceName != null){
-					trimmedInstanceName = instanceName.trim()
-				}
-				if(!trimmedInstanceName.isEmpty()){
-					sid = formatedSid + '-' + trimmedInstanceName
-				}else{
-					sid = formatedSid
-				}
-			}catch(Exception ex){
-				logger.debug(ex.toString())
-				isJobFinishedSuccessfully = false
-			}
-		}else if( (!'@SYS'.equals(sid)) && (!'@NET'.equals(sid)) && (!'@DB'.equals(sid)) ){
-			sid = null
+		if ((dbInfo != null) && (dbInfo.params != null)) {
+			sid = dbInfo.params.DBSID
 		}
 		return sid
 	}
@@ -580,23 +544,27 @@ class DefaultJobCaller {
 	 * @return hostId
 	 */
 	def getHostId(){
-		def hostId
-		def sysPropFile = new File(properties.get(ResourceConstants.SYSTEM_PROPERTIES_FILE_DIRECTORY) + "/system.properties")
-		if(sysPropFile != null){
-			def tempArray = []
-			def tempMap = [:]
-			try {
-				sysPropFile.eachLine {
-					tempArray = it.split("=")
-					tempMap[tempArray[0]] = ((tempArray.size() >= 2) ? tempArray[1] : "")
+		if ((dbInfo != null) && (dbInfo.params != null)) {
+			return dbInfo.params.DBHOSTID
+		} else {
+			def hostId
+			def sysPropFile = new File(properties.get(ResourceConstants.SYSTEM_PROPERTIES_FILE_DIRECTORY) + "/system.properties")
+			if(sysPropFile != null){
+				def tempArray = []
+				def tempMap = [:]
+				try {
+					sysPropFile.eachLine {
+						tempArray = it.split("=")
+						tempMap[tempArray[0]] = ((tempArray.size() >= 2) ? tempArray[1] : "")
+					}
+				}catch (Exception ex){
+					logger.debug(ex.toString())
+					isJobFinishedSuccessfully = false
 				}
-			}catch (Exception ex){
-				logger.debug(ex.toString())
-				isJobFinishedSuccessfully = false
+				hostId = tempMap['pi.local.hostid']
 			}
-			hostId = tempMap['pi.local.hostid']
+			return hostId
 		}
-		return hostId
 	}
 	
 	/**
@@ -691,5 +659,37 @@ class DefaultJobCaller {
 			RECORD_SEQ += 1
 		}
 		return RECORD_SEQ
+	}
+	
+	/**
+	 * getDbInfo: get connect DB information
+	 * @param paramsJob
+	 * @param dbTypeString type of DB was configed in Job
+	 * @param hostIdString hostId was configed in Job
+	 * @param sidString sid was configed in Job
+	 * @return connect DB information
+	 */
+	def getDbInfo(paramsJob, dbTypeString, hostIdString, sidString) {
+		def dbInformation
+		def params = [:]
+		// Key which management connect information of DB
+		def keyManager
+		if(hostIdString != null) {
+			keyManager = hostIdString + "-" + dbTypeString
+		} else {
+			keyManager = dbTypeString
+		}
+		if(sidString != null) {
+			keyManager += "-" + sidString
+		}
+		dbInformation = paramsJob.dbinfo[keyManager]
+		if (dbInformation != null) {
+			params['DBHOSTID'] = dbInformation.dbHostId
+			params['DBSID'] = dbInformation.dbSid
+			dbInformation.params = params
+			dbInformation.dbHostId = hostIdString
+			dbInformation.dbSid = sidString
+		}
+		return dbInformation
 	}
 }
