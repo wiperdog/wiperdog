@@ -1,0 +1,126 @@
+/**
+ * データベースファイルの空きサイズ等を監視します。<br/>
+ * <p>
+ * 各データベースは、データファイルとログファイルを持っています。 <br/>
+ * データベースファイルには現在のサイズと最大拡張済みサイズがあり、 <br/>
+ * 最大拡張後のテーブルスペース使用率が100%になると、空きサイズが無くなったという事が分かります。
+ * </p>
+ * @targetVersion 2008+
+ * @return サンプリング毎に各データベースの数だけレコードを取得します。
+ * @returnParam DBName データベース名
+ * @returnParam DBFileName ファイル名
+ * @returnParam FileSizePageInt ファイルのサイズ(ページ単位)
+ * @returnParam LocationAddr ファイルの場所
+ * @returnParam CurrentUsedSizePageInt 現在の使用サイズ(ページ単位)
+ * @returnParam CurrentFreeSizePageInt 現在の空きサイズ(ページ単位)
+ * @returnParam CurrentTotalSizePageDbl 現在のファイルサイズ(ページ単位)
+ * @returnParam CurrentUsedPct 現在の使用率
+ * @returnParam MaxTotalSizePageDbl 最大拡張時のファイルサイズ(ページ単位)
+ * @returnParam MaxFreeSizePageDbl 最大拡張時のファイルの空きサイズ(ページ単位)
+ * @returnParam MaxUsedPct 最大拡張時のファイルサイズでの使用率
+ */
+
+JOB = [name: "SQL_Server_Database_Area.Database_free"]
+
+FETCHACTION = {
+	def query = '''
+		CREATE TABLE #TempTable
+ 			  (     DBName nvarchar(50),
+                    DBFileName nvarchar(50) NOT NULL,
+                    FileSizePageInt int,
+        			LocationAddr nvarchar(500) NOT NULL,
+                    CurrentUsedSizePageInt int,
+                    CurrentFreeSizePageInt int, 
+                    CurrentUsedPct numeric(5,2),
+                    MaxTotalSizePageDbl int
+ 			   )
+		DECLARE @db varchar(50)
+		DECLARE @SqlQuery varchar(max)
+		DECLARE @stringQuery varchar(max)
+		DECLARE db_cursor CURSOR FOR
+		 SELECT name
+		 FROM sys.databases
+		 WHERE name NOT IN 
+		  (\'master\', \'tempdb\', \'model\', \'msdb\', \'ReportServer$SQLEXPRESS\', \'ReportServer$SQLEXPRESSTempDB\');
+		OPEN db_cursor ;
+		FETCH NEXT FROM db_cursor INTO @db;
+		WHILE @@FETCH_STATUS = 0
+		BEGIN
+		                SELECT @stringQuery = \'
+                                              select
+                									   DBName,
+                                                       DBFileName,
+                                                       FileSizePageInt, 
+            										   LocationAddr,
+                                                       CurrentUsedSizePageInt, 
+                                                       CurrentFreeSizePageInt, 
+                                                       CurrentUsedPct = convert(numeric(10,2),(CurrentUsedSizePageInt/(FileSizePageInt)))*100,
+                                                       MaxTotalSizePageDbl
+                                               from
+                                                          (select
+                                                                        \'\'\' + @db +\'\'\' as DBName,
+                                                                        convert(numeric(10,2),sum(a.size)) as FileSizePageInt,
+                                                                        convert(numeric(10,2),sum(fileproperty( a.name,\'\'\' + \'SpaceUsed\' + \'\'\'))) as CurrentUsedSizePageInt,
+                                                                        convert(numeric(10,2),sum((a.size-fileproperty( a.name,\'\'\' + \'SpaceUsed\' + \'\'\')))) as CurrentFreeSizePageInt,
+                                                                        a.name as DBFileName,
+            															a.filename as LocationAddr,
+                                                                        a.maxsize as MaxTotalSizePageDbl
+                                                           from
+                                                                        sysfiles a
+                                                           group by
+                                                                        groupid,
+                                                                        a.name,
+            															a.filename,
+                                                                        a.maxsize
+                                                          having
+                                                                       a.groupid is null or
+                                                                       a.name is not null or
+                                                                       a.maxsize is not null or
+            														   a.filename is not null
+                                                                       ) as T
+                                     \';
+                 SELECT @SqlQuery = \'use \' + @db + \' \' + @stringQuery;
+                 INSERT INTO #TempTable EXEC(@SqlQuery);
+                 FETCH NEXT FROM db_cursor INTO @db;
+	END
+	CLOSE db_cursor ;
+	DEALLOCATE db_cursor;
+			'''
+	def resultData = []
+	sql.execute(query)	
+	resultData = sql.rows('SELECT * FROM #TempTable')
+	sql.execute('DROP TABLE #TempTable')
+	
+	def location
+	def DiskFreeSizePage
+	def MaxFreeSizePageDbl
+	def MaxUsedPct
+	def CurrentUsedSizeDbl
+	def FileSize
+	resultData.each {
+		location = it.LocationAddr
+		File file = new File(location)
+		DiskFreeSizePage = file.getFreeSpace()/(8*1024)
+		FileSize = new java.math.BigDecimal(it.FileSizePageInt)
+		if(it.MaxTotalSizePageDbl == -1 || it.MaxTotalSizePageDbl > DiskFreeSizePage) {
+			it.MaxTotalSizePageDbl = FileSize + DiskFreeSizePage
+		}
+		CurrentUsedSizeDbl = new java.math.BigDecimal(it.CurrentUsedSizePageInt)
+		MaxFreeSizePageDbl = it.MaxTotalSizePageDbl - CurrentUsedSizeDbl
+		MaxUsedPct = CurrentUsedSizeDbl*100/it.MaxTotalSizePageDbl
+		it['MaxFreeSizePageDbl'] = MaxFreeSizePageDbl
+		it['MaxUsedPct'] = MaxUsedPct
+		it['CurrentTotalSizePageDbl'] = it.CurrentUsedSizePageInt + it.CurrentFreeSizePageInt
+	}
+	return resultData
+}
+
+KEYEXPR = ['_root':['DBName','DBFileName'], '_sequence':['CurrentUsedPct','FileSizePageInt','CurrentUsedSizePageInt']]
+KEYEXPR._unit = ["CurrentUsedSizePageInt":"pages","CurrentFreeSizePageInt":"pages","CurrentUsedPct":"%","MaxTotalSizePageDbl": "pages","MaxFreeSizePageDbl":"pages","CurrentTotalSizePageDbl":"pages","MaxUsedPct":"%"]
+SENDTYPE = "Store"
+RESOURCEID = "As/MsDbFree"
+MONITORINGTYPE = "@DB"
+DBTYPE = "SQLS"
+DBUSER = "sa"
+DEST = parameters.dest
+DBCONNSTR = parameters.dbconnstr.SQLS

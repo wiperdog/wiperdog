@@ -1,0 +1,56 @@
+/**
+ * Monitoring wait status.<br/>
+ * <p>
+ * We can use this aggregated view to diagnose performance issues with SQL Server and also with specific queries and batches.<br/>
+ * </p>
+ * @targetVersion 2008
+ * @return information about all the waits encountered by threads that executed.
+ * @returnParam WaitTypeName Name of the wait type
+ * @returnParam WaitingTasksCumCnt Total number of waits on this wait type
+ * @returnParam WaitingTasksCnt The number of waits on this wait type from the last monitoring
+ * @returnParam WaitTimeMsCumLong Total wait time for this wait type in milliseconds
+ * @returnParam WaitTimeMsLong Wait time for this wait type from the last monitoring
+ */
+JOB = [name: "SQL_Server_Performance.Wait_Status"]
+FETCHACTION = {
+	def firstData = sql.rows('''
+		SELECT 
+		         wait_type as WaitTypeName, 
+		         waiting_tasks_count as WaitingTasksCumCnt,
+				 wait_time_ms as WaitTimeMsCumLong
+		FROM 
+		         sys.dm_os_wait_stats
+	'''
+	)
+	def finalResultData = []
+	def copyPersistentData = PERSISTENTDATA
+	firstData.each{
+		def mapDataPersistentOfField = copyPersistentData[it.WaitTypeName]
+		if(mapDataPersistentOfField != null){
+			def finalData = [:]
+			finalData['WaitTypeName'] = it.WaitTypeName
+			finalData['WaitingTasksCumCnt'] = it.WaitingTasksCumCnt				
+			finalData['WaitingTasksCnt'] = it.WaitingTasksCumCnt - mapDataPersistentOfField['WaitingTasksCumCnt']
+			finalData['WaitTimeMsCumLong'] = it.WaitTimeMsCumLong
+			finalData['WaitTimeMsLong'] = it.WaitTimeMsCumLong - mapDataPersistentOfField['WaitTimeMsCumLong']
+			if(finalData['WaitingTasksCnt'] > 0){
+				finalResultData.add(finalData)
+			}
+		}
+		copyPersistentData[it.WaitTypeName] = [:]
+		copyPersistentData[it.WaitTypeName]['WaitingTasksCumCnt'] = it.WaitingTasksCumCnt
+		copyPersistentData[it.WaitTypeName]['WaitTimeMsCumLong'] = it.WaitTimeMsCumLong
+	}
+	PERSISTENTDATA = copyPersistentData
+	assert interval != null, "First time, we cannot return calculating values"
+	return finalResultData
+}
+KEYEXPR = [_root:['WaitTypeName'], _sequence:['WaitingTasksCnt', 'WaitTimeMsLong']]
+KEYEXPR._unit = ["WaitingTasksCumCnt":"count", "WaitingTasksCnt":"count/interval", "WaitTimeMsCumLong":"ms", "WaitTimeMsLong":"ms/interval"]
+SENDTYPE = "Store"
+RESOURCEID = "Pf/MsWaitStat"
+MONITORINGTYPE = "@DB"
+DBTYPE = "SQLS"
+DBUSER = "test"
+DEST = parameters.dest
+DBCONNSTR = parameters.dbconnstr.SQLS

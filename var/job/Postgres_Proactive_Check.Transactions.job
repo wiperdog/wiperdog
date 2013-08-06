@@ -1,0 +1,32 @@
+/**
+ * Monitoring Transactions.<br />
+ * <p>
+ * Showing number of transactions in database that havebeen commited, rolled back, ...<br />
+ * </p>
+ * @targetVersion All version
+ * @return Basic informations of transactions.
+ * @returnParam TransactionsCnt Total transactions in all database that have been commited and rolled back.
+ * @returnParam CommitTransactionCnt Total transactions in all database that have been commited.
+ * @returnParam RollbackTransactionCnt Total transactions in all database that have been rolled back.
+ * @returnParam CommitRateVal CommitTransactionCnt/TransactionsCnt ratio
+ */
+JOB = [name:"Postgres_Proactive_Check.Transactions"]
+FETCHACTION = {
+	def query_get_trans = """
+		SELECT sum( xact_commit + xact_rollback ) AS "TransactionsCnt",
+			sum(xact_commit) AS "CommitTransactionCnt",
+			sum(xact_rollback) AS "RollbackTransactionCnt",
+			trunc((sum(xact_commit)/sum(xact_commit + xact_rollback))*100 ,2) AS "CommitRateVal" 
+		FROM   pg_stat_database
+	"""
+	def resultData = sql.rows(query_get_trans)
+	return resultData
+	
+}
+DBTYPE = "POSTGRES" 
+DBUSER = "postgres"
+DEST = parameters.dest
+DBCONNSTR = parameters.dbconnstr.POSTGRES
+MONITORINGTYPE = "@DB"
+RESOURCEID = "Sr/PgTransactions"
+SENDTYPE = "Store"
