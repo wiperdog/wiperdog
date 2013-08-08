@@ -1,0 +1,104 @@
+/**
+ * Monitoring MyISAM Key Buffer.<br/>
+ * <p>
+ * MYISAM use a special structure called the key cache (or key buffer) contains a number of block buffers where the most-used index blocks are placed.<br/>
+ * Have features that improve key cache performance and that enable you to better control cache operation.<br/>
+ * Multiple sessions can access the cache concurrently.<br/>
+ * Can set up multiple key caches and assign table indexes to specific caches.<br/>
+ * </p>
+ * @targetVersion 5.1
+ * @return get information on the use of key buffer in MYISAM.
+ * @returnParam KeyReadsCnt The number of physical reads of a key block from disk
+ * @returnParam KeyReadRequestsCnt The number of requests to read a key block from the cache
+ * @returnParam KeyWritesCnt The number of physical writes of a key block to disk
+ * @returnParam KeyWriteRequestsCnt The number of requests to write a key block to the cache
+ * @returnParam KeyBufferSizeLong The size of the buffer
+ * @returnParam KeyBufferSizeUsedLong The size of the buffer used
+ * @returnParam KeyBufferSizeUnusedLong The size of the buffer unused
+ * @returnParam FragmentationPct Percent fragmentation
+ * @returnParam BufferHitPct Percent buffer hit success
+ * @returnParam KeyReadsDiffVal The number of physical reads from the last monitoring
+ * @returnParam KeyReadRequestsDiffVal The number of requests to read from the last monitoring
+ * @returnParam KeyWritesDiffVal The number of physical writes from the last monitoring
+ * @returnParam KeyWriteRequestsDiffVal The number of requests to write from the last monitoring
+ * @returnParam KeyReadsRateDbl The number of physical reads per second
+ * @returnParam KeyReadRequestsRateDbl The number of requests to read per second
+ * @returnParam KeyWritesRateDbl The number of physical writes per second
+ * @returnParam KeyWriteRequestsRateDbl The number of requests to write per second
+ */
+JOB = [name:"MySQL_Performance.MyISAMKeyBuffer"]
+FETCHACTION={
+		def prev_key_reads = PERSISTENTDATA['KeyReadsCnt'] != null ? PERSISTENTDATA['KeyReadsCnt'] : 0
+		def prev_key_read_requests = PERSISTENTDATA['KeyReadRequestsCnt'] != null ? PERSISTENTDATA['KeyReadRequestsCnt'] : 0
+		def prev_key_writes = PERSISTENTDATA['KeyWritesCnt'] != null ? PERSISTENTDATA['KeyWritesCnt'] : 0
+		def prev_key_write_requests = PERSISTENTDATA['KeyWriteRequestsCnt'] != null ? PERSISTENTDATA['KeyWriteRequestsCnt'] : 0
+		def resultData = [:]
+		def data = sql.rows('''
+						SELECT
+						    A.KeyReadsCnt,
+						    B.KeyReadRequestsCnt,
+						    C.KeyWritesCnt,
+						    D.KeyWriteRequestsCnt,
+						    CASE
+						        WHEN (B.KeyReadRequestsCnt = 0) THEN 0
+						        ELSE (100 - A.KeyReadsCnt/B.KeyReadRequestsCnt*100)
+						    END BufferHitPct,
+						    E.KeyBufferSizeLong,
+						    (G.key_blocks_used * F.key_cache_block_size) AS KeyBufferSizeUsedLong,
+						    (H.key_blocks_unused * F.key_cache_block_size) AS KeyBufferSizeUnusedLong,
+						    (E.KeyBufferSizeLong-G.key_blocks_used * F.key_cache_block_size-H.key_blocks_unused * F.key_cache_block_size)/E.KeyBufferSizeLong AS FragmentationPct
+						FROM
+						    (SELECT G.variable_value as KeyReadsCnt FROM information_schema.global_status G WHERE G.variable_name = 'key_reads') A,
+						    (SELECT G.variable_value as KeyReadRequestsCnt FROM information_schema.global_status G WHERE G.variable_name = 'key_read_requests') B,
+						    (SELECT G.variable_value as KeyWritesCnt FROM information_schema.global_status G WHERE G.variable_name = 'key_writes') C,
+						    (SELECT G.variable_value as KeyWriteRequestsCnt FROM information_schema.global_status G WHERE G.variable_name = 'key_write_requests') D,
+						    (SELECT G.variable_value as KeyBufferSizeLong FROM information_schema.global_variables G WHERE G.variable_name = 'key_buffer_size') E,
+						    (SELECT G.variable_value as key_cache_block_size FROM information_schema.global_variables G WHERE G.variable_name = 'key_cache_block_size') F,
+						    (SELECT G.variable_value as key_blocks_used FROM information_schema.global_status G WHERE G.variable_name = 'key_blocks_used') G,
+						    (SELECT G.variable_value as key_blocks_unused FROM information_schema.global_status G WHERE G.variable_name = 'key_blocks_unused') H;
+			''')
+				
+		resultData['KeyReadsCnt'] = Integer.parseInt(data[0]['KeyReadsCnt'])
+		resultData['KeyReadRequestsCnt'] = Integer.parseInt(data[0]['KeyReadRequestsCnt'])
+		resultData['KeyWritesCnt'] = Integer.parseInt(data[0]['KeyWritesCnt'])
+		resultData['KeyWriteRequestsCnt'] = Integer.parseInt(data[0]['KeyWriteRequestsCnt'])		
+		resultData['KeyBufferSizeLong'] = Integer.parseInt(data[0]['KeyBufferSizeLong'])	
+		resultData['KeyBufferSizeUsedLong'] = data[0]['KeyBufferSizeUsedLong']
+		resultData['KeyBufferSizeUnusedLong'] = data[0]['KeyBufferSizeUnusedLong']
+		resultData['FragmentationPct'] = data[0]['FragmentationPct']*100
+		resultData['BufferHitPct'] = data[0]['BufferHitPct']
+
+		//Set PERSISTENTDATA
+		PERSISTENTDATA['KeyReadsCnt'] = resultData['KeyReadsCnt']
+		PERSISTENTDATA['KeyReadRequestsCnt'] = resultData['KeyReadRequestsCnt']
+		PERSISTENTDATA['KeyWritesCnt'] = resultData['KeyWritesCnt']
+		PERSISTENTDATA['KeyWriteRequestsCnt'] = resultData['KeyWriteRequestsCnt']
+		assert interval != null, "This is the first execution time, interval is null, quit the job"
+			
+		resultData['KeyReadsDiffVal'] = resultData['KeyReadsCnt'] - prev_key_reads
+		resultData['KeyReadRequestsDiffVal'] = resultData['KeyReadRequestsCnt'] - prev_key_read_requests
+		resultData['KeyWritesDiffVal'] = resultData['KeyWritesCnt'] - prev_key_writes 
+		resultData['KeyWriteRequestsDiffVal'] = resultData['KeyWriteRequestsCnt'] - prev_key_write_requests
+
+		resultData['KeyReadsRateDbl'] = resultData['KeyReadsDiffVal'] / interval	
+		resultData['KeyReadRequestsRateDbl'] = resultData['KeyReadRequestsDiffVal'] / interval
+		resultData['KeyWritesRateDbl'] = resultData['KeyWritesDiffVal'] / interval
+		resultData['KeyWriteRequestsRateDbl'] = resultData['KeyWriteRequestsDiffVal'] / interval
+
+		def updateResultData = []
+		updateResultData.add(resultData)
+		return updateResultData
+}
+KEYEXPR = [_sequence:["BufferHitPct","KeyReadRequestsCnt","KeyReadsCnt"]]	
+KEYEXPR._unit = ["KeyReadsCnt" : "count" , "KeyReadRequestsCnt" : "count","KeyWritesCnt" : "count","KeyWriteRequestsCnt" : "count" ,"KeyBufferSizeLong" : "byte" ,
+	"KeyBufferSizeUsedLong" : "byte" , "KeyBufferSizeUnusedLong" : "byte" ,"FragmentationPct" : "%" , "BufferHitPct" : "%",  
+	"KeyReadsRateDbl":"count/sec", "KeyReadRequestsRateDbl":"count/sec", "KeyWritesRateDbl":"count/sec", "KeyWriteRequestsRateDbl":"count/sec",
+	"KeyReadsDiffVal":"count/interval", "KeyReadRequestsDiffVal":"count/interval", "KeyWritesDiffVal":"count/interval", "KeyWriteRequestsDiffVal":"count/interval"] 
+SENDTYPE = "Store"
+DBTYPE = "MYSQL"
+DBCONNSTR = parameters.dbconnstr.MYSQL
+DBUSER = "root"
+DEST = parameters.dest 
+MONITORINGTYPE = "@DB"
+RESOURCEID = "Pf/MyIsamKeyBuff"
+
