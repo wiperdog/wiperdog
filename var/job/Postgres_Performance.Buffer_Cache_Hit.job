@@ -1,0 +1,77 @@
+/**
+ * 共有バッファ(shared_buffer)のヒット率を監視します。</br>
+ * <p>
+ * 共有バッファはテーブルやインデックスをキャッシュするメモリ領域です。<br/>
+ * 共有バッファのヒット率が低い場合、ディスクアクセスが増加し、パフォーマンスに影響を与えます。<br/>
+ * 共有バッファのヒット率を監視することで、共有バッファのサイズが十分か確認することができます。<br/>
+ * サイズはshared_bufferで指定することができます。<br/>
+ * 
+ * 共有バッファのデータは8kBのブロック単位で管理されます。<br/>
+ * ヒット率は、ブロックの要求数とブロック要求の内バッファに存在していた数（ヒット数）を元に計算されます。<br/>
+ * </p>
+ * @targetVersion 9.1
+ * @return サンプリング毎に1レコードのデータを取得します。
+ * @returnParam BufferHitRatePct バッファヒット率
+ * @returnParam IncreaseBlocksFetchVal ブロック要求数
+ * @returnParam IncreaseBlockHitVal ブロックヒット数
+ * @returnParam BlocksFetchPerSecVal 1秒あたりのブロック要求数
+ * @returnParam BlocksHitPerSecVal 1秒あたりのブロックヒット数
+ * @returnParam AccumulateBufferHitRatePct バッファヒット率 (累積値)
+ * @returnParam TotalBlocksFetchCnt ブロック要求数(累積値)
+ * @returnParam TotalBlocksHitCnt ブロックヒット数 (累積値)
+ */
+JOB = [name:"Postgres_Performance.Buffer_Cache_Hit"]
+FETCHACTION = {
+	def resultData = sql.rows (''' 
+								SELECT
+									(
+										CASE
+											WHEN SUM(pg_stat_get_db_blocks_fetched(d.oid)) IS NULL THEN 0
+											ELSE SUM(pg_stat_get_db_blocks_fetched(d.oid))
+										END
+									)
+									as "TotalBlocksFetchCnt",
+									(
+										CASE
+											WHEN SUM(pg_stat_get_db_blocks_hit(d.oid)) IS NULL THEN 0
+											ELSE SUM(pg_stat_get_db_blocks_hit(d.oid))
+										END
+									)as "TotalBlocksHitCnt",
+									( 
+										CASE 
+											WHEN SUM(pg_stat_get_db_blocks_fetched(d.oid)) = 0 THEN 0
+											WHEN SUM(pg_stat_get_db_blocks_fetched(d.oid)) IS NULL THEN 0
+											ELSE SUM(pg_stat_get_db_blocks_hit(d.oid))/ SUM(pg_stat_get_db_blocks_fetched(d.oid))*100
+										END
+									 )
+									AS "AccumulateBufferHitRatePct"
+								FROM pg_database d where datname <> 'postgres' and datistemplate = false;
+								''');
+	return resultData
+}
+ACCUMULATE = {
+	assert interval != null : "First time ,we can not get meaniningful values"
+	assert (prevOUTPUT != null && prevOUTPUT[0] != null ) : "Can not get previous monitoring data !"
+	OUTPUT.each{ rec ->
+		rec['IncreaseBlocksFetchVal'] = rec['TotalBlocksFetchCnt'] - prevOUTPUT[0]['TotalBlocksFetchCnt']
+		rec['IncreaseBlockHitVal'] = rec['TotalBlocksHitCnt'] - prevOUTPUT[0]['TotalBlocksHitCnt']
+		if(rec['IncreaseBlocksFetchVal'] != 0) {
+			rec['BufferHitRatePct'] = rec['IncreaseBlockHitVal'] / rec['IncreaseBlocksFetchVal'] * 100
+		} else {
+			rec['BufferHitRatePct'] = null
+		}
+		rec['BlocksHitPerSecVal'] = rec['IncreaseBlockHitVal']/interval
+		rec['BlocksFetchPerSecVal']  = rec['IncreaseBlocksFetchVal']/interval
+	}
+	
+}
+KEYEXPR = [_sequence:["BufferHitRatePct","AccumulateBufferHitRatePct"]]
+KEYEXPR._unit = [ "TotalBlocksFetchCnt" : "count", "TotalBlocksHitCnt": "count", "AccumulateBufferHitRatePct" : "%", "IncreaseBlocksFetchVal": "count/interval", 
+	"IncreaseBlockHitVal": "count/interval", "BufferHitRatePct" : "%", "BlocksHitPerSecVal": "count/sec", "BlocksFetchPerSecVal": "count/sec" ]
+SENDTYPE = "Store"
+DBTYPE = "POSTGRES" 
+DBUSER = "postgres"
+DEST = parameters.dest
+DBCONNSTR = parameters.dbconnstr.POSTGRES
+MONITORINGTYPE = "@DB"
+RESOURCEID = "Pf/PgBufferCHR"

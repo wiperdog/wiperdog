@@ -1,0 +1,65 @@
+/**
+ * Monitoring thread inside MySQL server
+ * <p>
+ * Monitoring threads which are currently connected, avtive, cached inside an instance of
+ * </p> 
+ * @targetVersion 5.0
+ * @return count of each kind of thread, connected, active, cached, running.
+ * @returnParam ThreadsCachedCnt The number of threads in the thread cache since MySQL version 3.23.17
+ * @returnParam ThreadsConnectedCnt The number of currently open connections
+ * @returnParam ThreadsCreatedCnt The number of threads created to handle connections
+ * @returnParam ThreadsRunningCnt The number of threads that are not sleeping
+ * @returnParam MaxUsedConnectionsCnt The maximum number of connections that have been in use simultaneously since the server started.
+ */
+JOB = [name:"MySQL_ProactiveCheck.Thread"]
+FETCHACTION = {
+	def query = """
+		SELECT 
+			A.Threads_cached As ThreadsCachedCnt, 
+			B.Threads_connected As ThreadsConnectedCnt, 
+			C.Threads_created As ThreadsCreatedCnt, 
+			D.Threads_running As ThreadsRunningCnt,
+			E.max_used_connections As MaxUsedConnectionsCnt
+		FROM
+		(SELECT CONVERT(variable_value, UNSIGNED INTEGER) as Threads_cached
+		FROM information_schema.GLOBAL_STATUS G
+		where G.variable_name = "Threads_cached" ) A,
+		(SELECT CONVERT(variable_value, UNSIGNED INTEGER) as Threads_connected
+		FROM information_schema.GLOBAL_STATUS G
+		where G.variable_name = "Threads_connected" ) B,
+		(SELECT CONVERT(variable_value, UNSIGNED INTEGER) as Threads_created
+		FROM information_schema.GLOBAL_STATUS G
+		where G.variable_name = "Threads_created" ) C,
+		(SELECT CONVERT(variable_value, UNSIGNED INTEGER) as Threads_running
+		FROM information_schema.GLOBAL_STATUS G
+		where G.variable_name = "Threads_running" ) D,
+		(SELECT CONVERT(variable_value, UNSIGNED INTEGER) as max_used_connections
+		FROM information_schema.GLOBAL_STATUS G
+		where G.variable_name = "max_used_connections" ) E
+		;
+	"""
+	def resultData = sql.rows(query)
+}
+ACCUMULATE = {
+	assert interval != null : "First time ,we can not get meaniningful values"
+	assert (prevOUTPUT != null && prevOUTPUT[0] != null ) : "Can not get previous monitoring data !"
+	OUTPUT.each{ rec ->
+		rec['ThreadsCachedDiffVal'] = rec['ThreadsCachedCnt'] - prevOUTPUT[0]['ThreadsCachedCnt']
+		rec['ThreadsConnectedDiffVal'] = rec['ThreadsConnectedCnt'] - prevOUTPUT[0]['ThreadsConnectedCnt']
+		rec['ThreadsCreatedDiffVal'] = rec['ThreadsCreatedCnt'] - prevOUTPUT[0]['ThreadsCreatedCnt']
+		rec['ThreadsRunningDiffVal'] = rec['ThreadsRunningCnt'] - prevOUTPUT[0]['ThreadsRunningCnt']
+		rec['MaxUsedConnectionsDiffVal'] = rec['MaxUsedConnectionsCnt'] - prevOUTPUT[0]['MaxUsedConnectionsCnt']
+	}
+}
+KEYEXPR=[_sequence:["ThreadsRunningCnt"]]
+KEYEXPR._unit = ["ThreadsCachedCnt": "count", "ThreadsConnectedCnt": "count", "ThreadsCreatedCnt": "count", "ThreadsRunningCnt": "count",
+		"MaxUsedConnectionsCnt":"count","ThreadsCachedDiffVal":"count/interval","ThreadsConnectedDiffVal":"count/interval"
+		,"ThreadsCreatedDiffVal":"count/interval","ThreadsRunningDiffVal":"count/interval"
+		, "MaxUsedConnectionsDiffVal":"count/interval" ]
+SENDTYPE = "Store"
+DBTYPE = "MYSQL"
+DBCONNSTR = parameters.dbconnstr.MYSQL
+DBUSER = "root"
+DEST = parameters.dest
+MONITORINGTYPE = "@DB"
+RESOURCEID = "Sr/MyThread"

@@ -1,0 +1,72 @@
+/**
+ * Monitoring sort variable<br/>
+ * <p>
+ * Showing status of variable which has name contains "Sort"
+ * </p>
+ * @targetVersion All version
+ * @return Information of sort variable
+ * @returnParam MergePassesCnt The number of merge passes that the sort algorithm has had to do.
+ * @returnParam RangeCnt The number of sorts that were done using ranges.
+ * @returnParam RowsCnt The number of sorted rows.
+ * @returnParam ScanCnt The number of sorts that were done by scanning the table.
+ * @returnParam DiffMergePassesVal The number of merge passes that the sort algorithm has had to do from previous monitoring to current monitoring
+ * @returnParam DiffRangeVal The number of sorts that were done using ranges from previous monitoring to current monitoring
+ * @returnParam DiffRowsVal The number of sorted rows from previous monitoring to current monitoring
+ * @returnParam DiffScanVal The number of sorts that were done by scanning the table from previous monitoring to current monitoring
+ */
+JOB = [name:"MySQL_Performance.Sorts"]
+FETCHACTION = {
+	def resultQuery = """
+			SELECT
+			  A.MergePassesCnt,
+			  B.RangeCnt,
+			  C.RowsCnt,
+			  D.ScanCnt
+			FROM
+			  (
+			    SELECT
+					CONVERT(variable_value, UNSIGNED INTEGER) AS MergePassesCnt
+			    FROM `information_schema`.GLOBAL_Status G
+			    WHERE G.variable_name = "SORT_MERGE_PASSES"
+			  ) A,
+			  (
+			    SELECT
+					CONVERT(variable_value, UNSIGNED INTEGER) AS RangeCnt
+			    FROM `information_schema`.GLOBAL_Status G
+			    WHERE G.variable_name = "SORT_RANGE"
+			  ) B,
+			  (
+			    SELECT
+					CONVERT(variable_value, UNSIGNED INTEGER) AS RowsCnt
+			    FROM `information_schema`.GLOBAL_Status G
+			    WHERE G.variable_name = "SORT_ROWS"
+			  ) C,
+			  (
+			    SELECT
+					CONVERT(variable_value, UNSIGNED INTEGER) AS ScanCnt
+			    FROM `information_schema`.GLOBAL_Status G
+			    WHERE G.variable_name = "SORT_SCAN"
+			  ) D;
+		"""
+	def resultData = sql.rows(resultQuery)
+}
+ACCUMULATE = {
+	assert interval != null : "First time ,we can not get meaniningful values"
+	assert (prevOUTPUT != null && prevOUTPUT[0] != null ) : "Can not get previous monitoring data !"
+	OUTPUT.each{ rec ->
+		rec['DiffMergePassesVal'] = rec['MergePassesCnt'] - prevOUTPUT[0]['MergePassesCnt']
+		rec['DiffRangeVal'] = rec['RangeCnt'] - prevOUTPUT[0]['RangeCnt']
+		rec['DiffRowsVal'] = rec['RowsCnt'] - prevOUTPUT[0]['RowsCnt']
+		rec['DiffScanVal'] = rec['ScanCnt'] - prevOUTPUT[0]['ScanCnt']
+	}
+}
+KEYEXPR = [_sequence:["MergePassesCnt", "RangeCnt", "RowsCnt", "ScanCnt"]]
+KEYEXPR._unit = ["MergePassesCnt": "count", "RangeCnt": "count", "RowsCnt": "count", "ScanCnt": "count", 
+	"DiffMergePassesVal": "count/interval", "DiffRangeVal": "count/interval", "DiffRowsVal": "count/interval", "DiffScanVal": "count/interval"]
+SENDTYPE = "Store"
+MONITORINGTYPE = "@DB"
+RESOURCEID = "Pf/MySorts"
+DBTYPE = "MYSQL"
+DBCONNSTR = parameters.dbconnstr.MYSQL
+DBUSER = "root"
+DEST = parameters.dest
