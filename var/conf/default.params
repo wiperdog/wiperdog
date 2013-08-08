@@ -3,7 +3,9 @@
    "@MYSQL": [dbconnstr: "jdbc:mysql://localhost:3306/information_schema", user: "root", dbHostId: "localhost", dbSid: "information_schema"],
    "localhost-@MYSQL-information_schema": [dbconnstr: "jdbc:mysql://localhost:3306/information_schema", user: "root", dbHostId: "localhost", dbSid: "information_schema"],
    "@PGSQL": [dbconnstr: "jdbc:postgresql://localhost:5432/postgres", user: "postgres", dbHostId: "localhost", dbSid: "postgres"],
-   "localhost-@PGSQL-postgres": [dbconnstr: "jdbc:postgresql://localhost:5432/postgres", user: "postgres", dbHostId: "localhost", dbSid: "postgres"]
+   "localhost-@PGSQL-postgres": [dbconnstr: "jdbc:postgresql://localhost:5432/postgres", user: "postgres", dbHostId: "localhost", dbSid: "postgres"],
+   "@MSSQL-MSSQLSERVER2008": [dbconnstr: "jdbc:sqlserver://localhost:1433", user: "sa", dbHostId:"localhost", dbSid: "MSSQLSERVER2008" ],
+   "@MSSQL": [dbconnstr: "jdbc:sqlserver://localhost:1433", user: "sa", dbHostId:"localhost", dbSid: "MSSQLSERVER2008" ]
   ],
   dest: [ [ file: "stdout" ] ],
    datadirectory: [				
