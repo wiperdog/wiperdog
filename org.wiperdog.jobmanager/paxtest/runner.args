@@ -1,7 +1,0 @@
---bundleStartLevel=3
---systemPackages=javax.ejb,javax.jms,javax.mail,javax.mail.internet
---workingDirectory=/home/kurohara/workspace_quartz3/com.insight_tec.pi.jobmanager/paxtest
---vmOptions= -Dfelix.home=/home/kurohara/workspace_quartz3/com.insight_tec.pi.jobmanager/paxtest -Dfelix.fileinstall.dir=/home/kurohara/workspace_quartz3/com.insight_tec.pi.jobmanager/paxtest/etc -Dfelix.fileinstall.filter=.*\.cfg -Dfelix.fileinstall.noInitialDelay=true -Dfelix.fileinstall.poll=2000
---platform=felix
---version=2.0.5
-
