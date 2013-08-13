@@ -10,7 +10,7 @@
  * @returnParam CurrentVal Value of current config
  * @returnParam ResourceUsedPct Usage rate of configuration
  */
-JOB = [name: "SQL_Server_Proactive_Check.RESOURCE_LIMIT"]
+JOB = [name: "SQL_Server.Proactive_Check.RESOURCE_LIMIT"]
 FETCHACTION = {
 	def mapConfig
 	def resultData = []
@@ -104,9 +104,15 @@ FETCHACTION = {
 SENDTYPE = "Store"
 KEYEXPR = ["_root":["ResourceName"],"_sequence":["ResourceUsedPct"]]
 KEYEXPR._unit = ["ResourceUsedPct":"%"]
+KEYEXPR._chart = [
+    [
+        "type": "area",
+        "name": "Resource Information",
+        "chart_columns": ["ResourceUsedPct"],
+        "hint_columns": ["LimitVal", "CurrentVal", "ResourceUsedPct"]
+    ]
+]
 RESOURCEID = "Sr/MsRsrcLimit"
 MONITORINGTYPE = "@DB"
-DBTYPE = "SQLS"
-DBUSER = "sa"
+DBTYPE = "@MSSQL"
 DEST = parameters.dest
-DBCONNSTR = parameters.dbconnstr.SQLS

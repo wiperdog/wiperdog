@@ -8,16 +8,16 @@
  * @returnParam WaitTypeName Name of the wait type
  * @returnParam WaitingTasksCumCnt Total number of waits on this wait type
  * @returnParam WaitingTasksCnt The number of waits on this wait type from the last monitoring
- * @returnParam WaitTimeMsCumLong Total wait time for this wait type in milliseconds
- * @returnParam WaitTimeMsLong Wait time for this wait type from the last monitoring
+ * @returnParam WaitTimeMsCumSize Total wait time for this wait type in milliseconds
+ * @returnParam WaitTimeMsSize Wait time for this wait type from the last monitoring
  */
-JOB = [name: "SQL_Server_Performance.Wait_Status"]
+JOB = [name: "SQL_Server.Performance.Wait_Status"]
 FETCHACTION = {
 	def firstData = sql.rows('''
 		SELECT 
 		         wait_type as WaitTypeName, 
 		         waiting_tasks_count as WaitingTasksCumCnt,
-				 wait_time_ms as WaitTimeMsCumLong
+				 wait_time_ms as WaitTimeMsCumSize
 		FROM 
 		         sys.dm_os_wait_stats
 	'''
@@ -31,26 +31,34 @@ FETCHACTION = {
 			finalData['WaitTypeName'] = it.WaitTypeName
 			finalData['WaitingTasksCumCnt'] = it.WaitingTasksCumCnt				
 			finalData['WaitingTasksCnt'] = it.WaitingTasksCumCnt - mapDataPersistentOfField['WaitingTasksCumCnt']
-			finalData['WaitTimeMsCumLong'] = it.WaitTimeMsCumLong
-			finalData['WaitTimeMsLong'] = it.WaitTimeMsCumLong - mapDataPersistentOfField['WaitTimeMsCumLong']
+			finalData['WaitTimeMsCumSize'] = it.WaitTimeMsCumSize
+			finalData['WaitTimeMsSize'] = it.WaitTimeMsCumSize - mapDataPersistentOfField['WaitTimeMsCumSize']
 			if(finalData['WaitingTasksCnt'] > 0){
 				finalResultData.add(finalData)
 			}
 		}
 		copyPersistentData[it.WaitTypeName] = [:]
 		copyPersistentData[it.WaitTypeName]['WaitingTasksCumCnt'] = it.WaitingTasksCumCnt
-		copyPersistentData[it.WaitTypeName]['WaitTimeMsCumLong'] = it.WaitTimeMsCumLong
+		copyPersistentData[it.WaitTypeName]['WaitTimeMsCumSize'] = it.WaitTimeMsCumSize
 	}
 	PERSISTENTDATA = copyPersistentData
 	assert interval != null, "First time, we cannot return calculating values"
 	return finalResultData
 }
-KEYEXPR = [_root:['WaitTypeName'], _sequence:['WaitingTasksCnt', 'WaitTimeMsLong']]
-KEYEXPR._unit = ["WaitingTasksCumCnt":"count", "WaitingTasksCnt":"count/interval", "WaitTimeMsCumLong":"ms", "WaitTimeMsLong":"ms/interval"]
+KEYEXPR = [_root:['WaitTypeName'], _sequence:['WaitingTasksCnt', 'WaitTimeMsSize']]
+KEYEXPR._unit = ["WaitingTasksCumCnt":"count", "WaitingTasksCnt":"count/interval", "WaitTimeMsCumSize":"ms", "WaitTimeMsSize":"ms/interval"]
+KEYEXPR._chart = [
+    [
+        "type": "bar",
+        "name": "Wait status",
+        "chart_columns": ["WaitingTasksCnt","WaitTimeMsSize"],
+        "hint_columns": ["WaitingTasksCnt","WaitTimeMsSize", "WaitingTasksCumCnt", "WaitTimeMsCumSize"] 
+    ]
+]
+
+
 SENDTYPE = "Store"
 RESOURCEID = "Pf/MsWaitStat"
 MONITORINGTYPE = "@DB"
-DBTYPE = "SQLS"
-DBUSER = "test"
+DBTYPE = "@MSSQL"
 DEST = parameters.dest
-DBCONNSTR = parameters.dbconnstr.SQLS

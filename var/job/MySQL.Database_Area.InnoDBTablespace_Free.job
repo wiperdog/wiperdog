@@ -17,7 +17,7 @@
  * @returnParam MaxFreeSizeKB 最大拡張時におけるテーブルスペースの空きサイズ(KB)
  * @returnParam MaxUsedPct 最大データ領域でのテーブルスペース使用率
  */
-JOB = [ name: "MySQL_Database_Area.InnoDBTablespace_Free" ]	
+JOB = [ name: "MySQL.Database_Area.InnoDBTablespace_Free" ]	
 FETCHACTION={
 /**
 	Concept of Design 
@@ -242,11 +242,18 @@ FETCHACTION={
 	return resultData
 }
 KEYEXPR = [:]
-KEYEXPR._unit = ["CurrentUsedSizeKB" : "KB", "CurrentTotalSizeKB":"KB", "CurrentFreeSizeKB":"KB", "CurrentUsedPct":"%", "MaxTotalSizeKB":"KB","MaxFreeSizeKB":"KB","MaxUsedPct":"%"]
-DBTYPE = "MYSQL"
-DBUSER = "root"
-SENDTYPE = "Subtyped"
+KEYEXPR._unit = ["CurrentUsedSizeKB" : "KB", "CurrentTotalSizeKB":"KB", "CurrentFreeSizeKB":"KB", "CurrentUsedPct":"%"
+, "MaxTotalSizeKB":"KB","MaxFreeSizeKB":"KB","MaxUsedPct":"%"]
+KEYEXPR._chart = [
+    [
+        "type": "pie",
+        "name": "Usage/Free rate",
+        "chart_columns": ["CurrentUsedSizeKB", "CurrentFreeSizeKB"],
+        "hint_columns": ["CurrentUsedSizeKB", "CurrentFreeSizeKB"]
+    ]
+]
+DBTYPE = "@MYSQL"
+SENDTYPE = "Store"
 MONITORINGTYPE = "@DB"
 RESOURCEID = "As/MyInnoTbsFree"
-DBCONNSTR = parameters.dbconnstr.MYSQL
 DEST = parameters.dest

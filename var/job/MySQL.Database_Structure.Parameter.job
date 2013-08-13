@@ -9,7 +9,7 @@
  * @returnParam VariableNameTxt ステータス変数の名前
  * @returnParam VariableValueTxt ステータス変数の値
  */
-JOB = [ name: "MySQL_Database_Structure.Parameter" ]
+JOB = [ name: "MySQL.Database_Structure.Parameter" ]
 QUERY='''
 		SELECT G.`VARIABLE_NAME` As VariableNameTxt, G.`VARIABLE_VALUE` As VariableValueTxt FROM information_schema.GLOBAL_VARIABLES G;
 	'''
@@ -17,7 +17,5 @@ KEYEXPR = ["VariableNameTxt"]
 SENDTYPE = "Store"
 MONITORINGTYPE = "@DB"
 RESOURCEID = "Sr/MyParameter"
-DBTYPE = "MYSQL"
-DBCONNSTR = parameters.dbconnstr.MYSQL
-DBUSER = "root"
+DBTYPE = "@MYSQL"
 DEST = parameters.dest

@@ -9,16 +9,16 @@
  * @targetVersion 5.1+
  * @return get サンプリング毎に使用率が高い30個のデータベースのレコードを取得します。
  * @returnParam DatabaseNm データベース名
- * @returnParam UsedDataSizeLong 使用中データサイズ(Byte)
- * @returnParam UsedIndexSizeLong 使用中インデックスサイズ(Byte)
- * @returnParam DataFreeSizeLong 空きデータサイズ(Byte)
- * @returnParam UsedSizeLong 使用中データサイズとインデックスサイズを足したサイズ(Byte)
+ * @returnParam UsedDataCumSize 使用中データサイズ(Byte)
+ * @returnParam UsedIndexCumSize 使用中インデックスサイズ(Byte)
+ * @returnParam DataFreeCumSize 空きデータサイズ(Byte)
+ * @returnParam UsedCumSize 使用中データサイズとインデックスサイズを足したサイズ(Byte)
  * @returnParam UsedDataPct データサイズの使用率
- * @returnParam TotalSizeLong 全体のデータサイズ(Byte)
- * @returnParam UsedPct 全体のデータサイズでの使用率
- * @returnParam UsedDiffVal 前回監視からのデータサイズ使用率
+ * @returnParam TotalCumSize 全体のデータサイズ(Byte)
+ * @returnParam UsedCumPct 全体のデータサイズでの使用率
+ * @returnParam UsedPct 最後の監視時刻との差の割合
  */
-JOB = [ name: "MySQL_Database_Area.Top30Database" ]
+JOB = [ name: "MySQL.Database_Area.Top30Database" ]
 GROUPKEY = ["Database"]
 FETCHACTION={  
 	// mapResult is an array, store key and the value of some variable
@@ -204,9 +204,9 @@ FETCHACTION={
 		isExisted = false
 		resultData.each {		
 			if (it['DatabaseNm'].equals(checkDB['db'])) {
-				it['UsedDataSizeLong'] += checkDB['data_length']
-				it['UsedIndexSizeLong'] += checkDB['index_length']
-				it['DataFreeSizeLong'] += checkDB['free_size_table']
+				it['UsedDataCumSize'] += checkDB['data_length']
+				it['UsedIndexCumSize'] += checkDB['index_length']
+				it['DataFreeCumSize'] += checkDB['free_size_table']
 				if(checkDB['engine'].equalsIgnoreCase('Innodb')){
 					innodbFlag.remove(checkDB['db'])
 					innodbFlag.put(checkDB['db'], "true")					
@@ -218,9 +218,9 @@ FETCHACTION={
 		if(resultData == null || resultData.size() == 0 || !isExisted) {
 			def tempResult = [:]
 			tempResult['DatabaseNm'] = checkDB['db']
-			tempResult['UsedDataSizeLong'] = checkDB['data_length']
-			tempResult['UsedIndexSizeLong'] = checkDB['index_length']
-			tempResult['DataFreeSizeLong'] = checkDB['free_size_table']
+			tempResult['UsedDataCumSize'] = checkDB['data_length']
+			tempResult['UsedIndexCumSize'] = checkDB['index_length']
+			tempResult['DataFreeCumSize'] = checkDB['free_size_table']
 			if(checkDB['engine'] != null && checkDB['engine'].equalsIgnoreCase('Innodb')){
 				innodbFlag.remove(checkDB['db'])
 				innodbFlag.put(checkDB['db'], "true")					
@@ -230,23 +230,23 @@ FETCHACTION={
 	}
 	
 	resultData.each{
-		it['UsedSizeLong'] = it['UsedDataSizeLong'] + it['UsedIndexSizeLong']
+		it['UsedCumSize'] = it['UsedDataCumSize'] + it['UsedIndexCumSize']
 			
 		
-		if (it['UsedSizeLong'] == 0) {
+		if (it['UsedCumSize'] == 0) {
 			it['UsedDataPct'] = null	
 		} else {
-			it['UsedDataPct'] = (it['UsedDataSizeLong'] / it['UsedSizeLong'])*100
+			it['UsedDataPct'] = (it['UsedDataCumSize'] / it['UsedCumSize'])*100
 		}
 		if(innodbFlag.containsKey(it['DatabaseNm'])){
-			it['DataFreeSizeLong'] += innodb_tablespace_free_size				
+			it['DataFreeCumSize'] += innodb_tablespace_free_size				
 		}
-		if (it['DataFreeSizeLong'] > diskFreeSize) {
-			it['DataFreeSizeLong'] = diskFreeSize
+		if (it['DataFreeCumSize'] > diskFreeSize) {
+			it['DataFreeCumSize'] = diskFreeSize
 		}
-		it['TotalSizeLong'] = it['UsedSizeLong'] + it['DataFreeSizeLong']
+		it['UsedCumSize'] = it['UsedCumSize'] + it['DataFreeCumSize']
 			
-		it['UsedPct'] = (it['UsedSizeLong'] / it['TotalSizeLong'])*100
+		it['UsedCumPct'] = (it['UsedCumSize'] / it['UsedCumSize'])*100
 	}
 	return resultData
 }
@@ -257,17 +257,17 @@ ACCUMULATE={
 	//-- Fix bug: prevOUTPUT contain only 30 database so it may cause db not found in previous OUTPUT
 	if(PERSISTENTDATA != null && prevExecutionData != null ) {
 		OUTPUT.each { rec ->
-			rec['UsedDiffVal'] = rec['UsedPct'] - (prevExecutionData[rec.DatabaseNm] != null ? prevExecutionData[rec.DatabaseNm] : 0)
+			rec['UsedPct'] = rec['UsedCumPct'] - (prevExecutionData[rec.DatabaseNm] != null ? prevExecutionData[rec.DatabaseNm] : 0)
 		}
 	} else {
 	     OUTPUT.each { rec ->
-		 	rec['UsedDiffVal'] = 0
+		 	rec['UsedPct'] = 0
 		}
 	}	
 	
 	def newPrevExecutionData = [:]
  	OUTPUT.each { rec ->
- 		newPrevExecutionData[rec.DatabaseNm] = rec['UsedPct'] 
+ 		newPrevExecutionData[rec.DatabaseNm] = rec['UsedCumPct'] 
  	}
  	PERSISTENTDATA['prevExecutionData'] = newPrevExecutionData 
  		
@@ -279,7 +279,7 @@ ACCUMULATE={
 		public int compare(arg0, arg1) {
 			def p = arg1
 			def n = arg0
-			float lv = p['UsedPct'] - n['UsedPct']
+			float lv = p['UsedCumPct'] - n['UsedCumPct']
 			if (lv > 0) {
 				return 1
 			} else if (lv < 0) {
@@ -302,7 +302,7 @@ ACCUMULATE={
 		public int compare(arg0, arg1) {
 			def p = arg1
 			def n = arg0
-			float lv = p['UsedDiffVal'] - n['UsedDiffVal']
+			float lv = p['UsedPct'] - n['UsedPct']
 			if (lv > 0) {
 				return 1
 			} else if (lv < 0) {
@@ -321,12 +321,37 @@ ACCUMULATE={
  	}
  	OUTPUT = finalResult
 }
-KEYEXPR = ["M":["DatabaseNm"], "D":["DatabaseNm"], "_sequence": [  "M":["UsedPct", "TotalSizeLong", "UsedDataSizeLong"],"D": ["UsedPct", "TotalSizeLong", "UsedDataSizeLong"] ]]
-KEYEXPR._unit = ["UsedDataSizeLong" : "byte" , "UsedSizeLong":"byte", "UsedDataPct":"%","UsedDiffVal" : "byte", "UsedIndexSizeLong" : "byte" ,"DataFreeSizeLong" : "byte", "UsedPct" : "%", "TotalSizeLong" : "byte" ]
-DBTYPE = "MYSQL"
-DBUSER = "root"
+
+KEYEXPR = ["M":["DatabaseNm"], "D":["DatabaseNm"], "_sequence": [  "M":["UsedCumPct", "UsedCumSize", "UsedDataCumSize"],"D": ["UsedCumPct", "UsedCumSize", "UsedDataCumSize"] ]]
+KEYEXPR._unit = ["UsedDataCumSize" : "byte" , "UsedCumSize":"byte", "UsedDataPct":"%", "UsedIndexCumSize" : "byte" ,"DataFreeCumSize" : "byte"
+	, "UsedCumPct" : "%", "UsedCumSize" : "byte", "UsedPct":"%" ]
+KEYEXPR._description = [
+ "D": "Top 10 database increase storage fastest this time",
+ "M": "Top 20 database of storage usage"
+]
+KEYEXPR._chart = 
+[
+	"D": [
+	    [
+		    "type": "line",
+	        "name": "Percentage of space usage",
+	        "chart_columns": ["UsedPct", "UsedCumPct"],
+	        "hint_columns": ["UsedPct", "UsedCumPct"]
+	    ]
+	],
+	"M": [
+	    [
+	        "type": "line",
+	        "name": "Percentage of space usage",
+	        "chart_columns": ["UsedPct", "UsedCumPct"],
+	        "hint_columns": ["UsedPct", "UsedCumPct"]
+	    ]
+	]
+]
+
+
+DBTYPE = "@MYSQL"
 SENDTYPE = "Subtyped"
 MONITORINGTYPE = "@DB"
 RESOURCEID = "As/MyTopNDb"
-DBCONNSTR = parameters.dbconnstr.MYSQL
 DEST = parameters.dest

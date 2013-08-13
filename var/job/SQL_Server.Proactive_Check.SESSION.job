@@ -10,7 +10,7 @@
  * @returnParam InactiveSessionsCnt The number of inactive sessions
  * @returnParam WaitSessionsCnt The number of sessions waiting for locks
  */
-JOB = [name: "SQL_Server_Proactive_Check.SESSION"]
+JOB = [name: "SQL_Server.Proactive_Check.SESSION"]
 
 FETCHACTION = {
 	def resultData = sql.rows('''
@@ -37,10 +37,15 @@ FETCHACTION = {
 }
 KEYEXPR = ["_sequence":["CurrentSessionsCnt"]]
 KEYEXPR._unit = ["CurrentSessionsCnt":"sessions", "InactiveSessionsCnt":"sessions", "WaitSessionsCnt":"sessions"]
+KEYEXPR._chart = [
+    [
+        "type": "line",
+        "name": "Sessions information",
+        "chart_columns": ["CurrentSessionsCnt", "InactiveSessionsCnt", "WaitSessionsCnt"]
+    ]
+]
 SENDTYPE = "Store"
 RESOURCEID = "Sr/MsSession"
 MONITORINGTYPE = "@DB"
-DBTYPE = "SQLS"
-DBUSER = "test"
+DBTYPE = "@MSSQL"
 DEST = parameters.dest
-DBCONNSTR = parameters.dbconnstr.SQLS

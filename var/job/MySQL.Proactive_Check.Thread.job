@@ -1,0 +1,81 @@
+/**
+ * Monitoring thread inside MySQL server
+ * <p>
+ * Monitoring threads which are currently connected, avtive, cached inside an instance of
+ * </p> 
+ * @targetVersion 5.0
+ * @return count of each kind of thread, connected, active, cached, running.
+ * @returnParam CachedCumCnt The number of threads in the thread cache since MySQL version 3.23.17
+ * @returnParam ConnectedCumCnt The number of currently open connections
+ * @returnParam CreatedCumCnt The number of threads created to handle connections
+ * @returnParam RunningCumCnt The number of threads that are not sleeping
+ * @returnParam MaxUsedConnectionsCumCnt The maximum number of connections that have been in use simultaneously since the server started.
+ */
+JOB = [name:"MySQL.Proactive_Check.Thread"]
+FETCHACTION = {
+	def query = """
+		SELECT 
+			A.CachedCumCnt As CachedCumCnt, 
+			B.ConnectedCumCnt As ConnectedCumCnt, 
+			C.CreatedCumCnt As CreatedCumCnt, 
+			D.RunningCumCnt As RunningCumCnt,
+			E.MaxUsedConnectionsCumCnt As MaxUsedConnectionsCumCnt
+		FROM
+		(SELECT CONVERT(variable_value, UNSIGNED INTEGER) as CachedCumCnt
+		FROM information_schema.GLOBAL_STATUS G
+		where G.variable_name = "Threads_cached" ) A,
+		(SELECT CONVERT(variable_value, UNSIGNED INTEGER) as ConnectedCumCnt
+		FROM information_schema.GLOBAL_STATUS G
+		where G.variable_name = "Threads_connected" ) B,
+		(SELECT CONVERT(variable_value, UNSIGNED INTEGER) as CreatedCumCnt
+		FROM information_schema.GLOBAL_STATUS G
+		where G.variable_name = "Threads_created" ) C,
+		(SELECT CONVERT(variable_value, UNSIGNED INTEGER) as RunningCumCnt
+		FROM information_schema.GLOBAL_STATUS G
+		where G.variable_name = "Threads_running" ) D,
+		(SELECT CONVERT(variable_value, UNSIGNED INTEGER) as MaxUsedConnectionsCumCnt
+		FROM information_schema.GLOBAL_STATUS G
+		where G.variable_name = "max_used_connections" ) E
+		;
+	"""
+	def resultData = sql.rows(query)
+}
+ACCUMULATE = {
+	assert interval != null : "First time ,we can not get meaniningful values"
+	assert (prevOUTPUT != null && prevOUTPUT[0] != null ) : "Can not get previous monitoring data !"
+	OUTPUT.each{ rec ->
+		rec['CachedCnt'] = rec['CachedCumCnt'] - prevOUTPUT[0]['CachedCumCnt']
+		rec['ConnectedCnt'] = rec['ConnectedCumCnt'] - prevOUTPUT[0]['ConnectedCumCnt']
+		rec['CreatedCnt'] = rec['CreatedCumCnt'] - prevOUTPUT[0]['CreatedCumCnt']
+		rec['RunningCnt'] = rec['RunningCumCnt'] - prevOUTPUT[0]['RunningCumCnt']
+		rec['MaxUsedConnectionsCnt'] = rec['MaxUsedConnectionsCumCnt'] - prevOUTPUT[0]['MaxUsedConnectionsCumCnt']
+	}
+}
+KEYEXPR=[_sequence:["RunningCumCnt"]]
+KEYEXPR._unit = ["CachedCumCnt": "count", "ConnectedCumCnt": "count", "CreatedCumCnt": "count", "RunningCumCnt": "count",
+		"MaxUsedConnectionsCumCnt":"count","CachedCnt":"count/interval","ConnectedCnt":"count/interval"
+		,"CreatedCnt":"count/interval","RunningCnt":"count/interval"
+		, "MaxUsedConnectionsCnt":"count/interval" ]
+KEYEXPR._chart = [
+    [
+        "type": "pie",
+        "name": "Thread diff. information",
+        "chart_columns": ["CachedCnt","ConnectedCnt"
+            ,"CreatedCnt","RunningCnt"
+            , "MaxUsedConnectionsCnt"],
+        "hint_columns": ["CachedCnt","ConnectedCnt"
+            ,"CreatedCnt","RunningCnt"
+            , "MaxUsedConnectionsCnt"]
+    ],
+    [
+        "type": "bar",
+        "name": "Thread information",
+        "chart_columns": ["CachedCumCnt", "ConnectedCumCnt", "CreatedCumCnt", "RunningCumCnt", "MaxUsedConnectionsCumCnt"],
+        "hint_columns": ["CachedCumCnt", "ConnectedCumCnt", "CreatedCumCnt", "RunningCumCnt", "MaxUsedConnectionsCumCnt"]
+    ]
+]
+SENDTYPE = "Store"
+DBTYPE = "@MYSQL"
+DEST = parameters.dest
+MONITORINGTYPE = "@DB"
+RESOURCEID = "Sr/MyThread"

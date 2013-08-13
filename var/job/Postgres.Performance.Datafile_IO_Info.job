@@ -1,0 +1,77 @@
+/**
+ * Monitoring Datafile I/O Information.<br />
+ * <p>
+ * One row for each table in the current database, showing statistics about I/O on that specific table. Except that only user tables are shown.<br />
+ * </p>
+ * @targetVersion All version
+ * @return Number of blocks read from disk
+ * @returnParam TotalHeapBlocksReadCumCnt Total heap blocks were read
+ * @returnParam TotalIndexBlocksReadCumCnt Total index blocks were read
+ * @returnParam TotalToastBlocksReadCumCnt Total toast blocks were read
+ * @returnParam TotalTidxBlocksReadCumCnt Total index blocks of toast table were read
+ * @returnParam TotalHeapBlocksReadVal increase or descrease amount of total heap blocks
+ * @returnParam TotalIndexBlocksReadVal increase or descrease amount of total index blocks
+ * @returnParam TotalToastBlocksReadVal increase or descrease amount of total toast blocks
+ * @returnParam TotalTidxBlocksReadVal increase or descrease amount of total index blocks of toast table
+ * @returnParam AvgTotalHeapBlocksReadVal Average  of increase or descrease amount of total heap blocks per second
+ * @returnParam AvgTotalIndexBlocksReadVal Average  of increase or descrease amount of total index blocks per second
+ * @returnParam AvgTotalToastBlocksReadVal Average  of increase or descrease amount of total toast blocks per second
+ * @returnParam AvgTotalTidxBlocksReadVal Average  of increase or descrease amount of total index toast blocks
+ */
+JOB = [name:"Postgres.Performance.Datafile_IO_Info"]
+FETCHACTION = {
+	def resultData = sql.rows('''
+								SELECT	(
+									  CASE
+									  WHEN SUM(heap_blks_read) IS NULL THEN 0
+									  ELSE SUM(heap_blks_read)
+									  END
+									 )  AS "TotalHeapBlocksReadCumCnt",
+									(
+									  CASE
+									  WHEN SUM(idx_blks_read)  IS NULL THEN 0
+									  ELSE SUM(idx_blks_read)
+									  END
+									 )  AS "TotalIndexBlocksReadCumCnt",
+									(
+									  CASE
+									  WHEN SUM(toast_blks_read) IS NULL THEN 0
+									  ELSE SUM(toast_blks_read)
+									  END
+									 ) AS "TotalToastBlocksReadCumCnt",
+									(
+									  CASE
+									  WHEN SUM(tidx_blks_read)  IS NULL THEN 0
+									  ELSE SUM(tidx_blks_read)
+									  END
+									 ) AS "TotalTidxBlocksReadCumCnt"
+								FROM pg_statio_user_tables
+							''');
+	return resultData
+}
+ACCUMULATE = {
+	assert interval != null, "First time, we cannot return meaningful values"
+	if( prevOUTPUT != null && prevOUTPUT[0] != null ){
+		OUTPUT.each { rec->
+			rec['TotalHeapBlocksReadVal'] = rec['TotalHeapBlocksReadCumCnt'] - (prevOUTPUT[0]['TotalHeapBlocksReadCumCnt']) != null ? prevOUTPUT[0]['TotalHeapBlocksReadCumCnt'] : 0
+			rec['TotalIndexBlocksReadVal'] = rec['TotalIndexBlocksReadCumCnt'] - (prevOUTPUT[0]['TotalIndexBlocksReadCumCnt']) != null ? prevOUTPUT[0]['TotalIndexBlocksReadCumCnt'] : 0
+			rec['TotalToastBlocksReadVal'] = rec['TotalToastBlocksReadCumCnt'] - (prevOUTPUT[0]['TotalToastBlocksReadCumCnt']) != null ? prevOUTPUT[0]['TotalToastBlocksReadCumCnt'] : 0
+			rec['TotalTidxBlocksReadVal']  = rec['TotalTidxBlocksReadCumCnt'] - (prevOUTPUT[0]['TotalTidxBlocksReadCumCnt']) != null ? prevOUTPUT[0]['TotalTidxBlocksReadCumCnt'] : 0
+			rec['AvgTotalHeapBlocksReadVal'] = rec['TotalHeapBlocksReadVal']/interval
+			rec['AvgTotalIndexBlocksReadVal'] = rec['TotalIndexBlocksReadVal']/interval
+			rec['AvgTotalToastBlocksReadVal'] = rec['TotalToastBlocksReadVal'] /interval
+			rec['AvgTotalTidxBlocksReadVal'] = rec['TotalTidxBlocksReadVal']/interval
+		}
+	}
+}
+KEYEXPR = [_sequence:["TotalHeapBlocksReadCumCnt","TotalIndexBlocksReadCumCnt"]]
+KEYEXPR._unit = [ "TotalHeapBlocksReadCumCnt" : "count", "TotalIndexBlocksReadCumCnt": "count", "TotalToastBlocksReadCumCnt" : "count", "TotalTidxBlocksReadCumCnt": "count",
+	"TotalHeapBlocksReadVal" : "count/interval", "TotalIndexBlocksReadVal": "count/interval", "TotalToastBlocksReadVal" : "count/interval", "TotalTidxBlocksReadVal": "count/interval",
+	"AvgTotalHeapBlocksReadVal" : "count/sec", "AvgTotalIndexBlocksReadVal": "count/sec", "AvgTotalToastBlocksReadVal" : "count/sec", "AvgTotalTidxBlocksReadVal": "count/sec" ]
+KEYEXPR._chart = [
+[type:"line",name:"Datafile I/O Information",chart_columns:["TotalHeapBlocksReadCumCnt","TotalIndexBlocksReadCumCnt","TotalToastBlocksReadCumCnt","TotalTidxBlocksReadCumCnt"]]]
+SENDTYPE = "Store"
+DBTYPE = "@PGSQL"
+MONITORINGTYPE = "@DB"
+RESOURCEID = "Pf/PgDtFileIoInfo"
+DEST = parameters.dest

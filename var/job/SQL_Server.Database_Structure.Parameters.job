@@ -8,7 +8,7 @@
  * @returnParam MaximumInt Maximum value for the configuration option
  * @returnParam ValueInUseInt Running value currently in effect for this option
  */
-JOB = [name: "SQL_Server_Database_Structure.Parameters"]
+JOB = [name: "SQL_Server.Database_Structure.Parameters"]
 
 FETCHACTION = {
 	def resultData = sql.rows('''
@@ -25,11 +25,17 @@ FETCHACTION = {
 	return resultData
 }
 
-KEYEXPR = ['ParameterName']
+KEYEXPR = ['_root':['ParameterName']]
+KEYEXPR._chart = [
+    [
+        "type": "bar",
+        "name": "Parameter Information",
+        "chart_columns": ["ValueInUseInt"],
+        "hint_columns": ["ValueInUseInt", "MaximumInt", "ValueInt", "MinimumInt"]
+    ]
+]
 SENDTYPE = "Store"
 RESOURCEID = "Sr/MsParameter"
 MONITORINGTYPE = "@DB"
-DBTYPE = "SQLS"
-DBUSER = "sa"
+DBTYPE = "@MSSQL"
 DEST = parameters.dest
-DBCONNSTR = parameters.dbconnstr.SQLS

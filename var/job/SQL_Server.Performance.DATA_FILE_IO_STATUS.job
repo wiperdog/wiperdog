@@ -7,6 +7,7 @@
  * @return get information I/O of data file or log file with each database。
  * @returnParam DatabaseName Database name
  * @returnParam PhysicalName File name
+ * @returnParam FileId File Id
  * @returnParam ReadsCumCnt Total Reads times
  * @returnParam BytesReadCumCnt Total bytes were read
  * @returnParam ReadTimeDbl Total time for reading (ms)
@@ -26,21 +27,22 @@
  * @returnParam AverageIOTimeDbl Avarage time for I/O
  * @returnParam AverageIOTimeCumDbl Total avarage time for I/O
  */
-JOB = [name: "SQL_Server_Performance.DATA_FILE_IO_STATUS"]
-GROUPKEY = ["PhysicalName"] 
+JOB = [name: "SQL_Server.Performance.DATA_FILE_IO_STATUS"]
+GROUPKEY = ["PhysicalName"]
 FETCHACTION = {
 	def resultData = sql.rows('''
 		SELECT 
-                    DB_NAME(mf.database_id) AS DatabaseName,
-                    mf.physical_name as PhysicalName,
-                    NumberReads as ReadsCumCnt, 
-                    BytesRead as BytesReadCumCnt,
-                    IoStallReadMS as ReadTimeDbl,
-                    NumberWrites as WritesCumCnt,
-                    BytesWritten as BytesWriteCumCnt,
-                    IoStallWriteMS as WriteTimeDbl,
-                    IoStallMS as TotalTimeIODbl,
-		            BytesOnDisk as BytesOnDiskDbl
+	            DB_NAME(mf.database_id) AS DatabaseName,
+	            REPLACE(mf.physical_name,\'\\\',\'/\') as PhysicalName,
+	            mf.file_id as FileId,
+	            NumberReads as ReadsCumCnt, 
+	            BytesRead as BytesReadCumCnt,
+	            IoStallReadMS as ReadTimeDbl,
+	            NumberWrites as WritesCumCnt,
+	            BytesWritten as BytesWriteCumCnt,
+	            IoStallWriteMS as WriteTimeDbl,
+	            IoStallMS as TotalTimeIODbl,
+	            BytesOnDisk as BytesOnDiskDbl
 		FROM 
 		     sys.fn_virtualfilestats(NULL, NULL) AS fv
 		JOIN sys.master_files AS mf ON mf.database_id = fv.DbId
@@ -98,12 +100,30 @@ ACCUMULATE = {
 		}
 }
 
-KEYEXPR = ['_root':['PhysicalName'],'_sequence':['AverageIOTimeDbl','AverageIOTimeCumDbl']]
+KEYEXPR = ['_root':['DatabaseName','FileId'],'_sequence':['AverageIOTimeDbl','AverageIOTimeCumDbl']]
 KEYEXPR._unit = ["ReadsCumCnt":"count", "BytesReadCumCnt":"byte", "ReadTimeDbl":"msec", "WritesCumCnt":"count", "BytesWriteCumCnt":"byte", "WriteTimeDbl":"msec", "TotalTimeIODbl":"msec", "BytesOnDiskDbl":"byte", "ReadsCnt":"count/interval", "BytesReadsCnt":"byte/interval", "WritesCnt":"count/interval", "BytesWritesCnt":"byte/interval", "ReadsRateVal":"count/sec", "BytesReadRateVal":"byte/sec", "WritesRateVal":"count/sec", "BytesWritesRateVal":"byte/sec", "AverageIOTimeDbl":"msec"]
+KEYEXPR._chart = [
+    [
+        "type": "line",
+        "name": "Read/Write Count",
+        "chart_columns": ["ReadsCnt","WritesCnt"],
+        "hint_columns": ["PhysicalName", "ReadsCnt","WritesCnt", "ReadsCumCnt", "WritesCumCnt", "ReadTimeDbl", "WriteTimeDbl"] 
+    ],
+    [
+        "type": "bar",
+        "name": "Read/Write Byte",
+        "chart_columns": ["BytesReadsCnt", "BytesWritesCnt"],
+        "hint_columns": ["PhysicalName", "BytesReadsCnt", "BytesWritesCnt", "BytesReadCumCnt", "BytesWriteCumCnt", "ReadsRateVal", "BytesReadRateVal", "BytesOnDiskDbl", "WritesRateVal", "BytesWritesRateVal"]
+    ],
+    [
+        "type": "area",
+        "name": "Average I/O Time",
+        "chart_columns": ["AverageIOTimeDbl", "AverageIOTimeCumDbl"],
+        "hint_columns": ["PhysicalName", "TotalTimeIODbl", "AverageIOTimeDbl", "AverageIOTimeCumDbl"]
+    ]
+]
 SENDTYPE = "Store"
 RESOURCEID = "Pf/MsDtFileIoStat"
 MONITORINGTYPE = "@DB"
-DBTYPE = "SQLS"
-DBUSER = "sa"
+DBTYPE = "@MSSQL"
 DEST = parameters.dest
-DBCONNSTR = parameters.dbconnstr.SQLS

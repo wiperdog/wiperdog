@@ -1,0 +1,22 @@
+/**
+ * Postgresのバージョン情報とインストール済みモジュールのバージョン情報を監視します。<br />
+ * <p>
+ * 現在使用しているPostgresのバージョン情報とインストール済みモジュールのバージョン情報を取得します。<br />
+ * </p>
+ * @targetVersion 9.1+
+ * @return サンプリング毎にPostgresのバージョン情報とインストール済みモジュールのバージョン情報分のレコードのデータを取得します。
+ * @returnParam Name "Database Version"かモジュールの名前
+ * @returnParam VersionTxt バージョン番号
+ */
+JOB = [name:"Postgres.Database_Structure.Database_Version"]
+QUERY = ''' 
+			SELECT 'Database Version' AS "Name", version() AS "VersionTxt"
+			UNION				
+			SELECT name, version from pg_available_extension_versions
+			WHERE installed = 't'
+		'''			
+KEYEXPR = ["Name"]
+SENDTYPE = "Store"
+DBTYPE = "@PGSQL"
+MONITORINGTYPE = "@DB"
+RESOURCEID = "Sr/PgDbVer"

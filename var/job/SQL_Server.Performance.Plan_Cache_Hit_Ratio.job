@@ -10,13 +10,13 @@
  * @returnParam LookupRequestCnt The number of Cache Hit Ratio Base from the last monitoring 
  * @returnParam LookupRequestCumCnt Cache Hit Ratio Base
  * @returnParam CacheRequestCumCnt Cache Hit Ratio
- * @returnParam CachePagesCnt The number of pages used by cache objects
- * @returnParam CacheObjectCnt The number of cache objects in the cache
- * @returnParam CacheObjectsInUseCnt The number of cache objects in use
+ * @returnParam CachePagesCumCnt The number of pages used by cache objects
+ * @returnParam CacheObjectCumCnt The number of cache objects in the cache
+ * @returnParam CacheObjectsInUseCumCnt The number of cache objects in use
  * @returnParam AccumulatePlanCacheHitRatioPct Percent of cache hit
  * @returnParam PlanCacheHitRatioPct Percent of cache hit from the last monitoring
  */
-JOB = [name: "SQL_Server_Performance.Plan_Cache_Hit_Ratio"]
+JOB = [name: "SQL_Server.Performance.Plan_Cache_Hit_Ratio"]
 
 FETCHACTION = {
 	def resultData = sql.rows('''
@@ -44,9 +44,9 @@ FETCHACTION = {
 	convertedData["LookupRequestCumCnt"] = finalData["Cache Hit Ratio Base"]
 	convertedData["CacheRequestCumCnt"] = finalData["Cache Hit Ratio"]
 	
-	convertedData["CachePagesCnt"] = finalData["Cache Pages"]
-	convertedData["CacheObjectCnt"] = finalData["Cache Object Counts"]
-	convertedData["CacheObjectsInUseCnt"] = finalData["Cache Objects in use"]
+	convertedData["CachePagesCumCnt"] = finalData["Cache Pages"]
+	convertedData["CacheObjectCumCnt"] = finalData["Cache Object Counts"]
+	convertedData["CacheObjectsInUseCumCnt"] = finalData["Cache Objects in use"]
 
 	if(convertedData["LookupRequestCumCnt"] == 0) {
 		convertedData['AccumulatePlanCacheHitRatioPct'] = null
@@ -66,11 +66,30 @@ FETCHACTION = {
 	return finalResultData
 }
 KEYEXPR = ['_sequence':['PlanCacheHitRatioPct','AccumulatePlanCacheHitRatioPct']]
-KEYEXPR._unit = ["CacheRequestCnt":"count/interval", "LookupRequestCnt":"count/interval", "LookupRequestCumCnt":"count", "CacheRequestCumCnt":"count", "CachePagesCnt":"pages", "CacheObjectCnt":"count", "CacheObjectsInUseCnt":"count", "PlanCacheHitRatioPct":"%","AccumulatePlanCacheHitRatioPct":"%"]
+KEYEXPR._unit = ["CacheRequestCnt":"count/interval", "LookupRequestCnt":"count/interval", "LookupRequestCumCnt":"count", "CacheRequestCumCnt":"count", "CachePagesCumCnt":"pages", "CacheObjectCumCnt":"count", "CacheObjectsInUseCumCnt":"count", "PlanCacheHitRatioPct":"%","AccumulatePlanCacheHitRatioPct":"%"]
+KEYEXPR._chart = [
+	[
+        "type": "area",
+        "name": "Cache Hit Request",
+        "chart_columns": ["CacheRequestCnt", "LookupRequestCnt"],
+        "hint_columns": ["CacheRequestCnt", "LookupRequestCnt", "LookupRequestCumCnt", "CacheRequestCumCnt"]
+    ],
+    [
+        "type": "line",
+        "name": "Ojects Information",
+        "chart_columns": ["CachePagesCumCnt","CacheObjectCumCnt", "CacheObjectsInUseCumCnt"],
+        "hint_columns": ["CachePagesCumCnt","CacheObjectCumCnt", "CacheObjectsInUseCumCnt"] 
+    ],
+    
+    [
+        "type": "bar",
+        "name": "Cache Hit Ratio",
+        "chart_columns": ["PlanCacheHitRatioPct"],
+        "hint_columns": ["PlanCacheHitRatioPct", "AccumulatePlanCacheHitRatioPct"]
+    ]
+]
 SENDTYPE = "Store"
 RESOURCEID = "Pf/MsPlanCHR"
 MONITORINGTYPE = "@DB"
-DBTYPE = "SQLS"
-DBUSER = "sa"
+DBTYPE = "@MSSQL"
 DEST = parameters.dest
-DBCONNSTR = parameters.dbconnstr.SQLS

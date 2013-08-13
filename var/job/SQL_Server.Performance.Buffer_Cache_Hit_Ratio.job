@@ -7,11 +7,11 @@
  * @targetVersion 2008
  * @return get data on the use of buffer cache.
  * @returnParam FreeListStallsPerSecVal The number of requests per second that had to wait for a free page
- * @returnParam FreePagesCnt Total number of pages on all free lists
- * @returnParam TotalPagesCnt The number of pages in the buffer pool (includes database, free, and stolen pages)
- * @returnParam TargetPagesCnt Ideal number of pages in the buffer pool
- * @returnParam DatabasePagesCnt The number of pages in the buffer pool with database content
- * @returnParam StolenPagesCnt The number of pages used for miscellaneous server purposes (including procedure cache)
+ * @returnParam FreePagesCumCnt Total number of pages on all free lists
+ * @returnParam TotalPagesCumCnt The number of pages in the buffer pool (includes database, free, and stolen pages)
+ * @returnParam TargetPagesCumCnt Ideal number of pages in the buffer pool
+ * @returnParam DatabasePagesCumCnt The number of pages in the buffer pool with database content
+ * @returnParam StolenPagesCumCnt The number of pages used for miscellaneous server purposes (including procedure cache)
  * @returnParam LazyWritesPerSecVal The number of buffers written per second by the buffer manager's lazy writer
  * @returnParam CheckpointPagesPerSecVal The number of pages flushed to disk per second by a checkpoint or other operation that require all dirty pages to be flushed
  * @returnParam PageReadsPerSecVal The number of physical database page reads that are issued per second
@@ -24,7 +24,7 @@
  * @returnParam CacheHitRatioPct Buffer cache hit rate from last monitoring to now
  * @returnParam AccumulateCacheHitRatioPct Total buffer cache hit rate
  */
-JOB = [name: "SQL_Server_Performance.Buffer_Cache_Hit_Ratio"]
+JOB = [name: "SQL_Server.Performance.Buffer_Cache_Hit_Ratio"]
 
 FETCHACTION = {
 	def resultData = sql.rows('''
@@ -62,11 +62,11 @@ FETCHACTION = {
 	}
 	
 	convertedResult['FreeListStallsPerSecVal'] = finalResult['Free list stalls/sec']
-	convertedResult['FreePagesCnt'] = finalResult['Free pages']
-	convertedResult['TotalPagesCnt'] = finalResult['Total pages']
-	convertedResult['TargetPagesCnt'] = finalResult['Target pages']
-	convertedResult['DatabasePagesCnt'] = finalResult['Database pages']
-	convertedResult['StolenPagesCnt'] = finalResult['Stolen pages']
+	convertedResult['FreePagesCumCnt'] = finalResult['Free pages']
+	convertedResult['TotalPagesCumCnt'] = finalResult['Total pages']
+	convertedResult['TargetPagesCumCnt'] = finalResult['Target pages']
+	convertedResult['DatabasePagesCumCnt'] = finalResult['Database pages']
+	convertedResult['StolenPagesCumCnt'] = finalResult['Stolen pages']
 	convertedResult['LazyWritesPerSecVal'] = finalResult['Lazy writes/sec']
 	convertedResult['CheckpointPagesPerSecVal'] = finalResult['Checkpoint pages/sec']
 	convertedResult['PageReadsPerSecVal'] = finalResult['Page reads/sec']
@@ -95,11 +95,24 @@ FETCHACTION = {
 	return finalResultData
 }
 KEYEXPR = ['_sequence':['CacheHitRatioPct','AccumulateCacheHitRatioPct']]
-KEYEXPR._unit = ["FreeListStallsPerSecVal":"count/sec", "FreePagesCnt":"pages", "TotalPagesCnt":"pages", "TargetPagesCnt":"pages", "DatabasePagesCnt":"pages", "StolenPagesCnt":"pages", "LazyWritesPerSecVal":"count/sec", "CheckpointPagesPerSecVal":"count/sec", "PageReadsPerSecVal":"pages/sec", "PageWritesPerSecVal":"pages/sec", "PageLifeExpectancyInt":"sec", "PagesInCacheCnt":"pages/interval", "PagesCnt":"pages/interval", "PagesInCacheCumCnt":"pages", "PagesCumCnt":"pages", "CacheHitRatioPct":"%", "AccumulateCacheHitRatioPct":"%"]
+KEYEXPR._unit = ["FreeListStallsPerSecVal":"count/sec", "FreePagesCumCnt":"pages", "TotalPagesCumCnt":"pages", "TargetPagesCumCnt":"pages", "DatabasePagesCumCnt":"pages", "StolenPagesCumCnt":"pages", "LazyWritesPerSecVal":"count/sec", "CheckpointPagesPerSecVal":"count/sec", "PageReadsPerSecVal":"pages/sec", "PageWritesPerSecVal":"pages/sec", "PageLifeExpectancyInt":"sec", "PagesInCacheCnt":"pages/interval", "PagesCnt":"pages/interval", "PagesInCacheCumCnt":"pages", "PagesCumCnt":"pages", "CacheHitRatioPct":"%", "AccumulateCacheHitRatioPct":"%"]
+KEYEXPR._chart = [
+    [
+        "type": "bar",
+        "name": "Cache Hit Ratio",
+        "chart_columns": ['CacheHitRatioPct','AccumulateCacheHitRatioPct'],
+        "hint_columns": ["PagesInCacheCnt", "PagesCnt", "PagesInCacheCumCnt", "PagesCumCnt", "PageLifeExpectancyInt", "FreeListStallsPerSecVal", "LazyWritesPerSecVal", "CheckpointPagesPerSecVal", "PageReadsPerSecVal", "PageWritesPerSecVal"] 
+    ],
+    [
+        "type": "pie",
+        "name": "Pages Buffer Pool",
+        "chart_columns": ["FreePagesCumCnt", "TotalPagesCumCnt", "TargetPagesCumCnt", "DatabasePagesCumCnt", "StolenPagesCumCnt"]
+    ]
+]
+ 
+
 SENDTYPE = "Store"
 RESOURCEID = "Pf/MsBufferCHR"
 MONITORINGTYPE = "@DB"
-DBTYPE = "SQLS"
-DBUSER = "sa"
+DBTYPE = "@MSSQL"
 DEST = parameters.dest
-DBCONNSTR = parameters.dbconnstr.SQLS

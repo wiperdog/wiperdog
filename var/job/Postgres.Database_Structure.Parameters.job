@@ -1,0 +1,80 @@
+/**
+ * Monitoring Initialization Parameter.<br />
+ * <p>
+ * Showing all parameters and their value which were configed in postgresql.conf.<br />
+ * </p>
+ * @targetVersion All version
+ * @return Status of databases
+ * @returnParam Name Parameter's name
+ * @returnParam SettingValueStr Parameter's setting value
+ * @returnParam UnitTxt Parameter's unit
+ * @returnParam CategoryTxt Specify which category parameter is belongs to (Developer Options,Reporting and Logging / What to Log ,Write-Ahead Log / Archiving,"Autovacuum"
+ * @returnParam ShortDescTxt Parameter's short description  
+ * @returnParam ExtraDescTxt Parameter's extra description
+ * @returnParam ContextTxt Specify which context parameter is belongs to
+ * @returnParam VarTypeTxt Parameter's data type (bool, enum, integer, real, or string)
+ * @returnParam SourceTxt Parameter's source
+ * @returnParam MinStr Parameter's minimum value
+ * @returnParam MaxStr Parameter's maximum value
+ * @returnParam BootValueStr Parameter value assumed at server startup if the parameter is not otherwise set
+ * @returnParam ResetValueStr Value that RESET would reset the parameter to in the current session
+ * @returnParam SourceFileTxt Configuration file the current value was set in (null for values set from sources other than configuration files, or when examined by a non-superuser); helpful when using include directives in configuration files
+ * @returnParam SourceLineInt Line number within the configuration file the current value was set at (null for values set from sources other than configuration files, or when examined by a non-superuser)
+ */
+JOB = [ name: "Postgres.Database_Structure.Parameters" ]
+FETCHACTION = {
+	// Get version PostgreSQL
+	def query_get_version = sql.rows('SELECT version()')
+	def version = query_get_version[0]['version']
+	// Store resultRecord
+	def resultData = []
+	def query_version_newer = """
+			SELECT
+				name AS "Name",
+				setting AS "SettingValueStr",
+				unit AS "UnitTxt",
+				category AS "CategoryTxt",
+				short_desc AS "ShortDescTxt",
+				extra_desc AS "ExtraDescTxt",
+				context AS "ContextTxt",
+				vartype AS "VarTypeTxt",
+				source AS "SourceTxt",
+				min_val AS "MinStr",
+				max_val AS "MaxStr",
+				boot_val AS "BootValueStr",
+				reset_val AS "ResetValueStr",
+				sourcefile AS "SourceFileTxt",
+				sourceline AS "SourceLineInt"
+			FROM pg_settings;
+		"""
+	def query_version_older = """
+			SELECT
+				name AS "Name",
+				setting AS "SettingValueStr",
+				unit AS "UnitTxt",
+				category AS "CategoryTxt",
+				short_desc AS "ShortDescTxt",
+				extra_desc AS "ExtraDescTxt",
+				context AS "ContextTxt",
+				vartype AS "VarTypeTxt",
+				source AS "SourceTxt",
+				min_val AS "MinStr",
+				max_val AS "MaxStr",
+				NULL AS "BootValueStr",
+				NULL AS "ResetValueStr",
+				NULL AS "SourceFileTxt",
+				NULL AS "SourceLineInt"
+			FROM pg_settings
+		"""
+	if(version >= "PostgreSQL 8.4") {
+		resultData = sql.rows(query_version_newer)
+	} else {
+		resultData = sql.rows(query_version_older)
+	}
+	return resultData
+}
+KEYEXPR = ["Name"]
+SENDTYPE = "Store"
+DBTYPE = "@PGSQL" 
+MONITORINGTYPE = "@DB"
+RESOURCEID ="Sr/PgParameter"

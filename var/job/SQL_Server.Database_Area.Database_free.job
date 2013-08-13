@@ -20,7 +20,7 @@
  * @returnParam MaxUsedPct 最大拡張時のファイルサイズでの使用率
  */
 
-JOB = [name: "SQL_Server_Database_Area.Database_free"]
+JOB = [name: "SQL_Server.Database_Area.Database_free"]
 
 FETCHACTION = {
 	def query = '''
@@ -117,10 +117,16 @@ FETCHACTION = {
 
 KEYEXPR = ['_root':['DBName','DBFileName'], '_sequence':['CurrentUsedPct','FileSizePageInt','CurrentUsedSizePageInt']]
 KEYEXPR._unit = ["CurrentUsedSizePageInt":"pages","CurrentFreeSizePageInt":"pages","CurrentUsedPct":"%","MaxTotalSizePageDbl": "pages","MaxFreeSizePageDbl":"pages","CurrentTotalSizePageDbl":"pages","MaxUsedPct":"%"]
+KEYEXPR._chart = [
+    [
+        "type": "pie",
+        "name": "Current Size Page",
+        "chart_columns": ["CurrentUsedSizePageInt", "CurrentFreeSizePageInt"],
+        "hint_columns": ["CurrentUsedSizePageInt", "CurrentFreeSizePageInt", "CurrentTotalSizePageDbl", "MaxTotalSizePageDbl", "MaxFreeSizePageDbl", "MaxUsedPct"]
+    ]
+]
 SENDTYPE = "Store"
 RESOURCEID = "As/MsDbFree"
 MONITORINGTYPE = "@DB"
-DBTYPE = "SQLS"
-DBUSER = "sa"
+DBTYPE = "@MSSQL"
 DEST = parameters.dest
-DBCONNSTR = parameters.dbconnstr.SQLS

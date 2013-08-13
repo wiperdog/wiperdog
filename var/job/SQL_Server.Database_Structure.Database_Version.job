@@ -9,7 +9,7 @@
  * @returnParam ProductLevelStr SQL Serverの製品レベル
  * @returnParam EditionStr SQL Serverのエディション
  */
-JOB = [name: "SQL_Server_Database_Structure.Database_Version"]
+JOB = [name: "SQL_Server.Database_Structure.Database_Version"]
 
 QUERY = '''
 		SELECT 
@@ -20,8 +20,5 @@ QUERY = '''
 
 SENDTYPE = "Store"
 RESOURCEID = "Sr/MsDbVer"
-MONITORINGTYPE = "@DB"
-DBTYPE = "SQLS"
-DBUSER = "sa"
+DBTYPE = "@MSSQL"
 DEST = parameters.dest
-DBCONNSTR = parameters.dbconnstr.SQLS

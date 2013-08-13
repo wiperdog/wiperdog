@@ -12,9 +12,10 @@
  * @returnParam ResourceName Name of the resource, can be one of 04 resource described above
  * @returnParam LimitVal Limitation value of this resource
  * @returnParam CurrentVal Current used value of the resource
+ * @returnParam FreeVal Current free value of the resource
  * @returnParam ResourceUsedPct Percentage of usage of the resource
  */
-JOB = [name:"MySQL_ProactiveCheck.Resource_Limit"]
+JOB = [name:"MySQL.Proactive_Check.Resource_Limit"]
 FETCHACTION={
 	def resultData = []
 	
@@ -49,24 +50,28 @@ FETCHACTION={
 	resultMap['ResourceName'] = "PreparedStatement"
 	resultMap['LimitVal'] = (maxPreparedStmtResult != null && maxPreparedStmtResult.size()>0)?maxPreparedStmtResult.get(0)['Value'].toLong():-1
 	resultMap['CurrentVal'] = (currentPreparedStmtResult != null && currentPreparedStmtResult.size()>0)?currentPreparedStmtResult.get(0)['Variable_Value'].toLong():-1
+	resultMap['FreeVal'] = resultMap['LimitVal'] - resultMap['CurrentVal']
 	resultData.add(resultMap)
 	
 	resultMap = [:]
 	resultMap['ResourceName'] = "InsertDelayedThreads"
 	resultMap['LimitVal']  = (maxInsertDelayThreadResult != null && maxInsertDelayThreadResult.size()>0)?maxInsertDelayThreadResult.get(0)['Value'].toLong():-1
 	resultMap['CurrentVal']  = (currentInsertDelayThreadResult != null && currentInsertDelayThreadResult.size()>0)?currentInsertDelayThreadResult.get(0)['Variable_Value'].toLong():-1
+	resultMap['FreeVal'] = resultMap['LimitVal'] - resultMap['CurrentVal']
 	resultData.add(resultMap)
 	
 	resultMap = [:]
 	resultMap['ResourceName'] = "Connections"
 	resultMap['LimitVal'] = (maxConnectionsResult != null && maxConnectionsResult.size()>0)?maxConnectionsResult.get(0)['Value'].toLong():-1
 	resultMap['CurrentVal'] = (currentConnectionsResult != null && currentConnectionsResult.size()>0)?currentConnectionsResult.get(0)['Variable_Value'].toLong():-1
+	resultMap['FreeVal'] = resultMap['LimitVal'] - resultMap['CurrentVal']
 	resultData.add(resultMap)
 	
 	resultMap = [:]
 	resultMap['ResourceName'] = "TableOpen"
 	resultMap['LimitVal'] = (maxTableCacheResult != null && maxTableCacheResult.size()>0)?maxTableCacheResult.get(0)['Value'].toLong():-1
 	resultMap['CurrentVal'] = (currentOpenTableResult != null && currentOpenTableResult.size()>0)?currentOpenTableResult.size().toLong():-1
+	resultMap['FreeVal'] = resultMap['LimitVal'] - resultMap['CurrentVal']		
 	resultData.add(resultMap)
 	
 	resultData.each { data->
@@ -81,9 +86,15 @@ FETCHACTION={
 KEYEXPR = [_root:["ResourceName"]]
 KEYEXPR._unit = ["LimitVal":"count", "CurrentVal":"count","ResourceUsedPct":"%"]
 SENDTYPE = "Store"
-DBTYPE = "MYSQL"
-DBCONNSTR = parameters.dbconnstr.MYSQL
-DBUSER = "root"
+KEYEXPR._chart = [
+    [
+        "type": "pie",
+        "name": "Resource limitation",
+        "chart_columns": ["CurrentVal","FreeVal"],
+        "hint_columns": ["CurrentVal","FreeVal"]
+    ]
+]
+DBTYPE = "@MYSQL"
 DEST = parameters.dest
 MONITORINGTYPE = "@DB"
 RESOURCEID = "Sr/MyResourceLimit"

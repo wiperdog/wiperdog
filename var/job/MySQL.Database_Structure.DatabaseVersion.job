@@ -11,7 +11,7 @@
  * @returnParam VersionCompileMachineTxt MySQLがコンパイル/ビルドされたマシンの種類(x86_64など)
  * @returnParam VersionCompileOsTxt MySQLがコンパイル/ビルドされたマシンのOS(Win64など)
  */
-JOB = [ name: "MySQL_Database_Structure.DatabaseVersion" ]
+JOB = [ name: "MySQL.Database_Structure.DatabaseVersion" ]
 QUERY = '''
 	SELECT A.ProtocolVersionTxt, B.VersionTxt, C.VersionCommentTxt, D.VersionCompileMachineTxt, E.VersionCompileOsTxt
 	FROM
@@ -34,7 +34,5 @@ QUERY = '''
 SENDTYPE = "Store"
 MONITORINGTYPE = "@DB"
 RESOURCEID = "Sr/MyDbVer"
-DBTYPE = "MYSQL"
-DBCONNSTR = parameters.dbconnstr.MYSQL
-DBUSER = "root"
+DBTYPE = "@MYSQL"
 DEST = parameters.dest

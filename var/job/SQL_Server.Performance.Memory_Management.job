@@ -20,7 +20,7 @@
  * @returnParam TargetServerMemoryKBDbl Total amount of dynamic memory the server can consume
  * @returnParam TotalServerMemoryKBDbl The committed memory from the buffer pool
  */
-JOB = [name: "SQL_Server_Performance.Memory_Management"]
+JOB = [name: "SQL_Server.Performance.Memory_Management"]
 
 FETCHACTION = {
 	def resultData = sql.rows('''
@@ -77,10 +77,23 @@ FETCHACTION = {
 
 KEYEXPR = [:]
 KEYEXPR._unit = ["ConnectionMemoryKBDbl":"KB", "GrantedWorkspaceMemoryKBDbl":"KB", "LockMemoryKBDbl":"KB", "LockBlocksAllocatedDbl":"blocks", "LockOwnerBlocksAllocatedDbl":"blocks", "LockBlocksDbl":"blocks", "LockOwnerBlocksDbl":"blocks", "MaximumWorkspaceMemoryKBDbl":"KB", "MemoryGrantsOutstandingDbl":"count", "MemoryGrantsPendingDbl":"count", "OptimizerMemoryKBDbl":"KB", "SQLCacheMemoryKBDbl":"KB", "TargetServerMemoryKBDbl":"KB", "TotalServerMemoryKBDbl":"KB"]
+KEYEXPR._chart = [
+    [
+        "type": "line",
+        "name": "Memory usage",
+        "chart_columns": ["ConnectionMemoryKBDbl", "GrantedWorkspaceMemoryKBDbl", "OptimizerMemoryKBDbl", "SQLCacheMemoryKBDbl", "MemoryGrantsOutstandingDbl", "MemoryGrantsPendingDbl", "TargetServerMemoryKBDbl", "TotalServerMemoryKBDbl", "MaximumWorkspaceMemoryKBDbl"],
+        "hint_columns": ["ConnectionMemoryKBDbl", "GrantedWorkspaceMemoryKBDbl", "OptimizerMemoryKBDbl", "SQLCacheMemoryKBDbl", "MemoryGrantsOutstandingDbl", "MemoryGrantsPendingDbl", "TargetServerMemoryKBDbl", "TotalServerMemoryKBDbl", "MaximumWorkspaceMemoryKBDbl"]
+    ],
+    [
+        "type": "line",
+        "name": "Lock Allocated",
+        "chart_columns": ["LockMemoryKBDbl", "LockBlocksAllocatedDbl", "LockOwnerBlocksAllocatedDbl", "LockBlocksDbl", "LockOwnerBlocksDbl"],
+        "hint_columns": ["LockMemoryKBDbl", "LockBlocksAllocatedDbl", "LockOwnerBlocksAllocatedDbl", "LockBlocksDbl", "LockOwnerBlocksDbl"]
+    ]
+]
+
 SENDTYPE = "Store"
 RESOURCEID = "Pf/MsMemMgmt"
 MONITORINGTYPE = "@DB"
-DBTYPE = "SQLS"
-DBUSER = "test"
+DBTYPE = "@MSSQL"
 DEST = parameters.dest
-DBCONNSTR = parameters.dbconnstr.SQLS

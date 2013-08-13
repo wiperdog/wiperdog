@@ -10,7 +10,7 @@
  * @returnParam BatchRequestsCumCnt Total number of Transact-SQL command batches received
  * @returnParam BatchRequestsCnt The number of Transact-SQL command batches received from the last monitoring
  */
-JOB = [name: "SQL_Server_Proactive_Check.Batch_Requests"]
+JOB = [name: "SQL_Server.Proactive_Check.Batch_Requests"]
 FETCHACTION = {
 	def persistentdata
 	def execute = sql.firstRow('''
@@ -39,10 +39,15 @@ FETCHACTION = {
 
 KEYEXPR = ["_sequence":["BatchRequestsCnt","BatchRequestsCumCnt"]]
 KEYEXPR._unit = ["BatchRequestsCumCnt":"count", "BatchRequestsCnt":"count/interval"]
+KEYEXPR._chart = [
+    [
+        "type": "line",
+        "name": "Batch Request",
+        "chart_columns": ["BatchRequestsCnt"]
+    ]
+]
 SENDTYPE = "Store"
 RESOURCEID = "Sr/MsBatRq"
 MONITORINGTYPE = "@DB"
-DBTYPE = "SQLS"
-DBUSER = "sa"
+DBTYPE = "@MSSQL"
 DEST = parameters.dest
-DBCONNSTR = parameters.dbconnstr.SQLS

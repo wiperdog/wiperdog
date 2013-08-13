@@ -1,0 +1,40 @@
+/**
+ * Monitoring Information of Session.<br/>
+ * <p>
+ * Showing informations of session: total session, lock wait session, ...<br />
+ * </p>
+ * @targetVersion All version
+ * @return Information of Session.
+ * @returnParam NumOfSessionCnt Total of session 
+ * @returnParam NumOfLockWaitSessCnt Number of  lock wait session
+ * @returnParam SessLockedPct Lock wait session / total of session ratio
+ */
+JOB = [ name: "Postgres.Proactive_Check.Session" ]
+FETCHACTION = {
+	def map_data = [:]
+	// Total of session 
+	def num_of_session = sql.rows("SELECT count(*) AS num_of_session FROM pg_stat_activity;")
+	// Number of  lock wait session
+	def num_of_lock_wait_sess = sql.rows("""
+		SELECT count(*) AS num_of_lock_wait_sess
+		FROM pg_stat_activity
+		WHERE waiting = true;
+	""")
+	// Fill data into map_data
+	map_data['NumOfSessionCnt'] = num_of_session[0].num_of_session
+	map_data['NumOfLockWaitSessCnt'] = num_of_lock_wait_sess[0].num_of_lock_wait_sess
+	def per_sess_locked = (double)(map_data['NumOfLockWaitSessCnt'] / map_data['NumOfSessionCnt'])*100
+	map_data['SessLockedPct'] = per_sess_locked
+	// Return data monitoring
+	def resultData = []
+	resultData.add(map_data)
+	return resultData
+}
+KEYEXPR = [_sequence:["SessLockedPct","NumOfLockWaitSessCnt","NumOfSessionCnt"]]
+KEYEXPR._unit = [ "NumOfSessionCnt" : "count", "NumOfLockWaitSessCnt": "count", "SessLockedPct" : "%" ]
+KEYEXPR._chart = [[type:"line",name:"Session Information" ,chart_columns:["NumOfSessionCnt","NumOfLockWaitSessCnt"]] ]
+SENDTYPE = "Store"
+DBTYPE = "@PGSQL" 
+MONITORINGTYPE = "@DB"
+RESOURCEID = "Sr/PgSession"
+DEST = parameters.dest
