@@ -54,7 +54,7 @@ KEYEXPR._unit = ["WritesCumCnt":"count","WrittenCumSize":"byte"
 	,"ReadSize":"byte/interval","ReadsCnt":"count/interval"]
 KEYEXPR._chart = [
     [
-        "type": "bar",
+        "type": "line",
         "name": "InnoDB DB I/O Status",
         "chart_columns": ["ReadsCnt", "WritesCnt"],
         "hint_columns": ["ReadsCnt", "WritesCnt"]

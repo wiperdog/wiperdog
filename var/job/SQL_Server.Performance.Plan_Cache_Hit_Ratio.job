@@ -69,20 +69,20 @@ KEYEXPR = ['_sequence':['PlanCacheHitRatioPct','AccumulatePlanCacheHitRatioPct']
 KEYEXPR._unit = ["CacheRequestCnt":"count/interval", "LookupRequestCnt":"count/interval", "LookupRequestCumCnt":"count", "CacheRequestCumCnt":"count", "CachePagesCumCnt":"pages", "CacheObjectCumCnt":"count", "CacheObjectsInUseCumCnt":"count", "PlanCacheHitRatioPct":"%","AccumulatePlanCacheHitRatioPct":"%"]
 KEYEXPR._chart = [
 	[
-        "type": "area",
-        "name": "Cache Hit Request",
+        "type": "line",
+        "name": "Plan Cache Activity",
         "chart_columns": ["CacheRequestCnt", "LookupRequestCnt"],
         "hint_columns": ["CacheRequestCnt", "LookupRequestCnt", "LookupRequestCumCnt", "CacheRequestCumCnt"]
     ],
     [
         "type": "line",
-        "name": "Ojects Information",
+        "name": "Objects Information",
         "chart_columns": ["CachePagesCumCnt","CacheObjectCumCnt", "CacheObjectsInUseCumCnt"],
         "hint_columns": ["CachePagesCumCnt","CacheObjectCumCnt", "CacheObjectsInUseCumCnt"] 
     ],
     
     [
-        "type": "bar",
+        "type": "line",
         "name": "Cache Hit Ratio",
         "chart_columns": ["PlanCacheHitRatioPct"],
         "hint_columns": ["PlanCacheHitRatioPct", "AccumulatePlanCacheHitRatioPct"]

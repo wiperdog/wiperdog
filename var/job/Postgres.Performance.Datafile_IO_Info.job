@@ -16,6 +16,8 @@
  * @returnParam AvgTotalHeapBlocksReadVal Average  of increase or descrease amount of total heap blocks per second
  * @returnParam AvgTotalIndexBlocksReadVal Average  of increase or descrease amount of total index blocks per second
  * @returnParam AvgTotalToastBlocksReadVal Average  of increase or descrease amount of total toast blocks per second
+ * @BlkWriteTimeVal Total time the statement spent writing blocks, in milliseconds (version PostgreSQL >= 9.2)
+ * @BlkReadTimeVal Total time the statement spent reading blocks, in milliseconds (version PostgreSQL >= 9.2)
  * @returnParam AvgTotalTidxBlocksReadVal Average  of increase or descrease amount of total index toast blocks
  */
 JOB = [name:"Postgres.Performance.Datafile_IO_Info"]
@@ -47,6 +49,15 @@ FETCHACTION = {
 									 ) AS "TotalTidxBlocksReadCumCnt"
 								FROM pg_statio_user_tables
 							''');
+	def postgresVersion = sql.rows("SELECT version();")[0][0]
+	def blk_read_write_time = null
+	if(postgresVersion >= "PostgreSQL 9.2") {
+		blk_read_write_time = sql.rows("SELECT blk_read_time,blk_write_time FROM pg_stat_statements;")[0]
+	}
+	if(blk_read_write_time != null) {
+		resultData[0]['BlkReadTimeVal'] = blk_read_write_time.blk_read_time
+		resultData[0]['BlkWriteTimeVal'] = blk_read_write_time.blk_write_time
+	}
 	return resultData
 }
 ACCUMULATE = {
@@ -67,9 +78,20 @@ ACCUMULATE = {
 KEYEXPR = [_sequence:["TotalHeapBlocksReadCumCnt","TotalIndexBlocksReadCumCnt"]]
 KEYEXPR._unit = [ "TotalHeapBlocksReadCumCnt" : "count", "TotalIndexBlocksReadCumCnt": "count", "TotalToastBlocksReadCumCnt" : "count", "TotalTidxBlocksReadCumCnt": "count",
 	"TotalHeapBlocksReadVal" : "count/interval", "TotalIndexBlocksReadVal": "count/interval", "TotalToastBlocksReadVal" : "count/interval", "TotalTidxBlocksReadVal": "count/interval",
-	"AvgTotalHeapBlocksReadVal" : "count/sec", "AvgTotalIndexBlocksReadVal": "count/sec", "AvgTotalToastBlocksReadVal" : "count/sec", "AvgTotalTidxBlocksReadVal": "count/sec" ]
+	"AvgTotalHeapBlocksReadVal" : "count/sec", "AvgTotalIndexBlocksReadVal": "count/sec", "AvgTotalToastBlocksReadVal" : "count/sec", "AvgTotalTidxBlocksReadVal": "count/sec",
+	"BlkReadTimeVal": "double", "BlkWriteTimeVal": "double" ]
 KEYEXPR._chart = [
-[type:"line",name:"Datafile I/O Information",chart_columns:["TotalHeapBlocksReadCumCnt","TotalIndexBlocksReadCumCnt","TotalToastBlocksReadCumCnt","TotalTidxBlocksReadCumCnt"]]]
+	[
+		type:"line",
+		name:"Datafile I/O Information",
+		chart_columns:["TotalHeapBlocksReadCumCnt","TotalIndexBlocksReadCumCnt","TotalToastBlocksReadCumCnt","TotalTidxBlocksReadCumCnt"]
+	],
+	[
+		type:"bar",
+		name:"Block Read And Write Time",
+		chart_columns:["BlkReadTimeVal", "BlkWriteTimeVal"]
+	]
+]
 SENDTYPE = "Store"
 DBTYPE = "@PGSQL"
 MONITORINGTYPE = "@DB"

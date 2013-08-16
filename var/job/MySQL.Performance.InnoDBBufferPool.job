@@ -9,10 +9,10 @@
  * @returnParam WriteRequestsCumCnt バッファ プールに リクエスト書いた回数
  * @returnParam WaitFreeCumCnt  書くため待つ回数
  * @returnParam WaitFreeRatioPct 書くため待つレシオ
- * @returnParam PagesTotalCumCnt ページ数
- * @returnParam PagesFreeCumCnt フリーページ数
- * @returnParam PagesDataCumCnt データのページ数
- * @returnParam PagesDirtyCumCnt  汚いページ数
+ * @returnParam PagesTotalCnt ページ数
+ * @returnParam PagesFreeCnt フリーページ数
+ * @returnParam PagesDataCnt データのページ数
+ * @returnParam PagesDirtyCnt  汚いページ数
  * @returnParam BufferUsedRatioPct ユーズドバッフレシオ
  * @returnParam DirtyRatioPct dirtyレシオ
  * @returnParam ReadRequestsCnt 前監視回から今回までバッファからロジック読む回数
@@ -32,8 +32,8 @@ FETCHACTION={
 		def prev_innodb_buffer_pool_reads = PERSISTENTDATA['ReadsCumCnt'] != null ? PERSISTENTDATA['ReadsCumCnt'] : 0
 		def prev_innodb_buffer_pool_write_requests = PERSISTENTDATA['WriteRequestsCumCnt'] != null ? PERSISTENTDATA['WriteRequestsCumCnt'] : 0
 		def prev_innodb_buffer_pool_wait_free = PERSISTENTDATA['WaitFreeCumCnt'] != null ? PERSISTENTDATA['WaitFreeCumCnt'] : 0
-		def prev_innodb_buffer_pool_pages_data = PERSISTENTDATA['PagesDataCumCnt'] != null ? PERSISTENTDATA['PagesDataCumCnt'] : 0
-		def prev_innodb_buffer_pool_pages_dirty = PERSISTENTDATA['PagesDirtyCumCnt'] != null ? PERSISTENTDATA['PagesDirtyCumCnt'] : 0
+		def prev_innodb_buffer_pool_pages_data = PERSISTENTDATA['PagesDataCnt'] != null ? PERSISTENTDATA['PagesDataCnt'] : 0
+		def prev_innodb_buffer_pool_pages_dirty = PERSISTENTDATA['PagesDirtyCnt'] != null ? PERSISTENTDATA['PagesDirtyCnt'] : 0
 		
 		def resultData = [:]
 		
@@ -50,37 +50,37 @@ FETCHACTION={
  				 B.ReadsCumCnt,
  				 C.WriteRequestsCumCnt,
  				 D.WaitFreeCumCnt,
- 				 E.PagesTotalCumCnt,
-  		  		 F.PagesFreeCumCnt,
-  				 G.PagesDataCumCnt,
-  				 H.PagesDirtyCumCnt
+ 				 E.PagesTotalCnt,
+  		  		 F.PagesFreeCnt,
+  				 G.PagesDataCnt,
+  				 H.PagesDirtyCnt
 				 FROM
   				 (SELECT GS.variable_value as ReadRequestsCumCnt FROM information_schema.global_status GS WHERE GS.variable_name = 'innodb_buffer_pool_read_requests') A,
  				 (SELECT GS.variable_value as ReadsCumCnt FROM information_schema.global_status GS WHERE GS.variable_name = 'innodb_buffer_pool_reads') B,
   				 (SELECT GS.variable_value as WriteRequestsCumCnt FROM information_schema.global_status GS WHERE GS.variable_name = 'innodb_buffer_pool_write_requests') C,
   				 (SELECT GS.variable_value as WaitFreeCumCnt FROM information_schema.global_status GS WHERE GS.variable_name = 'innodb_buffer_pool_wait_free') D,
- 				 (SELECT GS.variable_value as PagesTotalCumCnt FROM information_schema.global_status GS WHERE GS.variable_name = 'innodb_buffer_pool_pages_total') E,
-				 (SELECT GS.variable_value as PagesFreeCumCnt FROM information_schema.global_status GS WHERE GS.variable_name = 'innodb_buffer_pool_pages_free') F,
-  				 (SELECT GS.variable_value as PagesDataCumCnt FROM information_schema.global_status GS WHERE GS.variable_name = 'innodb_buffer_pool_pages_data') G,
-  				 (SELECT GS.variable_value as PagesDirtyCumCnt FROM information_schema.global_status GS WHERE GS.variable_name = 'innodb_buffer_pool_pages_dirty') H;
+ 				 (SELECT GS.variable_value as PagesTotalCnt FROM information_schema.global_status GS WHERE GS.variable_name = 'innodb_buffer_pool_pages_total') E,
+				 (SELECT GS.variable_value as PagesFreeCnt FROM information_schema.global_status GS WHERE GS.variable_name = 'innodb_buffer_pool_pages_free') F,
+  				 (SELECT GS.variable_value as PagesDataCnt FROM information_schema.global_status GS WHERE GS.variable_name = 'innodb_buffer_pool_pages_data') G,
+  				 (SELECT GS.variable_value as PagesDirtyCnt FROM information_schema.global_status GS WHERE GS.variable_name = 'innodb_buffer_pool_pages_dirty') H;
 			''')
 		
 		resultData['ReadRequestsCumCnt'] = Integer.parseInt(data[0]['ReadRequestsCumCnt'])
 		resultData['ReadsCumCnt'] = Integer.parseInt(data[0]['ReadsCumCnt'])
 		resultData['WriteRequestsCumCnt'] = Integer.parseInt(data[0]['WriteRequestsCumCnt'])
 		resultData['WaitFreeCumCnt'] = Integer.parseInt(data[0]['WaitFreeCumCnt'])
-		resultData['PagesTotalCumCnt'] = Integer.parseInt(data[0]['PagesTotalCumCnt'])
-		resultData['PagesFreeCumCnt'] = Integer.parseInt(data[0]['PagesFreeCumCnt'])
-		resultData['PagesDataCumCnt'] = Integer.parseInt(data[0]['PagesDataCumCnt'])
-		resultData['PagesDirtyCumCnt'] = Integer.parseInt(data[0]['PagesDirtyCumCnt'])
+		resultData['PagesTotalCnt'] = Integer.parseInt(data[0]['PagesTotalCnt'])
+		resultData['PagesFreeCnt'] = Integer.parseInt(data[0]['PagesFreeCnt'])
+		resultData['PagesDataCnt'] = Integer.parseInt(data[0]['PagesDataCnt'])
+		resultData['PagesDirtyCnt'] = Integer.parseInt(data[0]['PagesDirtyCnt'])
 		
 		//Set PERSISTENTDATA
 		PERSISTENTDATA['ReadRequestsCumCnt'] = resultData['ReadRequestsCumCnt']
 		PERSISTENTDATA['ReadsCumCnt'] = resultData['ReadsCumCnt']
 		PERSISTENTDATA['WriteRequestsCumCnt'] = resultData['WriteRequestsCumCnt']
 		PERSISTENTDATA['WaitFreeCumCnt'] = resultData['WaitFreeCumCnt']
-		PERSISTENTDATA['PagesDataCumCnt'] = resultData['PagesDataCumCnt']
-		PERSISTENTDATA['PagesDirtyCumCnt'] = resultData['PagesDirtyCumCnt']
+		PERSISTENTDATA['PagesDataCnt'] = resultData['PagesDataCnt']
+		PERSISTENTDATA['PagesDirtyCnt'] = resultData['PagesDirtyCnt']
 		
 		assert interval != null, "This is the first execution time, interval is null, quit the job"
 		
@@ -89,10 +89,10 @@ FETCHACTION={
 		
 		resultData['WriteRequestsCnt'] = resultData['WriteRequestsCumCnt'] - prev_innodb_buffer_pool_write_requests
 		resultData['WaitFreeCnt'] = resultData['WaitFreeCumCnt'] - prev_innodb_buffer_pool_wait_free
-		resultData['PagesDataCnt'] = resultData['PagesDataCumCnt'] - prev_innodb_buffer_pool_pages_data
-		resultData['PagesDirtyCnt'] = resultData['PagesDirtyCumCnt'] - prev_innodb_buffer_pool_pages_dirty
+		resultData['PagesDataCnt'] = resultData['PagesDataCnt'] - prev_innodb_buffer_pool_pages_data
+		resultData['PagesDirtyCnt'] = resultData['PagesDirtyCnt'] - prev_innodb_buffer_pool_pages_dirty
 		
-		resultData['ReadRequestsRateDbl'] = resultData['PagesDirtyCumCnt'] / interval	
+		resultData['ReadRequestsRateDbl'] = resultData['PagesDirtyCnt'] / interval	
 		resultData['ReadsRateDbl'] = resultData['ReadsCnt'] / interval
 		resultData['WriteRequestsRateDbl'] = resultData['WriteRequestsCnt'] / interval
 		resultData['WaitFreeRateDbl'] = resultData['WaitFreeCnt'] / interval
@@ -107,15 +107,15 @@ FETCHACTION={
 		} else {
 			resultData['WaitFreeRatioPct']= resultData['WaitFreeCumCnt'] / resultData['WriteRequestsCumCnt'] * 100
 		}
-		if(resultData['PagesTotalCumCnt'] == 0){
+		if(resultData['PagesTotalCnt'] == 0){
 			resultData['BufferUsedRatioPct'] = null
 		} else {
-			resultData['BufferUsedRatioPct']= resultData['PagesDataCumCnt'] / resultData['PagesTotalCumCnt'] * 100
+			resultData['BufferUsedRatioPct']= resultData['PagesDataCnt'] / resultData['PagesTotalCnt'] * 100
 		}
-		if(resultData['PagesDataCumCnt'] == 0){
+		if(resultData['PagesDataCnt'] == 0){
 			resultData['DirtyRatioPct'] = null
 		} else {
-			resultData['DirtyRatioPct'] = resultData['PagesDirtyCumCnt'] / resultData['PagesDataCumCnt'] * 100
+			resultData['DirtyRatioPct'] = resultData['PagesDirtyCnt'] / resultData['PagesDataCnt'] * 100
 		}
 		
 		
@@ -123,32 +123,34 @@ FETCHACTION={
 		updateResultData.add(resultData)
 		return updateResultData
 }
-KEYEXPR = [_sequence:["BufferUsedRatioPct","PagesDataCumCnt","PagesTotalCumCnt"]]
-KEYEXPR._unit = ["ReadRequestsCumCnt" : "count" , "ReadsCumCnt" : "count" , "WriteRequestsCumCnt" : "count" , "WaitFreeCumCnt" : "count" ,"PagesTotalCumCnt" : "pages" 
-	,"PagesFreeCumCnt" :"pages" ,"PagesDataCumCnt":"pages" , "PagesDirtyCumCnt" : "pages"  , "ReadRequestsRateDbl" : "count/sec" 
+KEYEXPR = [_sequence:["BufferUsedRatioPct","PagesDataCnt","PagesTotalCnt"]]
+KEYEXPR._unit = ["ReadRequestsCumCnt" : "count" , "ReadsCumCnt" : "count" , "WriteRequestsCumCnt" : "count" , "WaitFreeCumCnt" : "count" ,"PagesTotalCnt" : "pages" 
+	,"PagesFreeCnt" :"pages" ,"PagesDataCnt":"pages" , "PagesDirtyCnt" : "pages"  , "ReadRequestsRateDbl" : "count/sec" 
 	, "ReadsRateDbl" : "count/sec" ,"WriteRequestsRateDbl" : "count/sec" , "WaitFreeRateDbl" : "count/sec" , "HitRatioPct" : "%" 
 	,"WaitFreeRatioPct" : "%" , "BufferUsedRatioPct" : "%" , "DirtyRatioPct" : "%" , "ReadRequestsCnt" : "count/interval" 
 	, "ReadsCnt" : "count/interval" , "WriteRequestsCnt" : "count/interval" , "WaitFreeCnt" : "count/interval" 
 	, "PagesDataCnt" : "pages/interval" , "PagesDirtyCnt" : "pages/interval" ]
 KEYEXPR._chart = [
-    [
-        "type": "pie",
-        "name": "Buffer hit ratio",
-        "chart_columns": ["ReadRequestsCumCnt","ReadsCumCnt"],
-        "hint_columns": ["ReadRequestsCumCnt","ReadsCumCnt"]
-    ],
-    [
-        "type": "bar",
-        "name": "Percentage of page data",
-        "chart_columns": ["WriteRequestsCnt", "ReadsCnt"],
-        "hint_columns": ["WriteRequestsCnt", "ReadsCnt"]
-    ],
-    [
+	
+	[
         "type": "line",
-        "name": "Buffer usage information",
-        "chart_columns": ["PagesDataCumCnt", "PagesTotalCumCnt"],
-        "hint_columns": ["PagesDataCumCnt", "PagesTotalCumCnt"]
-    ] 
+        "name": "Buffer information",
+        "chart_columns": ["BufferUsedRatioPct","HitRatioPct", "DirtyRatioPct"],
+        "hint_columns":  ["BufferUsedRatioPct","HitRatioPct", "DirtyRatioPct"]
+    ],
+    [
+        "type": "area",
+        "name": "Buffer Pool used ratio",
+        "chart_columns": ["PagesData", "PagesMisc", "PagesFree"],
+        "hint_columns": ["PagesData", "PagesMisc", "PagesFree"]
+    ],
+    [
+        "type": "area",
+        "name": "Buffer pool activity",
+        "chart_columns": ["ReadRequestsCnt","WriteRequestsCnt"],
+        "hint_columns": ["ReadRequestsCnt","WriteRequestsCnt"]
+    ]
+    
 ]
 SENDTYPE = "Store"
 DBTYPE = "@MYSQL"

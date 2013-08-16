@@ -67,8 +67,8 @@ KEYEXPR._chart = [
     [
         "type": "line",
         "name": "Sort Action Counter",
-        "chart_columns": ["MergePassesCumCnt", "RangeCumCnt", "RowsCumCnt", "ScanCumCnt"],
-        "hint_columns": ["MergePassesCumCnt", "RangeCumCnt", "RowsCumCnt", "ScanCumCnt"]
+        "chart_columns": ["MergePassesCnt", "RangeCnt", "RowsCnt", "ScanCnt"],
+        "hint_columns": ["MergePassesCnt", "RangeCnt", "RowsCnt", "ScanCnt"]
     ]
 ]
 SENDTYPE = "Store"

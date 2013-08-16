@@ -12,9 +12,9 @@
  * @returnParam ReadRequestsCumCnt The number of requests to read a key block from the cache
  * @returnParam WritesCumCnt The number of physical writes of a key block to disk
  * @returnParam WriteRequestsCumCnt The number of requests to write a key block to the cache
- * @returnParam BufferCumLong The size of the buffer
- * @returnParam BufferUsedCumSize The size of the buffer used
- * @returnParam BufferUnusedCumSize The size of the buffer unused
+ * @returnParam TotalSize The size of the buffer
+ * @returnParam UsedSize The size of the buffer used
+ * @returnParam UnusedSize The size of the buffer unused
  * @returnParam FragmentationPct Percent fragmentation
  * @returnParam BufferHitPct Percent buffer hit success
  * @returnParam ReadsCnt The number of physical reads from the last monitoring
@@ -25,6 +25,7 @@
  * @returnParam ReadRequestsRateDbl The number of requests to read per second
  * @returnParam WritesRateDbl The number of physical writes per second
  * @returnParam WriteRequestsRateDbl The number of requests to write per second
+ * @returnParam UsedPct Percentage of cummulative buffer used via total buffer
  */
 JOB = [name:"MySQL.Performance.MyISAMKeyBuffer"]
 FETCHACTION={
@@ -43,30 +44,31 @@ FETCHACTION={
 						        WHEN (B.ReadRequestsCumCnt = 0) THEN 0
 						        ELSE (100 - A.ReadsCumCnt/B.ReadRequestsCumCnt*100)
 						    END BufferHitPct,
-						    E.BufferCumSize,
-						    (G.key_blocks_used * F.key_cache_block_size) AS BufferUsedCumSize,
-						    (H.key_blocks_unused * F.key_cache_block_size) AS BufferUnusedCumSize,
-						    (E.BufferCumSize-G.key_blocks_used * F.key_cache_block_size-H.key_blocks_unused * F.key_cache_block_size)/E.BufferCumSize AS FragmentationPct
+						    E.TotalSize,
+						    (G.key_blocks_used * F.key_cache_block_size) AS UsedSize,
+						    (H.key_blocks_unused * F.key_cache_block_size) AS UnusedSize,
+						    (E.TotalSize-G.key_blocks_used * F.key_cache_block_size-H.key_blocks_unused * F.key_cache_block_size)/E.TotalSize AS FragmentationPct
 						FROM
 						    (SELECT G.variable_value as ReadsCumCnt FROM information_schema.global_status G WHERE G.variable_name = 'key_reads') A,
 						    (SELECT G.variable_value as ReadRequestsCumCnt FROM information_schema.global_status G WHERE G.variable_name = 'key_read_requests') B,
 						    (SELECT G.variable_value as WritesCumCnt FROM information_schema.global_status G WHERE G.variable_name = 'key_writes') C,
 						    (SELECT G.variable_value as WriteRequestsCumCnt FROM information_schema.global_status G WHERE G.variable_name = 'key_write_requests') D,
-						    (SELECT G.variable_value as BufferCumSize FROM information_schema.global_variables G WHERE G.variable_name = 'key_buffer_size') E,
+						    (SELECT G.variable_value as TotalSize FROM information_schema.global_variables G WHERE G.variable_name = 'key_buffer_size') E,
 						    (SELECT G.variable_value as key_cache_block_size FROM information_schema.global_variables G WHERE G.variable_name = 'key_cache_block_size') F,
 						    (SELECT G.variable_value as key_blocks_used FROM information_schema.global_status G WHERE G.variable_name = 'key_blocks_used') G,
 						    (SELECT G.variable_value as key_blocks_unused FROM information_schema.global_status G WHERE G.variable_name = 'key_blocks_unused') H;
 			''')
-				
+		//
 		resultData['ReadsCumCnt'] = Integer.parseInt(data[0]['ReadsCumCnt'])
 		resultData['ReadRequestsCumCnt'] = Integer.parseInt(data[0]['ReadRequestsCumCnt'])
 		resultData['WritesCumCnt'] = Integer.parseInt(data[0]['WritesCumCnt'])
 		resultData['WriteRequestsCumCnt'] = Integer.parseInt(data[0]['WriteRequestsCumCnt'])		
-		resultData['BufferCumSize'] = Integer.parseInt(data[0]['BufferCumSize'])	
-		resultData['BufferUsedCumSize'] = data[0]['BufferUsedCumSize']
-		resultData['BufferUnusedCumSize'] = data[0]['BufferUnusedCumSize']
+		resultData['TotalSize'] = Integer.parseInt(data[0]['TotalSize'])	
+		resultData['UsedSize'] = data[0]['UsedSize']
+		resultData['UnusedSize'] = data[0]['UnusedSize']
 		resultData['FragmentationPct'] = data[0]['FragmentationPct']*100
 		resultData['BufferHitPct'] = data[0]['BufferHitPct']
+        resultData['UsedPct'] = resultData['UsedSize'] / resultData['TotalSize'] * 100
 
 		//Set PERSISTENTDATA
 		PERSISTENTDATA['ReadsCumCnt'] = resultData['ReadsCumCnt']
@@ -90,22 +92,34 @@ FETCHACTION={
 		return updateResultData
 }
 KEYEXPR = [_sequence:["BufferHitPct","ReadRequestsCumCnt","ReadsCumCnt"]]	
-KEYEXPR._unit = ["ReadsCumCnt" : "count" , "ReadRequestsCumCnt" : "count","WritesCumCnt" : "count","WriteRequestsCumCnt" : "count" ,"BufferCumSize" : "byte" ,
-	"BufferUsedCumSize" : "byte" , "BufferUnusedCumSize" : "byte" ,"FragmentationPct" : "%" , "BufferHitPct" : "%",  
+KEYEXPR._unit = ["ReadsCumCnt" : "count" , "ReadRequestsCumCnt" : "count","WritesCumCnt" : "count","WriteRequestsCumCnt" : "count" ,"TotalSize" : "byte" ,
+	"UsedSize" : "byte" , "UnusedSize" : "byte" ,"FragmentationPct" : "%" , "BufferHitPct" : "%",  
 	"ReadsRateDbl":"count/sec", "ReadRequestsRateDbl":"count/sec", "WritesRateDbl":"count/sec", "WriteRequestsRateDbl":"count/sec",
-	"ReadsCnt":"count/interval", "ReadRequestsCnt":"count/interval", "WritesCnt":"count/interval", "WriteRequestsCnt":"count/interval"] 
+	"ReadsCnt":"count/interval", "ReadRequestsCnt":"count/interval", "WritesCnt":"count/interval", "WriteRequestsCnt":"count/interval", "UsedPct":"%"] 
 KEYEXPR._chart = [
     [
-        "type": "pie",
-        "name": "Buffer hit rate",
-        "chart_columns": ["ReadsCumCnt","ReadRequestsCumCnt"],
-        "hint_columns": ["ReadsCumCnt","ReadRequestsCumCnt"]
+        "type": "line",
+        "name": "Buffer hit information",
+        "chart_columns": ["BufferHitPct","FragmentationPct"],
+        "hint_columns": ["BufferHitPct","FragmentationPct"]
     ],
     [
-        "type": "bar",
+        "type": "line",
+        "name": "Buffer usage(%) information",
+        "chart_columns": ["UsedPct"],
+        "hint_columns": ["UsedSize","TotalSize"]
+    ],
+    [
+        "type": "area",
+        "name": "Key Buffer Activity",
+        "chart_columns": ["ReadsCnt","WritesCnt"],
+        "hint_columns": ["ReadsCnt","WritesCnt"]
+    ],
+    [
+        "type": "area",
         "name": "MyISAM key buffer",
-        "chart_columns": ["ReadRequestsCumCnt", "ReadsCumCnt"],
-        "hint_columns": ["ReadRequestsCumCnt", "ReadsCumCnt"]
+        "chart_columns": ["ReadRequestsCnt", "WriteRequestsCnt"],
+        "hint_columns": ["ReadRequestsCnt", "WriteRequestsCnt"]
     ]
 ]
 SENDTYPE = "Store"

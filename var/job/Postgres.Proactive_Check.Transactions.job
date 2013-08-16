@@ -23,7 +23,19 @@ FETCHACTION = {
 	return resultData
 	
 }
-KEYEXPR = [_chart:[[type:"pie",name:"Transactions Information",chart_columns:["CommitTransactionCumCnt","RollbackTransactionCumCnt"]]]]
+KEYEXPR = [:]
+KEYEXPR._chart = [
+	[
+		type:"pie",
+		name:"Commit And Rollback Transactions Ratio",
+		chart_columns:["CommitTransactionCumCnt","RollbackTransactionCumCnt"]
+	],
+	[
+		type:"line",
+		name:"Transactions Information",
+		chart_columns:["TransactionsCumCnt"]
+	]
+]
 DBTYPE = "@PGSQL" 
 MONITORINGTYPE = "@DB"
 RESOURCEID = "Sr/PgTransactions"

@@ -10,8 +10,8 @@
  * @returnParam NumOfCurrentConnectionsCnt Number of current connections established to database
  * @returnParam NumOfCommitedCumCnt Number of transactions were committed
  * @returnParam NumOfRollbackCumCnt Number of transactions were rollbacked
- * @returnParam NumOfBlockReadCumCnt Number of read block of database
- * @returnParam NumOfBufferHitCumCnt Number of buffer hit of database
+ * @returnParam NumOfBlockReadCnt Number of block read of database
+ * @returnParam NumOfBufferHitCnt Number of buffer hit of database
  * @returnParam NumOfReturnedRowCumCnt Number of rows were returned by  queries occuried in this database
  * @returnParam NumOfInsertedRowCumCnt Number of rows were inserted by  queries occuried in this database
  * @returnParam NumOfUpdatedRowCumCnt Number of rows were updateted by  queries occuried in this database
@@ -38,8 +38,8 @@ FETCHACTION = {
 				psd.numbackends  AS  "NumOfCurrentConnectionsCnt",
 				psd.xact_commit  AS "NumOfCommitedCumCnt",
 				psd.xact_rollback AS "NumOfRollbackCumCnt",
-				psd.blks_read AS "NumOfBlockReadCumCnt",
-				psd.blks_hit AS "NumOfBufferHitCumCnt",
+				psd.blks_read AS "NumOfBlockReadCnt",
+				psd.blks_hit AS "NumOfBufferHitCnt",
 				psd.tup_returned AS "NumOfReturnedRowCumCnt",
 				psd.tup_inserted AS "NumOfInsertedRowCumCnt",
 				psd.tup_updated AS "NumOfUpdatedRowCumCnt",
@@ -56,8 +56,8 @@ FETCHACTION = {
 				psd.numbackends  AS  "NumOfCurrentConnectionsCnt",
 				psd.xact_commit  AS "NumOfCommitedCumCnt",
 				psd.xact_rollback AS "NumOfRollbackCumCnt",
-				psd.blks_read AS "NumOfBlockReadCumCnt",
-				psd.blks_hit AS "NumOfBufferHitCumCnt"
+				psd.blks_read AS "NumOfBlockReadCnt",
+				psd.blks_hit AS "NumOfBufferHitCnt"
 			FROM    pg_stat_database psd,pg_database pd
 			WHERE psd.datid = pd.oid AND pd.datistemplate = false
 		"""
@@ -96,11 +96,11 @@ ACCUMULATE = {
 }
 KEYEXPR = [_root:["DatabaseName"],_meta:["TimeStatsResetTm":"UNIXEPOCH:yyyy-MM-dd'T'HH:mm:ss+SSSZ"]]
 KEYEXPR._unit = ["DatabaseSizeCumVal": "KB", "NumOfCurrentConnectionsCnt": "count", "NumOfCommitedCumCnt": "count", "NumOfRollbackCumCnt": "count",
-	"NumOfBlockReadCumCnt": "count", "NumOfBufferHitCumCnt": "count", "NumOfReturnedRowCumCnt": "count", "NumOfInsertedRowCumCnt": "count",
+	"NumOfBlockReadCnt": "count", "NumOfBufferHitCnt": "count", "NumOfReturnedRowCumCnt": "count", "NumOfInsertedRowCumCnt": "count",
 	"NumOfUpdatedRowCumCnt": "count", "NumOfDeletedRowCumCnt": "count", "NumOfCanceledQueryCumCnt": "count", "IncreaseDatabaseSizeVal": "KB/interval",
 	"AverageIncreaseDatabaseSizeVal": "KB/sec", "NumberOfCommitedCnt": "count/interval", "NumberOfRollbackCnt": "count/interval" ]
 KEYEXPR._chart = [[type:"line",name:"Database Information",chart_columns:["NumOfReturnedRowCumCnt","NumOfInsertedRowCumCnt","NumOfUpdatedRowCumCnt","NumOfDeletedRowCumCnt"]],
-                  [type:"bar",name:"Database Information - Database Access" , chart_columns:["NumOfBlockReadCumCnt","NumOfBufferHitCumCnt"]]]
+                  [type:"bar",name:"Database Information - Database Access" , chart_columns:["NumOfBlockReadCnt","NumOfBufferHitCnt"]]]
 SENDTYPE = "Store"
 DBTYPE = "@PGSQL"
 MONITORINGTYPE = "@DB"

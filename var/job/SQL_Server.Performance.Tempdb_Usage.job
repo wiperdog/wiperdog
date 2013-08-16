@@ -36,7 +36,7 @@ KEYEXPR = [:]
 KEYEXPR._unit = ["UsrObjKbSize":"KB", "InternalObjKbSize":"KB", "VersionStoreKbSize":"KB", "FreespaceKbSize":"KB", "MixEdextentKbSize":"KB"]
 KEYEXPR._chart = [
     [
-        "type": "pie",
+        "type": "area",
         "name": "Size Allocated of Object",
         "chart_columns": ["UsrObjKbSize", "InternalObjKbSize", "VersionStoreKbSize", "FreespaceKbSize", "MixEdextentKbSize"]
     ]

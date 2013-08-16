@@ -80,15 +80,21 @@ KEYEXPR._unit = ["ConnectionMemoryKBDbl":"KB", "GrantedWorkspaceMemoryKBDbl":"KB
 KEYEXPR._chart = [
     [
         "type": "line",
-        "name": "Memory usage",
-        "chart_columns": ["ConnectionMemoryKBDbl", "GrantedWorkspaceMemoryKBDbl", "OptimizerMemoryKBDbl", "SQLCacheMemoryKBDbl", "MemoryGrantsOutstandingDbl", "MemoryGrantsPendingDbl", "TargetServerMemoryKBDbl", "TotalServerMemoryKBDbl", "MaximumWorkspaceMemoryKBDbl"],
-        "hint_columns": ["ConnectionMemoryKBDbl", "GrantedWorkspaceMemoryKBDbl", "OptimizerMemoryKBDbl", "SQLCacheMemoryKBDbl", "MemoryGrantsOutstandingDbl", "MemoryGrantsPendingDbl", "TargetServerMemoryKBDbl", "TotalServerMemoryKBDbl", "MaximumWorkspaceMemoryKBDbl"]
+        "name": "Stolen Server Memory",
+        "chart_columns": ["ConnectionMemoryKBDbl", "GrantedWorkspaceMemoryKBDbl", "OptimizerMemoryKBDbl", "SQLCacheMemoryKBDbl", "LockMemoryKBDbl"],
+        "hint_columns": ["ConnectionMemoryKBDbl", "GrantedWorkspaceMemoryKBDbl", "OptimizerMemoryKBDbl", "SQLCacheMemoryKBDbl", "LockMemoryKBDbl"]
     ],
     [
         "type": "line",
-        "name": "Lock Allocated",
-        "chart_columns": ["LockMemoryKBDbl", "LockBlocksAllocatedDbl", "LockOwnerBlocksAllocatedDbl", "LockBlocksDbl", "LockOwnerBlocksDbl"],
-        "hint_columns": ["LockMemoryKBDbl", "LockBlocksAllocatedDbl", "LockOwnerBlocksAllocatedDbl", "LockBlocksDbl", "LockOwnerBlocksDbl"]
+        "name": "Number of Block Lock",
+        "chart_columns": ["LockBlocksAllocatedDbl", "LockOwnerBlocksAllocatedDbl", "LockBlocksDbl", "LockOwnerBlocksDbl"],
+        "hint_columns": ["LockBlocksAllocatedDbl", "LockOwnerBlocksAllocatedDbl", "LockBlocksDbl", "LockOwnerBlocksDbl"]
+    ],
+    [
+        "type": "line",
+        "name": "Grants Workspace Memory",
+        "chart_columns": ["MemoryGrantsOutstandingDbl", "MemoryGrantsPendingDbl"],
+        "hint_columns": ["MemoryGrantsOutstandingDbl", "MemoryGrantsPendingDbl"]
     ]
 ]
 

@@ -12,17 +12,17 @@
  * @targetVersion 9.1
  * @return サンプリング毎に1レコードのデータを取得します。
  * @returnParam BufferHitRatePct バッファヒット率
- * @returnParam IncreaseBlocksFetchVal ブロック要求数
- * @returnParam IncreaseBlockHitVal ブロックヒット数
+ * @returnParam BlocksFetchCnt ブロック要求数
+ * @returnParam BlocksHitCnt ブロックヒット数
  * @returnParam BlocksFetchPerSecVal 1秒あたりのブロック要求数
  * @returnParam BlocksHitPerSecVal 1秒あたりのブロックヒット数
  * @returnParam AccumulateBufferHitRatePct バッファヒット率 (累積値)
- * @returnParam TotalBlocksFetchCumCnt ブロック要求数(累積値)
- * @returnParam TotalBlocksHitCumCnt ブロックヒット数 (累積値)
+ * @returnParam BlocksFetchCumCnt ブロック要求数(累積値)
+ * @returnParam BlocksHitCumCnt ブロックヒット数 (累積値)
  */
 JOB = [name:"Postgres.Performance.Buffer_Cache_Hit"]
 FETCHACTION = {
-	def resultData = sql.rows ('''
+	def resultData = sql.rows (''' 
 								SELECT
 									(
 										CASE
@@ -30,21 +30,21 @@ FETCHACTION = {
 											ELSE SUM(pg_stat_get_db_blocks_fetched(d.oid))
 										END
 									)
-									as "TotalBlocksFetchCumCnt",
+									as "BlocksFetchCumCnt",
 									(
 										CASE
 											WHEN SUM(pg_stat_get_db_blocks_hit(d.oid)) IS NULL THEN 0
 											ELSE SUM(pg_stat_get_db_blocks_hit(d.oid))
 										END
-									)as "TotalBlocksHitCumCnt",
-									(
-										CASE
+									)as "BlocksHitCumCnt",
+									( 
+										CASE 
 											WHEN SUM(pg_stat_get_db_blocks_fetched(d.oid)) = 0 THEN 0
 											WHEN SUM(pg_stat_get_db_blocks_fetched(d.oid)) IS NULL THEN 0
 											ELSE SUM(pg_stat_get_db_blocks_hit(d.oid))/ SUM(pg_stat_get_db_blocks_fetched(d.oid))*100
 										END
 									 )
-									AS "AccumulateBufferHitRatePct"
+									AS "BufferHitRatioCumPct"
 								FROM pg_database d where datname <> 'postgres' and datistemplate = false;
 								''');
 	return resultData
@@ -53,22 +53,33 @@ ACCUMULATE = {
 	assert interval != null : "First time ,we can not get meaniningful values"
 	assert (prevOUTPUT != null && prevOUTPUT[0] != null ) : "Can not get previous monitoring data !"
 	OUTPUT.each{ rec ->
-		rec['IncreaseBlocksFetchVal'] = rec['TotalBlocksFetchCumCnt'] - prevOUTPUT[0]['TotalBlocksFetchCumCnt']
-		rec['IncreaseBlockHitVal'] = rec['TotalBlocksHitCumCnt'] - prevOUTPUT[0]['TotalBlocksHitCumCnt']
-		if(rec['IncreaseBlocksFetchVal'] != 0) {
-			rec['BufferHitRatePct'] = rec['IncreaseBlockHitVal'] / rec['IncreaseBlocksFetchVal'] * 100
+		rec['BlocksFetchCnt'] = rec['BlocksFetchCumCnt'] - prevOUTPUT[0]['BlocksFetchCumCnt']
+		rec['BlocksHitCnt'] = rec['BlocksHitCumCnt'] - prevOUTPUT[0]['BlocksHitCumCnt']
+		if(rec['BlocksFetchCnt'] != 0) {
+			rec['BufferHitRatioPct'] = rec['BlocksHitCnt'] / rec['BlocksFetchCnt'] * 100
 		} else {
-			rec['BufferHitRatePct'] = null
+			rec['BufferHitRatioPct'] = null
 		}
-		rec['BlocksHitPerSecVal'] = rec['IncreaseBlockHitVal']/interval
-		rec['BlocksFetchPerSecVal']  = rec['IncreaseBlocksFetchVal']/interval
+		rec['BlocksHitRate'] = rec['BlocksHitCnt']/interval
+		rec['BlocksFetchRate']  = rec['BlocksFetchCnt']/interval
 	}
-
+	
 }
-KEYEXPR = [_sequence:["BufferHitRatePct","AccumulateBufferHitRatePct"]]
-KEYEXPR._unit = [ "TotalBlocksFetchCumCnt" : "count", "TotalBlocksHitCumCnt": "count", "AccumulateBufferHitRatePct" : "%", "IncreaseBlocksFetchVal": "count/interval",
-	"IncreaseBlockHitVal": "count/interval", "BufferHitRatePct" : "%", "BlocksHitPerSecVal": "count/sec", "BlocksFetchPerSecVal": "count/sec" ]
-KEYEXPR._chart = [[type:"line" ,name:"Total block fetch and block hit",chart_columns:["TotalBlocksFetchCumCnt","TotalBlocksHitCumCnt"]]]
+KEYEXPR = [_sequence:["BufferHitRatioPct","BufferHitRatioCumPct"]]
+KEYEXPR._unit = [ "BlocksFetchCumCnt" : "count", "BlocksHitCumCnt": "count", "BufferHitRatioCumPct" : "%", "BlocksFetchCnt": "count/interval", 
+	"BlocksHitCnt": "count/interval", "BufferHitRatioPct" : "%", "BlocksHitRate": "count/sec", "BlocksFetchRate": "count/sec" ]
+KEYEXPR._chart = [
+	[
+		type:"line",
+		name:"Buffer Hit Ratio Percent",
+		chart_columns:["BufferHitRatioPct"]
+	],
+	[
+		type:"line",
+		name:"Total block fetch and block hit",
+		chart_columns:["BlocksFetchCnt","BlocksHitCnt"]
+	]
+]
 SENDTYPE = "Store"
 DBTYPE = "@PGSQL"
 MONITORINGTYPE = "@DB"

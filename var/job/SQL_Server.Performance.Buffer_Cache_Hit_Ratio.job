@@ -98,10 +98,21 @@ KEYEXPR = ['_sequence':['CacheHitRatioPct','AccumulateCacheHitRatioPct']]
 KEYEXPR._unit = ["FreeListStallsPerSecVal":"count/sec", "FreePagesCumCnt":"pages", "TotalPagesCumCnt":"pages", "TargetPagesCumCnt":"pages", "DatabasePagesCumCnt":"pages", "StolenPagesCumCnt":"pages", "LazyWritesPerSecVal":"count/sec", "CheckpointPagesPerSecVal":"count/sec", "PageReadsPerSecVal":"pages/sec", "PageWritesPerSecVal":"pages/sec", "PageLifeExpectancyInt":"sec", "PagesInCacheCnt":"pages/interval", "PagesCnt":"pages/interval", "PagesInCacheCumCnt":"pages", "PagesCumCnt":"pages", "CacheHitRatioPct":"%", "AccumulateCacheHitRatioPct":"%"]
 KEYEXPR._chart = [
     [
-        "type": "bar",
+        "type": "line",
         "name": "Cache Hit Ratio",
-        "chart_columns": ['CacheHitRatioPct','AccumulateCacheHitRatioPct'],
-        "hint_columns": ["PagesInCacheCnt", "PagesCnt", "PagesInCacheCumCnt", "PagesCumCnt", "PageLifeExpectancyInt", "FreeListStallsPerSecVal", "LazyWritesPerSecVal", "CheckpointPagesPerSecVal", "PageReadsPerSecVal", "PageWritesPerSecVal"] 
+        "chart_columns": ["CacheHitRatioPct"],
+        "hint_columns": ["CacheHitRatioPct","PagesCnt", "PagesInCacheCumCnt"] 
+    ],
+    [
+        "type": "line",
+        "name": "Buffer Cache Activity",
+        "chart_columns": ["PageReadsPerSecVal", "PageWritesPerSecVal", "LazyWritesPerSecVal", "CheckpointPagesPerSecVal"],
+        "hint_columns": ["PageReadsPerSecVal", "PageWritesPerSecVal", "LazyWritesPerSecVal", "CheckpointPagesPerSecVal"] 
+    ],
+    [
+        "type": "line",
+        "name": "Page Life Expectancy",
+        "chart_columns": ["PageLifeExpectancyInt"]
     ],
     [
         "type": "pie",
