@@ -359,7 +359,8 @@
         <version>2.4</version>
         <configuration>
           <descriptors>
-            <descriptor>src/assemble/distribution.xml</descriptor>
+            <descriptor>src/assemble/distrib-unix.xml</descriptor>
+            <descriptor>src/assemble/distrib-win.xml</descriptor>
           </descriptors>
         </configuration>
       </plugin>
