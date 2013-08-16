@@ -82,6 +82,12 @@
         <include>org.wiperdog:org.wiperdog.scriptsupport.groovyrunner</include>
       </includes>
     </dependencySet>
+    <dependencySet>
+      <outputDirectory>/lib/java/ext</outputDirectory>
+      <includes>
+        <include>org.apache.felix:org.apache.felix.framework</include>
+      </includes>
+    </dependencySet>
   </dependencySets>
   <fileSets>
     <fileSet>

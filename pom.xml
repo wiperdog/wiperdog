@@ -324,7 +324,16 @@
         <artifactId>httpcore</artifactId>
         <version>4.1</version>
     </dependency>
- 
+    <dependency>
+        <groupId>org.apache.httpcomponents</groupId>
+        <artifactId>httpcore</artifactId>
+        <version>4.1</version>
+    </dependency> 
+    <dependency>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>org.apache.felix.framework</artifactId>
+        <version>3.0.4</version>
+    </dependency>
     <dependency>
     	<groupId>org.wiperdog</groupId>
     	<artifactId>org.wiperdog.configloader</artifactId>
