@@ -103,9 +103,9 @@
         <version>3.1</version>
     </dependency>
     <dependency>
-        <groupId>javax.servlet</groupId>
-        <artifactId>servlet-api</artifactId>
-        <version>2.5</version>
+        <groupId>org.apache.geronimo.specs</groupId>
+        <artifactId>geronimo-servlet_2.5_spec</artifactId>
+        <version>1.2</version>
     </dependency>
     <dependency>
         <groupId>commons-beanutils</groupId>
@@ -337,27 +337,27 @@
     <dependency>
     	<groupId>org.wiperdog</groupId>
     	<artifactId>org.wiperdog.configloader</artifactId>
-    	<version>[0.0,1.0)</version>
+    	<version>0.1.0</version>
     </dependency>
     <dependency>
     	<groupId>org.wiperdog</groupId>
     	<artifactId>org.wiperdog.rshell.api</artifactId>
-    	<version>[0.0,1.0)</version>
+    	<version>0.1.0</version>
     </dependency>
     <dependency>
     	<groupId>org.wiperdog</groupId>
     	<artifactId>org.wiperdog.jobmanager</artifactId>
-    	<version>[0.0,1.0)</version>
+    	<version>0.1.1-SNAPSHOT</version>
     </dependency>
     <dependency>
     	<groupId>org.wiperdog</groupId>
     	<artifactId>org.wiperdog.directorywatcher</artifactId>
-    	<version>[0.0,1.0)</version>
+    	<version>0.1.0</version>
     </dependency>
     <dependency>
     	<groupId>org.wiperdog</groupId>
     	<artifactId>org.wiperdog.scriptsupport.groovyrunner</artifactId>
-    	<version>[0.0,1.0)</version>
+    	<version>0.1.1-SNAPSHOT</version>
     </dependency>
   </dependencies>
   <build>

@@ -50,6 +50,7 @@
         <include>org.ops4j.pax.swissbox:pax-swissbox-property</include>
         <include>org.ops4j.pax.url:pax-url-commons</include>
         <include>org.ops4j.pax.url:pax-url-wrap</include>
+        <include>org.apache.geronimo.specs:geronimo-servlet_2.5_spec</include>
       </includes>
     </dependencySet>
     <dependencySet>
@@ -68,7 +69,6 @@
         <include>org.apache.httpcomponents:httpclient</include>
         <include>xml-resolver:xml-resolver</include>
         <include>org.apache.httpcomponents:httpcore</include>
-        <include>javax.servlet:servlet-api</include>
       </includes>
     </dependencySet>
     <dependencySet>
