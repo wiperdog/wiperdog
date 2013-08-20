@@ -133,6 +133,7 @@ class DefaultJobCaller {
 	 * @param dbInfo connect DB information
 	 * @return resultData data after executing query
 	 */
+	
 	def runQuery(queryString, strQueryVariable, dbInfo) {
 		List resultData = null
 		def binding = instanceJob.getBinding()
@@ -163,6 +164,37 @@ class DefaultJobCaller {
 		return resultData
 	}
 	
+	def runDbExec(queryString, strQueryVariable, dbInfo){
+		def resultData = [:]
+		def binding = instanceJob.getBinding()
+				
+		def conInt = new ConnectionInit()
+		synchronized (mapDBConnections) {
+			def db = conInt.getDbConnection(mapDBConnections, iDBConnectionSource, binding, dbInfo)
+			
+			if (db != null) {
+				try {
+					//Get data
+					if (strQueryVariable == null) {
+						db.execute(queryString)
+					} else {
+						db.execute(queryString, strQueryVariable)
+					}
+					resultData["Result"] = "SUCCESS"
+				} catch (SQLException e) {
+					logger.info (MessageFormat.format(mapMessage['ERR002'], "'" + queryString + "'", e.getErrorCode(), e.getMessage()))
+					isJobFinishedSuccessfully = false
+					resultData["Result"] = "FAIL"
+				}
+			
+			} else {
+				logger.info('after of 20 times of connections, connect to database falsed.')
+				isJobFinishedSuccessfully = false
+				resultData["Result"] = "FAIL"
+			}
+		}
+		return resultData
+	}
 	/**
 	 * Prepare data to run job
 	 * Error messages, math functions, interval, etc..
@@ -227,8 +259,10 @@ class DefaultJobCaller {
 			def mapDest = null
 			def cFetchAction = null
 			def strQuery = null
+			def strDbExec = null			
 			def strFinally = null
 			def strQueryVariable = null
+			def strDbExecVariable = null			
 			def strCon = null
 			def strDbType = null
 			def strHostId = null
@@ -251,10 +285,14 @@ class DefaultJobCaller {
 			cFetchAction = getVarFromBinding(binding, ResourceConstants.DEF_FETCHACTION)
 			//Get QUERY
 			strQuery = getVarFromBinding(binding, ResourceConstants.DEF_QUERY)
+			//Get DBEXEC
+			strDbExec = getVarFromBinding(binding, ResourceConstants.DEF_DBEXEC)			
 			//Get FINALLY
 			strFinally = getVarFromBinding(binding, ResourceConstants.DEF_FINALLY)
 			//Get QUERY_VARIABLE
 			strQueryVariable = getVarFromBinding(binding, ResourceConstants.DEF_QUERY_VARIABLE)
+			//Get DBEXEC_VARIABLE
+			strDbExecVariable = getVarFromBinding(binding, ResourceConstants.DEF_DBEXEC_VARIABLE)			
 			//Get type of DB (ORACLE, MYSQL...)
 			strDbType = getVarFromBinding(binding, ResourceConstants.DEF_DBTYPE)
 			// Get params of job
@@ -320,6 +358,17 @@ class DefaultJobCaller {
 					logger.debug("fileName: " + fileName + " ---End Process Query---")
 				}
 			}
+
+			if (cFetchAction == null && strDbExec != null) {
+				if (strCon == null || strDbType == null || strUser == null) {
+					logger.info (mapMessage['ERR006'])
+				} else {
+					logger.debug("fileName: " + fileName + " ---Start Process DBEXEC---")
+					resultData = runDbExec(strDbExec, strDbExecVariable, dbInfo)
+					logger.debug("fileName: " + fileName + " ---End Process DBEXEC---")
+				}
+			}            
+            			
 			// Get ACCUMULATE
 			strAccumulate = getVarFromBinding(binding, ResourceConstants.DEF_ACCUMULATE)
 			// Get GROUPKEY
