@@ -26,14 +26,6 @@ FETCHACTION = {
 }
 
 KEYEXPR = ['_root':['ParameterName']]
-KEYEXPR._chart = [
-    [
-        "type": "bar",
-        "name": "Parameter Information",
-        "chart_columns": ["ValueInUseInt"],
-        "hint_columns": ["ValueInUseInt", "MaximumInt", "ValueInt", "MinimumInt"]
-    ]
-]
 SENDTYPE = "Store"
 RESOURCEID = "Sr/MsParameter"
 MONITORINGTYPE = "@DB"

@@ -106,7 +106,7 @@ KEYEXPR = ["_root":["ResourceName"],"_sequence":["ResourceUsedPct"]]
 KEYEXPR._unit = ["ResourceUsedPct":"%"]
 KEYEXPR._chart = [
     [
-        "type": "area",
+        "type": "line",
         "name": "Resource Information",
         "chart_columns": ["ResourceUsedPct"],
         "hint_columns": ["LimitVal", "CurrentVal", "ResourceUsedPct"]

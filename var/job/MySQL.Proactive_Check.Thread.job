@@ -9,12 +9,12 @@
  * @returnParam ConnectedCnt The number of currently open connections
  * @returnParam CreatedCumCnt The number of threads created to handle connections
  * @returnParam RunningCnt The number of threads that are not sleeping
- * @returnParam MaxUsedConnectionsCumCnt The maximum number of connections that have been in use simultaneously since the server started.
+ * @returnParam MaxUsedConnectionsCnt The maximum number of connections that have been in use simultaneously since the server started.
  * @returnParam CachedDiffCnt different value with last monitoring time of <code>CachedCnt</code>
  * @returnParam ConnectedDiffCnt different value with last monitoring time of <code>ConnectedCnt</code>
  * @returnParam CreatedCnt different value with last monitoring time of <code>CreatedCumCnt</code>
  * @returnParam RunningDiffCnt different value with last monitoring time of <code>RunningCnt</code>
- * @returnParam MaxUsedConnectionsCnt different value with last monitoring time of <code>MaxUsedConnectionsCumCnt</code>
+ * @returnParam MaxUsedConnectionsDiffCnt different value with last monitoring time of <code>MaxUsedConnectionsCnt</code>
  */
 JOB = [name:"MySQL.Proactive_Check.Thread"]
 FETCHACTION = {
@@ -24,7 +24,7 @@ FETCHACTION = {
 			B.ConnectedCnt As ConnectedCnt, 
 			C.CreatedCumCnt As CreatedCumCnt, 
 			D.RunningCnt As RunningCnt,
-			E.MaxUsedConnectionsCumCnt As MaxUsedConnectionsCumCnt
+			E.MaxUsedConnectionsCnt As MaxUsedConnectionsCnt
 		FROM
 		(SELECT CONVERT(variable_value, UNSIGNED INTEGER) as CachedCnt
 		FROM information_schema.GLOBAL_STATUS G
@@ -38,7 +38,7 @@ FETCHACTION = {
 		(SELECT CONVERT(variable_value, UNSIGNED INTEGER) as RunningCnt
 		FROM information_schema.GLOBAL_STATUS G
 		where G.variable_name = "Threads_running" ) D,
-		(SELECT CONVERT(variable_value, UNSIGNED INTEGER) as MaxUsedConnectionsCumCnt
+		(SELECT CONVERT(variable_value, UNSIGNED INTEGER) as MaxUsedConnectionsCnt
 		FROM information_schema.GLOBAL_STATUS G
 		where G.variable_name = "max_used_connections" ) E
 		;
@@ -53,26 +53,19 @@ ACCUMULATE = {
 		rec['ConnectedDiffCnt'] = rec['ConnectedCnt'] - prevOUTPUT[0]['ConnectedCnt']
 		rec['CreatedCnt'] = rec['CreatedCumCnt'] - prevOUTPUT[0]['CreatedCumCnt']
 		rec['RunningDiffCnt'] = rec['RunningCnt'] - prevOUTPUT[0]['RunningCnt']
-		rec['MaxUsedConnectionsCnt'] = rec['MaxUsedConnectionsCumCnt'] - prevOUTPUT[0]['MaxUsedConnectionsCumCnt']
+		rec['MaxUsedConnectionsDiffCnt'] = rec['MaxUsedConnectionsCnt'] - prevOUTPUT[0]['MaxUsedConnectionsCnt']
 	}
 }
 KEYEXPR=[_sequence:["RunningCnt"]]
 KEYEXPR._unit = ["CachedCnt": "count", "ConnectedCnt": "count", "CreatedCumCnt": "count", "RunningCnt": "count",
-		"MaxUsedConnectionsCumCnt":"count","CachedDiffCnt":"count/interval","ConnectedDiffCnt":"count/interval"
+		"MaxUsedConnectionsCnt":"count","CachedDiffCnt":"count/interval","ConnectedDiffCnt":"count/interval"
 		,"CreatedCnt":"count/interval","RunningDiffCnt":"count/interval"
-		, "MaxUsedConnectionsCnt":"count/interval" ]
+		, "MaxUsedConnectionsDiffCnt":"count/interval" ]
 KEYEXPR._chart = [
     [
         "type": "line",
         "name": "Thread information",
-        "chart_columns": ["CachedCnt","ConnectedCnt","RunningCnt"],
-        "hint_columns": ["CachedCnt","ConnectedCnt","RunningCnt"]
-    ],
-    [
-        "type": "bar",
-        "name": "Thread information",
-        "chart_columns": ["CreatedCumCnt", "MaxUsedConnectionsCumCnt"],
-        "hint_columns" : ["CreatedCumCnt", "MaxUsedConnectionsCumCnt"]
+        "chart_columns": ["CachedCnt","ConnectedCnt","RunningCnt","MaxUsedConnectionsCnt"]
     ]
 ]
 SENDTYPE = "Store"

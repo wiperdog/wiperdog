@@ -43,7 +43,7 @@ KEYEXPR._chart = [
     [
         "type": "line",
         "name": "Batch Request",
-        "chart_columns": ["BatchRequestsCnt"]
+        "chart_columns": ["BatchRequestsCumCnt"]
     ]
 ]
 SENDTYPE = "Store"

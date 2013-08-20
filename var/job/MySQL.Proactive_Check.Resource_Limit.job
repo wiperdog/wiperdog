@@ -84,14 +84,13 @@ FETCHACTION={
 	return resultData
 }
 KEYEXPR = [_root:["ResourceName"]]
-KEYEXPR._unit = ["LimitVal":"count", "CurrentVal":"count","ResourceUsedPct":"%"]
+KEYEXPR._unit = ["LimitVal":"count", "CurrentVal":"count","ResourceUsedPct":"%", "FreeVal":"count"]
 SENDTYPE = "Store"
 KEYEXPR._chart = [
     [
-        "type": "pie",
-        "name": "Resource limitation",
-        "chart_columns": ["CurrentVal","FreeVal"],
-        "hint_columns": ["CurrentVal","FreeVal"]
+        "type": "line",
+        "name": "Resource usage",
+        "chart_columns": ["ResourceUsedPct"]
     ]
 ]
 DBTYPE = "@MYSQL"

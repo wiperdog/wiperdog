@@ -40,8 +40,7 @@ KEYEXPR._chart = [
     [
         "type": "line",
         "name": "SQL Execution",
-        "chart_columns": ["ExecutionsCnt", "ExecutionsRateVal"],
-        "hint_columns": ["ExecutionsCnt", "ExecutionsRateVal"]
+        "chart_columns": ["ExecutionsCnt"]
     ]
 ]
 SENDTYPE = "Store"

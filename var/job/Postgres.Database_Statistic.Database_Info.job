@@ -85,11 +85,21 @@ ACCUMULATE = {
 				rec['AverageIncreaseDatabaseSizeVal'] = (rec['IncreaseDatabaseSizeVal']/interval).doubleValue()
 				rec['NumberOfCommitedCnt'] = rec['NumOfCommitedCumCnt'] - prevOUTPUT[rec.DatabaseName]['NumOfCommitedCumCnt']
 				rec['NumberOfRollbackCnt'] = rec['NumOfRollbackCumCnt'] - prevOUTPUT[rec.DatabaseName]['NumOfRollbackCumCnt']
+				
+				rec['NumOfReturnedRowCnt'] = rec['NumOfReturnedRowCumCnt'] - prevOUTPUT[rec.DatabaseName]['NumOfReturnedRowCumCnt']
+				rec['NumOfInsertedRowCnt'] = rec['NumOfInsertedRowCumCnt'] - prevOUTPUT[rec.DatabaseName]['NumOfInsertedRowCumCnt']
+				rec['NumOfUpdatedRowCnt'] = rec['NumOfUpdatedRowCumCnt'] - prevOUTPUT[rec.DatabaseName]['NumOfUpdatedRowCumCnt']
+				rec['NumOfDeletedRowCnt'] = rec['NumOfDeletedRowCumCnt'] - prevOUTPUT[rec.DatabaseName]['NumOfDeletedRowCumCnt']
 			} else {
 				rec['IncreaseDatabaseSizeVal'] = rec['DatabaseSizeCumVal']
 				rec['AverageIncreaseDatabaseSizeVal'] = (rec['IncreaseDatabaseSizeVal']/interval).doubleValue()
 				rec['NumberOfCommitedCnt'] = rec['NumOfCommitedCumCnt']
 				rec['NumberOfRollbackCnt'] = rec['NumOfRollbackCumCnt']
+				
+				rec['NumOfReturnedRowCnt'] = rec['NumOfReturnedRowCumCnt']
+				rec['NumOfInsertedRowCnt'] = rec['NumOfInsertedRowCumCnt']
+				rec['NumOfUpdatedRowCnt'] = rec['NumOfUpdatedRowCumCnt']
+				rec['NumOfDeletedRowCnt'] = rec['NumOfDeletedRowCumCnt']
 			}
 		}
 	}
@@ -99,8 +109,18 @@ KEYEXPR._unit = ["DatabaseSizeCumVal": "KB", "NumOfCurrentConnectionsCnt": "coun
 	"NumOfBlockReadCnt": "count", "NumOfBufferHitCnt": "count", "NumOfReturnedRowCumCnt": "count", "NumOfInsertedRowCumCnt": "count",
 	"NumOfUpdatedRowCumCnt": "count", "NumOfDeletedRowCumCnt": "count", "NumOfCanceledQueryCumCnt": "count", "IncreaseDatabaseSizeVal": "KB/interval",
 	"AverageIncreaseDatabaseSizeVal": "KB/sec", "NumberOfCommitedCnt": "count/interval", "NumberOfRollbackCnt": "count/interval" ]
-KEYEXPR._chart = [[type:"line",name:"Database Information",chart_columns:["NumOfReturnedRowCumCnt","NumOfInsertedRowCumCnt","NumOfUpdatedRowCumCnt","NumOfDeletedRowCumCnt"]],
-                  [type:"bar",name:"Database Information - Database Access" , chart_columns:["NumOfBlockReadCnt","NumOfBufferHitCnt"]]]
+KEYEXPR._chart = [
+		[
+			type:"area",
+			name:"Transaction Informations",
+			chart_columns:["NumberOfCommitedCnt", "NumberOfRollbackCnt"]
+		],
+		[
+			type:"area",
+			name:"Query Informations",
+			chart_columns:["NumOfReturnedRowCnt", "NumOfInsertedRowCnt", "NumOfUpdatedRowCnt", "NumOfDeletedRowCnt"]
+		]
+	]
 SENDTYPE = "Store"
 DBTYPE = "@PGSQL"
 MONITORINGTYPE = "@DB"

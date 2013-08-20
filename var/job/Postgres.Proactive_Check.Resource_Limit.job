@@ -29,7 +29,18 @@ FETCHACTION = {
 }
 KEYEXPR = [_sequence:["PercentSessionPct","CurrentSessionCnt","LimitSessionCnt"]]
 KEYEXPR._unit = [ "LimitSessionCnt" : "count", "CurrentSessionCnt": "count", "PercentSessionPct" : "%" ]
-KEYEXPR._chart = [[type:"line",name:"Resource Limit" , chart_columns:["CurrentSessionCnt"]] ]
+KEYEXPR._chart = [
+	[
+		type:"line",
+		name:"Resource_Limit: Number Of Current Session", 
+		chart_columns:["CurrentSessionCnt"]
+	],
+	[
+		type:"line",
+		name:"Resource_Limit: Limit Session/Current Session Ratio", 
+		chart_columns:["PercentSessionPct"]
+	]
+]
 SENDTYPE = "Store"
 DBTYPE = "@PGSQL" 
 MONITORINGTYPE = "@DB"

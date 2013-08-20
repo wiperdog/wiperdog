@@ -47,13 +47,13 @@ KEYEXPR._unit = [ "AbortedClientsCumCnt" : "count" , "AbortedConnectsCumCnt" : "
 KEYEXPR._chart = [
     [
         "type": "line",
-        "name": "Aborted Information",
+        "name": "Aborted Information Differ",
         "chart_columns": ["AbortedClientsCnt", "AbortedConnectsCnt"],
         "hint_columns": ["AbortedClientsCnt", "AbortedConnectsCnt"]
     ],
      [
         "type": "line",
-        "name": "Aborted Information",
+        "name": "Aborted Information Cummulative",
         "chart_columns": ["AbortedClientsCumCnt", "AbortedConnectsCumCnt"],
         "hint_columns": ["AbortedClientsCumCnt", "AbortedConnectsCumCnt"]
     ]
