@@ -13,10 +13,9 @@
  * @returnParam LocationAddr ファイルの場所
  * @returnParam CurrentUsedSizePageInt 現在の使用サイズ(ページ単位)
  * @returnParam CurrentFreeSizePageInt 現在の空きサイズ(ページ単位)
- * @returnParam CurrentTotalSizePageDbl 現在のファイルサイズ(ページ単位)
  * @returnParam CurrentUsedPct 現在の使用率
- * @returnParam MaxTotalSizePageDbl 最大拡張時のファイルサイズ(ページ単位)
- * @returnParam MaxFreeSizePageDbl 最大拡張時のファイルの空きサイズ(ページ単位)
+ * @returnParam MaxTotalSizePageInt 最大拡張時のファイルサイズ(ページ単位)
+ * @returnParam MaxFreeSizePageInt 最大拡張時のファイルの空きサイズ(ページ単位)
  * @returnParam MaxUsedPct 最大拡張時のファイルサイズでの使用率
  */
 
@@ -32,7 +31,7 @@ FETCHACTION = {
                     CurrentUsedSizePageInt int,
                     CurrentFreeSizePageInt int, 
                     CurrentUsedPct numeric(5,2),
-                    MaxTotalSizePageDbl int
+                    MaxTotalSizePageInt int
  			   )
 		DECLARE @db varchar(50)
 		DECLARE @SqlQuery varchar(max)
@@ -55,7 +54,7 @@ FETCHACTION = {
                                                        CurrentUsedSizePageInt, 
                                                        CurrentFreeSizePageInt, 
                                                        CurrentUsedPct = convert(numeric(10,2),(CurrentUsedSizePageInt/(FileSizePageInt)))*100,
-                                                       MaxTotalSizePageDbl
+                                                       MaxTotalSizePageInt
                                                from
                                                           (select
                                                                         \'\'\' + @db +\'\'\' as DBName,
@@ -64,7 +63,7 @@ FETCHACTION = {
                                                                         convert(numeric(10,2),sum((a.size-fileproperty( a.name,\'\'\' + \'SpaceUsed\' + \'\'\')))) as CurrentFreeSizePageInt,
                                                                         a.name as DBFileName,
             															a.filename as LocationAddr,
-                                                                        a.maxsize as MaxTotalSizePageDbl
+                                                                        a.maxsize as MaxTotalSizePageInt
                                                            from
                                                                         sysfiles a
                                                            group by
@@ -93,36 +92,44 @@ FETCHACTION = {
 	
 	def location
 	def DiskFreeSizePage
-	def MaxFreeSizePageDbl
+	def MaxFreeSizePageInt
 	def MaxUsedPct
-	def CurrentUsedSizeDbl
-	def FileSize
+	def UsedPct
 	resultData.each {
 		location = it.LocationAddr
 		File file = new File(location)
 		DiskFreeSizePage = file.getFreeSpace()/(8*1024)
-		FileSize = new java.math.BigDecimal(it.FileSizePageInt)
-		if(it.MaxTotalSizePageDbl == -1 || it.MaxTotalSizePageDbl > DiskFreeSizePage) {
-			it.MaxTotalSizePageDbl = FileSize + DiskFreeSizePage
+		if(it.MaxTotalSizePageInt == -1 || it.MaxTotalSizePageInt > DiskFreeSizePage) {
+			it.MaxTotalSizePageInt = it.FileSizePageInt + DiskFreeSizePage
 		}
-		CurrentUsedSizeDbl = new java.math.BigDecimal(it.CurrentUsedSizePageInt)
-		MaxFreeSizePageDbl = it.MaxTotalSizePageDbl - CurrentUsedSizeDbl
-		MaxUsedPct = CurrentUsedSizeDbl*100/it.MaxTotalSizePageDbl
-		it['MaxFreeSizePageDbl'] = MaxFreeSizePageDbl
+		MaxFreeSizePageInt = it.MaxTotalSizePageInt - it.CurrentUsedSizePageInt
+		MaxUsedPct = it.CurrentUsedSizePageInt*100/it.MaxTotalSizePageInt
+		it['MaxFreeSizePageInt'] = MaxFreeSizePageInt
 		it['MaxUsedPct'] = MaxUsedPct
-		it['CurrentTotalSizePageDbl'] = it.CurrentUsedSizePageInt + it.CurrentFreeSizePageInt
 	}
 	return resultData
 }
 
 KEYEXPR = ['_root':['DBName','DBFileName'], '_sequence':['CurrentUsedPct','FileSizePageInt','CurrentUsedSizePageInt']]
-KEYEXPR._unit = ["CurrentUsedSizePageInt":"pages","CurrentFreeSizePageInt":"pages","CurrentUsedPct":"%","MaxTotalSizePageDbl": "pages","MaxFreeSizePageDbl":"pages","CurrentTotalSizePageDbl":"pages","MaxUsedPct":"%"]
+KEYEXPR._unit = ["CurrentUsedSizePageInt":"pages","CurrentFreeSizePageInt":"pages","CurrentUsedPct":"%","MaxTotalSizePageInt": "pages","MaxFreeSizePageInt":"pages","FileSizePageInt":"pages","MaxUsedPct":"%"]
 KEYEXPR._chart = [
-    [
+	[
         "type": "pie",
         "name": "Current Size Page",
         "chart_columns": ["CurrentUsedSizePageInt", "CurrentFreeSizePageInt"],
         "hint_columns": ["CurrentUsedSizePageInt", "CurrentFreeSizePageInt", "CurrentTotalSizePageDbl", "MaxTotalSizePageDbl", "MaxFreeSizePageDbl", "MaxUsedPct"]
+    ],
+    [
+        "type": "pie",
+        "name": "Current Used Size vs Max Free Size",
+        "chart_columns": ["CurrentUsedSizePageInt", "MaxFreeSizePageInt"],
+        "hint_columns": ["CurrentUsedSizePageInt", "FileSizePageInt", "MaxTotalSizePageInt", "MaxFreeSizePageInt"]
+    ],
+    [
+        "type": "line",
+        "name": "Database Free Utilization Rate",
+        "chart_columns": ["CurrentUsedPct", "MaxUsedPct"],
+        "hint_columns": ["CurrentUsedPct", "MaxUsedPct", "MaxTotalSizePageInt", "MaxFreeSizePageInt", "FileSizePageInt", "CurrentUsedSizePageInt"]
     ]
 ]
 SENDTYPE = "Store"

@@ -52,16 +52,18 @@ ACCUMULATE = {
 			   		location = sql.datadirectory
 			   	}
 			   	File file = new File(location)
-			   	assert file.getUsableSpace() != 0, "Cannot get usable space of this file: $file"
 	       		rec['CurrentFreeSizeKbLong'] = (file.getUsableSpace())/1024
 	       		rec['TotalSizeKbVal'] = rec['CurrentFreeSizeKbLong'] + rec['CurrentUsedSizeKbLong']
-	       		rec['UsedPct'] = rec['CurrentUsedSizeKbLong'] / rec['TotalSizeKbVal'] * 100
+	       		if(rec['TotalSizeKbVal'] != 0) {
+	       			rec['UsedPct'] = rec['CurrentUsedSizeKbLong'] / rec['TotalSizeKbVal'] * 100
+		       	} else {
+		       		rec['UsedPct'] = null
+		       	}
 	       		// If add new tablespace
 			   	if(prevOUTPUT[rec.TablespaceName] == null || prevOUTPUT[rec.TablespaceName] == "") {
 			   		rec['DiffUsedSizeKbVal'] = rec['CurrentUsedSizeKbLong']
 			   		rec['DiffSizePerSecPct'] = rec['DiffUsedSizeKbVal'] / interval
 				} else {
-
 		       		rec['DiffUsedSizeKbVal'] = rec['CurrentUsedSizeKbLong'] - prevOUTPUT[rec.TablespaceName]['CurrentUsedSizeKbLong']
 		       		rec['DiffSizePerSecPct'] = rec['DiffUsedSizeKbVal'] / interval
 		       	}
@@ -70,9 +72,18 @@ ACCUMULATE = {
 }
 KEYEXPR = [_root:["TablespaceName"],_sequence:["UsedPct","TotalSizeKbVal","CurrentUsedSizeKbLong"]]
 KEYEXPR._unit = [ "CurrentUsedSizeKbLong" : "KB", "CurrentFreeSizeKbLong": "KB", "TotalSizeKbVal" : "KB", "UsedPct": "%", "DiffUsedSizeKbVal": "KB/interval", "DiffSizePerSecPct": "KB/sec" ]
-KEYEXPR._chart = [[type:"pie" ,name:"Tablespace Free Size Information",chart_columns:["CurrentUsedSizeKbLong","CurrentFreeSizeKbLong"]],
-                 [type:"line" ,name:"Tablespace Free Size Information",chart_columns:["CurrentUsedSizeKbLong","CurrentFreeSizeKbLong"]]
-				 ]
+KEYEXPR._chart = [
+	[
+		type:"line",
+		name:"Use Size Of Tablespace At Current Time",
+		chart_columns:["CurrentUsedSizeKbLong"]
+	],
+	[
+		type:"bar",
+		name:"Use Size Of Tablespace At Current Time",
+		chart_columns:["CurrentUsedSizeKbLong"]
+	]
+]
 SENDTYPE = "Store"
 DBTYPE = "@PGSQL"
 MONITORINGTYPE = "@DB"
