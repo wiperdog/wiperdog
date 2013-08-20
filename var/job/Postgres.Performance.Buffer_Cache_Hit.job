@@ -11,12 +11,12 @@
  * </p>
  * @targetVersion 9.1
  * @return サンプリング毎に1レコードのデータを取得します。
- * @returnParam BufferHitRatePct バッファヒット率
+ * @returnParam BufferHitRatioPct バッファヒット率
  * @returnParam BlocksFetchCnt ブロック要求数
  * @returnParam BlocksHitCnt ブロックヒット数
- * @returnParam BlocksFetchPerSecVal 1秒あたりのブロック要求数
- * @returnParam BlocksHitPerSecVal 1秒あたりのブロックヒット数
- * @returnParam AccumulateBufferHitRatePct バッファヒット率 (累積値)
+ * @returnParam BlocksFetchRate 1秒あたりのブロック要求数
+ * @returnParam BlocksHitRate 1秒あたりのブロックヒット数
+ * @returnParam BufferHitRatioCumPct バッファヒット率 (累積値)
  * @returnParam BlocksFetchCumCnt ブロック要求数(累積値)
  * @returnParam BlocksHitCumCnt ブロックヒット数 (累積値)
  */

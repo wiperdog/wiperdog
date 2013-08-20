@@ -78,9 +78,15 @@ FETCHACTION = {
 KEYEXPR = [:]
 KEYEXPR._unit = ["ConnectionMemoryKBDbl":"KB", "GrantedWorkspaceMemoryKBDbl":"KB", "LockMemoryKBDbl":"KB", "LockBlocksAllocatedDbl":"blocks", "LockOwnerBlocksAllocatedDbl":"blocks", "LockBlocksDbl":"blocks", "LockOwnerBlocksDbl":"blocks", "MaximumWorkspaceMemoryKBDbl":"KB", "MemoryGrantsOutstandingDbl":"count", "MemoryGrantsPendingDbl":"count", "OptimizerMemoryKBDbl":"KB", "SQLCacheMemoryKBDbl":"KB", "TargetServerMemoryKBDbl":"KB", "TotalServerMemoryKBDbl":"KB"]
 KEYEXPR._chart = [
-    [
+	[
         "type": "line",
-        "name": "Stolen Server Memory",
+        "name": "Memory Component Information",
+        "chart_columns": ["TargetServerMemoryKBDbl", "TotalServerMemoryKBDbl"],
+        "hint_columns": ["TargetServerMemoryKBDbl", "TotalServerMemoryKBDbl"]
+    ],
+    [
+        "type": "area",
+        "name": "Total Server Memory Information",
         "chart_columns": ["ConnectionMemoryKBDbl", "GrantedWorkspaceMemoryKBDbl", "OptimizerMemoryKBDbl", "SQLCacheMemoryKBDbl", "LockMemoryKBDbl"],
         "hint_columns": ["ConnectionMemoryKBDbl", "GrantedWorkspaceMemoryKBDbl", "OptimizerMemoryKBDbl", "SQLCacheMemoryKBDbl", "LockMemoryKBDbl"]
     ],

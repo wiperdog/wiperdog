@@ -45,17 +45,16 @@ FETCHACTION = {
 	assert interval != null, "First time, we cannot return calculating values"
 	return finalResultData
 }
-KEYEXPR = [_root:['WaitTypeName'], _sequence:['WaitingTasksCnt', 'WaitTimeMsSize']]
+KEYEXPR = [_root:['WaitTypeName'], _sequence:['WaitingTasksCumCnt', 'WaitTimeMsCumSize']]
 KEYEXPR._unit = ["WaitingTasksCumCnt":"count", "WaitingTasksCnt":"count/interval", "WaitTimeMsCumSize":"ms", "WaitTimeMsSize":"ms/interval"]
 KEYEXPR._chart = [
     [
-        "type": "bar",
+        "type": "line",
         "name": "Wait status",
-        "chart_columns": ["WaitingTasksCnt","WaitTimeMsSize"],
+        "chart_columns": ["WaitingTasksCumCnt","WaitTimeMsCumSize"],
         "hint_columns": ["WaitingTasksCnt","WaitTimeMsSize", "WaitingTasksCumCnt", "WaitTimeMsCumSize"] 
     ]
 ]
-
 
 SENDTYPE = "Store"
 RESOURCEID = "Pf/MsWaitStat"

@@ -23,8 +23,6 @@
  * @returnParam WriteRequestsRateDbl 前監視回から今回まで一秒のバッファ プールに リクエスト書いた回数
  * @returnParam WaitFreeCnt 前監視回から今回まで書くため待つ回数
  * @returnParam WaitFreeRateDbl 前監視回から今回まで一秒の書くため待つ回数
- * @returnParam PagesDataCnt 前監視回から今回までデータのページ数
- * @returnParam PagesDirtyCnt  前監視回から今回まで 汚いページ数
  */
 JOB = [name:"MySQL.Performance.InnoDBBufferPool"]
 FETCHACTION={
@@ -89,8 +87,7 @@ FETCHACTION={
 		
 		resultData['WriteRequestsCnt'] = resultData['WriteRequestsCumCnt'] - prev_innodb_buffer_pool_write_requests
 		resultData['WaitFreeCnt'] = resultData['WaitFreeCumCnt'] - prev_innodb_buffer_pool_wait_free
-		resultData['PagesDataCnt'] = resultData['PagesDataCnt'] - prev_innodb_buffer_pool_pages_data
-		resultData['PagesDirtyCnt'] = resultData['PagesDirtyCnt'] - prev_innodb_buffer_pool_pages_dirty
+		
 		
 		resultData['ReadRequestsRateDbl'] = resultData['PagesDirtyCnt'] / interval	
 		resultData['ReadsRateDbl'] = resultData['ReadsCnt'] / interval
@@ -128,21 +125,31 @@ KEYEXPR._unit = ["ReadRequestsCumCnt" : "count" , "ReadsCumCnt" : "count" , "Wri
 	,"PagesFreeCnt" :"pages" ,"PagesDataCnt":"pages" , "PagesDirtyCnt" : "pages"  , "ReadRequestsRateDbl" : "count/sec" 
 	, "ReadsRateDbl" : "count/sec" ,"WriteRequestsRateDbl" : "count/sec" , "WaitFreeRateDbl" : "count/sec" , "HitRatioPct" : "%" 
 	,"WaitFreeRatioPct" : "%" , "BufferUsedRatioPct" : "%" , "DirtyRatioPct" : "%" , "ReadRequestsCnt" : "count/interval" 
-	, "ReadsCnt" : "count/interval" , "WriteRequestsCnt" : "count/interval" , "WaitFreeCnt" : "count/interval" 
-	, "PagesDataCnt" : "pages/interval" , "PagesDirtyCnt" : "pages/interval" ]
+	, "ReadsCnt" : "count/interval" , "WriteRequestsCnt" : "count/interval" , "WaitFreeCnt" : "count/interval"]
 KEYEXPR._chart = [
-	
-	[
+    [
         "type": "line",
-        "name": "Buffer information",
-        "chart_columns": ["BufferUsedRatioPct","HitRatioPct", "DirtyRatioPct"],
-        "hint_columns":  ["BufferUsedRatioPct","HitRatioPct", "DirtyRatioPct"]
+        "name": "Percentage of buffer hit ratio",
+        "chart_columns": ["HitRatioPct"],
+        "hint_columns":  ["HitRatioPct"]
+    ],
+    [
+        "type": "line",
+        "name": "Percentage of buffer used ratio",
+        "chart_columns": ["BufferUsedRatioPct"],
+        "hint_columns":  ["BufferUsedRatioPct"]
+    ],
+    [
+        "type": "line",
+        "name": "Percentage of buffer dirty ratio",
+        "chart_columns": ["DirtyRatioPct"],
+        "hint_columns":  ["DirtyRatioPct"]
     ],
     [
         "type": "area",
-        "name": "Buffer Pool used ratio",
-        "chart_columns": ["PagesData", "PagesMisc", "PagesFree"],
-        "hint_columns": ["PagesData", "PagesMisc", "PagesFree"]
+        "name": "Buffer pool components",
+        "chart_columns": ["PagesDataCnt", "PagesDirtyCnt", "PagesFreeCnt"],
+        "hint_columns": ["PagesDataCnt", "PagesDirtyCnt", "PagesFreeCnt"]
     ],
     [
         "type": "area",

@@ -110,7 +110,7 @@ KEYEXPR._chart = [
         "hint_columns": ["PhysicalName", "ReadsCnt","WritesCnt", "ReadsCumCnt", "WritesCumCnt", "ReadTimeDbl", "WriteTimeDbl"] 
     ],
     [
-        "type": "bar",
+        "type": "line",
         "name": "Read/Write Byte",
         "chart_columns": ["BytesReadsCnt", "BytesWritesCnt"],
         "hint_columns": ["PhysicalName", "BytesReadsCnt", "BytesWritesCnt", "BytesReadCumCnt", "BytesWriteCumCnt", "ReadsRateVal", "BytesReadRateVal", "BytesOnDiskDbl", "WritesRateVal", "BytesWritesRateVal"]
@@ -118,7 +118,7 @@ KEYEXPR._chart = [
     [
         "type": "area",
         "name": "Average I/O Time",
-        "chart_columns": ["AverageIOTimeDbl", "AverageIOTimeCumDbl"],
+        "chart_columns": ["AverageIOTimeDbl"],
         "hint_columns": ["PhysicalName", "TotalTimeIODbl", "AverageIOTimeDbl", "AverageIOTimeCumDbl"]
     ]
 ]

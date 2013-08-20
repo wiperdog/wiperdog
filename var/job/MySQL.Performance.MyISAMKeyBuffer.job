@@ -97,18 +97,24 @@ KEYEXPR._unit = ["ReadsCumCnt" : "count" , "ReadRequestsCumCnt" : "count","Write
 	"ReadsRateDbl":"count/sec", "ReadRequestsRateDbl":"count/sec", "WritesRateDbl":"count/sec", "WriteRequestsRateDbl":"count/sec",
 	"ReadsCnt":"count/interval", "ReadRequestsCnt":"count/interval", "WritesCnt":"count/interval", "WriteRequestsCnt":"count/interval", "UsedPct":"%"] 
 KEYEXPR._chart = [
-    [
-        "type": "line",
-        "name": "Buffer hit information",
-        "chart_columns": ["BufferHitPct","FragmentationPct"],
-        "hint_columns": ["BufferHitPct","FragmentationPct"]
-    ],
-    [
+	[
         "type": "line",
         "name": "Buffer usage(%) information",
         "chart_columns": ["UsedPct"],
         "hint_columns": ["UsedSize","TotalSize"]
     ],
+    [
+        "type": "line",
+        "name": "Buffer hit information",
+        "chart_columns": ["BufferHitPct"],
+        "hint_columns": ["BufferHitPct"]
+    ],
+    [
+        "type": "line",
+        "name": "Fragmentation Percentage",
+        "chart_columns": ["FragmentationPct"],
+        "hint_columns": ["FragmentationPct"]
+    ],    
     [
         "type": "area",
         "name": "Key Buffer Activity",
@@ -117,7 +123,7 @@ KEYEXPR._chart = [
     ],
     [
         "type": "area",
-        "name": "MyISAM key buffer",
+        "name": "Read/Write request count",
         "chart_columns": ["ReadRequestsCnt", "WriteRequestsCnt"],
         "hint_columns": ["ReadRequestsCnt", "WriteRequestsCnt"]
     ]

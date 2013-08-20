@@ -14,14 +14,9 @@
  * @returnParam DirtyBuffersCnt Number of buffer cache was dirtied
  * @returnParam UsedCacheRatioPct Percentage of buffer cache was used
  * @returnParam DirtyCacheRatioPct Percentage of buffer cache was dirtied
- * @returnParam UsedBuffersDiffVal Number of buffer cache (was used) increase or decrease from previous monitoring to current monitoring
- * @returnParam DirtyBuffersDiffVal Number of buffer cache (was dirtied) increase or decrease from previous monitoring to current monitoring
  */
 JOB = [name:"Postgres.Performance.Buffer_Cache_Usage"]
 FETCHACTION = {
-	// Get value from PERSISTENTDATA
-	def prev_used_buffers = PERSISTENTDATA['used_buffers'] != null ? PERSISTENTDATA['used_buffers'] : 0
-	def prev_dirty_buffers = PERSISTENTDATA['dirty_buffers'] != null ? PERSISTENTDATA['dirty_buffers'] : 0
 	// Declared a map to store data monitoring
 	def map_data = [:]
 	// Create query to get data monitoring
@@ -53,13 +48,6 @@ FETCHACTION = {
 	map_data['DirtyBuffersCnt'] = resultQuery.dirty_buffers[0]
 	map_data['UsedCacheRatioPct'] = resultQuery.used_cache_ratio[0]
 	map_data['DirtyCacheRatioPct'] = resultQuery.dirty_cache_ratio[0]
-	// Set value for PERSISTENTDATA
-	PERSISTENTDATA['used_buffers'] = map_data['UnusedBuffersCnt']
-	PERSISTENTDATA['dirty_buffers'] = map_data['DirtyBuffersCnt']
-	assert interval != null, "First time, we cannot return meaningful values"
-	// Get diff value
-	map_data['UsedBuffersDiffVal'] = resultQuery.used_buffers[0] - prev_used_buffers
-	map_data['DirtyBuffersDiffVal'] = resultQuery.dirty_buffers[0] - prev_dirty_buffers
 	// Return data monitoring
 	def resultData = []
 	resultData.add(map_data)
@@ -67,18 +55,8 @@ FETCHACTION = {
 }
 KEYEXPR = [_sequence:["UsedCacheRatioPct","SharedBuffersCnt","UsedBuffersCnt"]]
 KEYEXPR._unit = [ "SharedBuffersCnt" : "count", "UnusedBuffersCnt": "count", "UsedBuffersCnt" : "count", "DirtyBuffersCnt": "count",
-	"UsedCacheRatioPct": "%", "DirtyCacheRatioPct": "%", "UsedBuffersDiffVal": "count/interval", "DirtyBuffersDiffVal": "count/interval" ]
+	"UsedCacheRatioPct": "%", "DirtyCacheRatioPct": "%"]
 KEYEXPR._chart = [
-	[
-		type:"pie",
-		name:"Buffer Cache Usage Rate" , 
-		chart_columns:["UnusedBuffersCnt","UsedBuffersCnt"]
-	],
-	[
-		type:"bar",
-		name:"Compare UsedBuffers And DirtyBuffers" , 
-		chart_columns:["UsedBuffersCnt","DirtyBuffersCnt"]
-	],
 	[
 		type:"line",
 		name:"Ratio Percent Of Used Cache" , 
@@ -88,6 +66,11 @@ KEYEXPR._chart = [
 		type:"line",
 		name:"Ratio Percent Of Dirty Cache" , 
 		chart_columns:["DirtyCacheRatioPct"]
+	],
+	[
+		type:"area",
+		name:"Number Of Buffer Cache Was Not Used, Used And Dirtied" , 
+		chart_columns:["UnusedBuffersCnt", "UsedBuffersCnt", "DirtyBuffersCnt"]
 	]
 ]
 DBTYPE = "@PGSQL"

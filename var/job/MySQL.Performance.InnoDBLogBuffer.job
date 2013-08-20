@@ -95,8 +95,14 @@ KEYEXPR._unit = ["WaitsCumCnt":"count" , "WriteRequestsCumCnt" : "count" ,"Write
 KEYEXPR._chart = [   
     [
         "type": "line",
-        "name": "Logbuffer wait count",
-        "chart_columns": ["WritesCnt", "WaitsCnt"],
+        "name": "Logbuffer writes count",
+        "chart_columns": ["WritesCnt"],
+        "hint_columns": ["WritesCnt", "WaitsCnt", "OsLogWrittenCnt", "WaitsPct"]
+    ],
+    [
+        "type": "line",
+        "name": "Logbuffer waits count",
+        "chart_columns": ["WaitsCnt"],
         "hint_columns": ["WritesCnt", "WaitsCnt", "OsLogWrittenCnt", "WaitsPct"]
     ]
 ]

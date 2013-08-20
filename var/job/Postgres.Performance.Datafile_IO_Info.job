@@ -5,20 +5,22 @@
  * </p>
  * @targetVersion All version
  * @return Number of blocks read from disk
- * @returnParam TotalHeapBlocksReadCumCnt Total heap blocks were read
- * @returnParam TotalIndexBlocksReadCumCnt Total index blocks were read
- * @returnParam TotalToastBlocksReadCumCnt Total toast blocks were read
- * @returnParam TotalTidxBlocksReadCumCnt Total index blocks of toast table were read
- * @returnParam TotalHeapBlocksReadVal increase or descrease amount of total heap blocks
- * @returnParam TotalIndexBlocksReadVal increase or descrease amount of total index blocks
- * @returnParam TotalToastBlocksReadVal increase or descrease amount of total toast blocks
- * @returnParam TotalTidxBlocksReadVal increase or descrease amount of total index blocks of toast table
- * @returnParam AvgTotalHeapBlocksReadVal Average  of increase or descrease amount of total heap blocks per second
- * @returnParam AvgTotalIndexBlocksReadVal Average  of increase or descrease amount of total index blocks per second
- * @returnParam AvgTotalToastBlocksReadVal Average  of increase or descrease amount of total toast blocks per second
- * @BlkWriteTimeVal Total time the statement spent writing blocks, in milliseconds (version PostgreSQL >= 9.2)
- * @BlkReadTimeVal Total time the statement spent reading blocks, in milliseconds (version PostgreSQL >= 9.2)
- * @returnParam AvgTotalTidxBlocksReadVal Average  of increase or descrease amount of total index toast blocks
+ * @returnParam HeapBlocksReadCumCnt Total heap blocks were read
+ * @returnParam IndexBlocksReadCumCnt Total index blocks were read
+ * @returnParam ToastBlocksReadCumCnt Total toast blocks were read
+ * @returnParam TidxBlocksReadCumCnt Total index blocks of toast table were read
+ * @returnParam HeapBlocksReadCnt increase or descrease amount of total heap blocks
+ * @returnParam IndexBlocksReadCnt increase or descrease amount of total index blocks
+ * @returnParam ToastBlocksReadCnt increase or descrease amount of total toast blocks
+ * @returnParam TidxBlocksReadCnt increase or descrease amount of total index blocks of toast table
+ * @returnParam HeapBlocksReadRate Average  of increase or descrease amount of total heap blocks per second
+ * @returnParam IndexBlocksReadRate Average  of increase or descrease amount of total index blocks per second
+ * @returnParam ToastBlocksReadRate Average  of increase or descrease amount of total toast blocks per second
+ * @returnParam TidxBlocksReadRate Average  of increase or descrease amount of total index toast blocks
+ * @returnParam BlkReadTimeCumCnt Total time the statement spent reading blocks, in milliseconds (version PostgreSQL >= 9.2)
+ * @returnParam BlkWriteTimeCumCnt Total time the statement spent writing blocks, in milliseconds (version PostgreSQL >= 9.2)
+ * @returnParam BlkReadTimeCnt increase or descrease amount of total time the statement spent reading blocks, in milliseconds (version PostgreSQL >= 9.2)
+ * @returnParam BlkWriteTimeCnt increase or descrease amount of total time the statement spent writing blocks, in milliseconds (version PostgreSQL >= 9.2)
  */
 JOB = [name:"Postgres.Performance.Datafile_IO_Info"]
 FETCHACTION = {
@@ -28,25 +30,25 @@ FETCHACTION = {
 									  WHEN SUM(heap_blks_read) IS NULL THEN 0
 									  ELSE SUM(heap_blks_read)
 									  END
-									 )  AS "TotalHeapBlocksReadCumCnt",
+									 )  AS "HeapBlocksReadCumCnt",
 									(
 									  CASE
 									  WHEN SUM(idx_blks_read)  IS NULL THEN 0
 									  ELSE SUM(idx_blks_read)
 									  END
-									 )  AS "TotalIndexBlocksReadCumCnt",
+									 )  AS "IndexBlocksReadCumCnt",
 									(
 									  CASE
 									  WHEN SUM(toast_blks_read) IS NULL THEN 0
 									  ELSE SUM(toast_blks_read)
 									  END
-									 ) AS "TotalToastBlocksReadCumCnt",
+									 ) AS "ToastBlocksReadCumCnt",
 									(
 									  CASE
 									  WHEN SUM(tidx_blks_read)  IS NULL THEN 0
 									  ELSE SUM(tidx_blks_read)
 									  END
-									 ) AS "TotalTidxBlocksReadCumCnt"
+									 ) AS "TidxBlocksReadCumCnt"
 								FROM pg_statio_user_tables
 							''');
 	def postgresVersion = sql.rows("SELECT version();")[0][0]
@@ -54,9 +56,11 @@ FETCHACTION = {
 	if(postgresVersion >= "PostgreSQL 9.2") {
 		blk_read_write_time = sql.rows("SELECT blk_read_time,blk_write_time FROM pg_stat_statements;")[0]
 	}
+	resultData[0]['BlkReadTimeCumCnt'] = null
+	resultData[0]['BlkWriteTimeCumCnt'] = null
 	if(blk_read_write_time != null) {
-		resultData[0]['BlkReadTimeVal'] = blk_read_write_time.blk_read_time
-		resultData[0]['BlkWriteTimeVal'] = blk_read_write_time.blk_write_time
+		resultData[0]['BlkReadTimeCumCnt'] = blk_read_write_time.blk_read_time
+		resultData[0]['BlkWriteTimeCumCnt'] = blk_read_write_time.blk_write_time
 	}
 	return resultData
 }
@@ -64,32 +68,39 @@ ACCUMULATE = {
 	assert interval != null, "First time, we cannot return meaningful values"
 	if( prevOUTPUT != null && prevOUTPUT[0] != null ){
 		OUTPUT.each { rec->
-			rec['TotalHeapBlocksReadVal'] = rec['TotalHeapBlocksReadCumCnt'] - (prevOUTPUT[0]['TotalHeapBlocksReadCumCnt']) != null ? prevOUTPUT[0]['TotalHeapBlocksReadCumCnt'] : 0
-			rec['TotalIndexBlocksReadVal'] = rec['TotalIndexBlocksReadCumCnt'] - (prevOUTPUT[0]['TotalIndexBlocksReadCumCnt']) != null ? prevOUTPUT[0]['TotalIndexBlocksReadCumCnt'] : 0
-			rec['TotalToastBlocksReadVal'] = rec['TotalToastBlocksReadCumCnt'] - (prevOUTPUT[0]['TotalToastBlocksReadCumCnt']) != null ? prevOUTPUT[0]['TotalToastBlocksReadCumCnt'] : 0
-			rec['TotalTidxBlocksReadVal']  = rec['TotalTidxBlocksReadCumCnt'] - (prevOUTPUT[0]['TotalTidxBlocksReadCumCnt']) != null ? prevOUTPUT[0]['TotalTidxBlocksReadCumCnt'] : 0
-			rec['AvgTotalHeapBlocksReadVal'] = rec['TotalHeapBlocksReadVal']/interval
-			rec['AvgTotalIndexBlocksReadVal'] = rec['TotalIndexBlocksReadVal']/interval
-			rec['AvgTotalToastBlocksReadVal'] = rec['TotalToastBlocksReadVal'] /interval
-			rec['AvgTotalTidxBlocksReadVal'] = rec['TotalTidxBlocksReadVal']/interval
+			rec['HeapBlocksReadCnt'] = rec['HeapBlocksReadCumCnt'] - ((prevOUTPUT[0]['HeapBlocksReadCumCnt']) != null ? prevOUTPUT[0]['HeapBlocksReadCumCnt'] : 0)
+			rec['IndexBlocksReadCnt'] = rec['IndexBlocksReadCumCnt'] - ((prevOUTPUT[0]['IndexBlocksReadCumCnt']) != null ? prevOUTPUT[0]['IndexBlocksReadCumCnt'] : 0)
+			rec['ToastBlocksReadCnt'] = rec['ToastBlocksReadCumCnt'] - ((prevOUTPUT[0]['ToastBlocksReadCumCnt']) != null ? prevOUTPUT[0]['ToastBlocksReadCumCnt'] : 0)
+			rec['TidxBlocksReadCnt']  = rec['TidxBlocksReadCumCnt'] - ((prevOUTPUT[0]['TidxBlocksReadCumCnt']) != null ? prevOUTPUT[0]['TidxBlocksReadCumCnt'] : 0)
+			rec['HeapBlocksReadRate'] = rec['HeapBlocksReadCnt']/interval
+			rec['IndexBlocksReadRate'] = rec['IndexBlocksReadCnt']/interval
+			rec['ToastBlocksReadRate'] = rec['ToastBlocksReadCnt'] /interval
+			rec['TidxBlocksReadRate'] = rec['TidxBlocksReadCnt']/interval
+			if(rec['BlkReadTimeCumCnt'] != null && rec['BlkWriteTimeCumCnt'] != null) {
+				rec['BlkReadTimeCnt']  = rec['BlkReadTimeCumCnt'] - ((prevOUTPUT[0]['BlkReadTimeCumCnt']) != null ? prevOUTPUT[0]['BlkReadTimeCumCnt'] : 0)
+				rec['BlkWriteTimeCnt']  = rec['BlkWriteTimeCumCnt'] - ((prevOUTPUT[0]['BlkWriteTimeCumCnt']) != null ? prevOUTPUT[0]['BlkWriteTimeCumCnt'] : 0)
+			} else {
+				rec['BlkReadTimeCnt']  = null
+				rec['BlkWriteTimeCnt']  = null
+			}
 		}
 	}
 }
-KEYEXPR = [_sequence:["TotalHeapBlocksReadCumCnt","TotalIndexBlocksReadCumCnt"]]
-KEYEXPR._unit = [ "TotalHeapBlocksReadCumCnt" : "count", "TotalIndexBlocksReadCumCnt": "count", "TotalToastBlocksReadCumCnt" : "count", "TotalTidxBlocksReadCumCnt": "count",
-	"TotalHeapBlocksReadVal" : "count/interval", "TotalIndexBlocksReadVal": "count/interval", "TotalToastBlocksReadVal" : "count/interval", "TotalTidxBlocksReadVal": "count/interval",
-	"AvgTotalHeapBlocksReadVal" : "count/sec", "AvgTotalIndexBlocksReadVal": "count/sec", "AvgTotalToastBlocksReadVal" : "count/sec", "AvgTotalTidxBlocksReadVal": "count/sec",
-	"BlkReadTimeVal": "double", "BlkWriteTimeVal": "double" ]
+KEYEXPR = [_sequence:["HeapBlocksReadCumCnt","IndexBlocksReadCumCnt"]]
+KEYEXPR._unit = [ "HeapBlocksReadCumCnt" : "count", "IndexBlocksReadCumCnt": "count", "ToastBlocksReadCumCnt" : "count", "TidxBlocksReadCumCnt": "count",
+	"HeapBlocksReadCnt" : "count/interval", "IndexBlocksReadCnt": "count/interval", "ToastBlocksReadCnt" : "count/interval", "TidxBlocksReadCnt": "count/interval",
+	"HeapBlocksReadRate" : "count/sec", "IndexBlocksReadRate": "count/sec", "ToastBlocksReadRate" : "count/sec", "TidxBlocksReadRate": "count/sec",
+	"BlkReadTimeCumCnt": "milliseconds", "BlkWriteTimeCumCnt": "milliseconds", "BlkReadTimeCnt": "milliseconds/interval", "BlkWriteTimeCnt": "milliseconds/interval" ]
 KEYEXPR._chart = [
 	[
 		type:"line",
 		name:"Datafile I/O Information",
-		chart_columns:["TotalHeapBlocksReadCumCnt","TotalIndexBlocksReadCumCnt","TotalToastBlocksReadCumCnt","TotalTidxBlocksReadCumCnt"]
+		chart_columns:["HeapBlocksReadCumCnt","IndexBlocksReadCumCnt","ToastBlocksReadCumCnt","TidxBlocksReadCumCnt"]
 	],
 	[
-		type:"bar",
-		name:"Block Read And Write Time",
-		chart_columns:["BlkReadTimeVal", "BlkWriteTimeVal"]
+		type:"area",
+		name:"PostgreSQL Version >= 9.2: Block Read And Write Time From Previous Monitoring To Current Monitoring",
+		chart_columns:["BlkReadTimeCnt", "BlkWriteTimeCnt"]
 	]
 ]
 SENDTYPE = "Store"

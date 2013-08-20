@@ -98,35 +98,30 @@ KEYEXPR._unit = ["FreeBlocksCnt" :"blocks" , "FreeMemorySize" : "MB" , "HitsCumC
 	"InCacheCnt":"count/interval", "HitsCnt":"count/interval", "UsedPct":"%"]
 KEYEXPR._chart = [
 	[
-		"type": "line",
-        "name": "Query cache hit",
-        "chart_columns": ["CacheHitPct", "HitsCnt", "InsertsCnt", "LowmemPrunesCnt", "NotCachedCnt", "InCacheCnt"],
-        "hint_columns": ["CacheHitPct", "HitsCnt", "InsertsCnt", "LowmemPrunesCnt", "NotCachedCnt", "InCacheCnt"]
-	
-	],
-    [
         "type": "line",
         "name": "Buffer usage(%) information",
         "chart_columns": ["UsedPct"],
         "hint_columns": ["TotalBlocksCnt","FreeBlocksCnt"]
     ],
     [
+		"type": "line",
+        "name": "Query cache hit",
+        "chart_columns": ["CacheHitPct"],
+        "hint_columns": ["CacheHitPct"]
+	
+	],
+	[
+		"type": "line",
+        "name": "Query cache activities",
+        "chart_columns": ["HitsCnt", "InsertsCnt", "LowmemPrunesCnt", "NotCachedCnt", "InCacheCnt"],
+        "hint_columns": ["HitsCnt", "InsertsCnt", "LowmemPrunesCnt", "NotCachedCnt", "InCacheCnt"]
+	
+	],
+    [
         "type": "pie",
         "name": "Query cache hit",
         "chart_columns": ["HitsCumCnt","NotCachedCnt","InsertsCnt"],
         "hint_columns": ["HitsCumCnt","NotCachedCnt","InsertsCnt"]
-    ],
-    [
-        "type": "bar",
-        "name": "Sample query cache",
-        "chart_columns": ["HitsCnt", "InsertsCnt", "LowmemPrunesCnt", "NotCachedCnt", "InCacheCnt"],
-        "hint_columns": ["HitsCnt", "InsertsCnt", "LowmemPrunesCnt", "NotCachedCnt", "InCacheCnt"]
-    ],
-    [
-        "type": "line",
-        "name": "Cache free (blocks)",
-        "chart_columns": ["FreeBlocksCnt"],
-        "hint_columns": ["FreeBlocksCnt"]
     ]
 ]
 SENDTYPE = "Store"

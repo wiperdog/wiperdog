@@ -7,22 +7,22 @@
  * @targetVersion 2008
  * @return get data on the use of buffer cache.
  * @returnParam FreeListStallsPerSecVal The number of requests per second that had to wait for a free page
- * @returnParam FreePagesCumCnt Total number of pages on all free lists
- * @returnParam TotalPagesCumCnt The number of pages in the buffer pool (includes database, free, and stolen pages)
- * @returnParam TargetPagesCumCnt Ideal number of pages in the buffer pool
- * @returnParam DatabasePagesCumCnt The number of pages in the buffer pool with database content
- * @returnParam StolenPagesCumCnt The number of pages used for miscellaneous server purposes (including procedure cache)
+ * @returnParam FreePagesCnt Total number of pages on all free lists
+ * @returnParam TotalPagesCnt The number of pages in the buffer pool (includes database, free, and stolen pages)
+ * @returnParam TargetPagesCnt Ideal number of pages in the buffer pool
+ * @returnParam DatabasePagesCnt The number of pages in the buffer pool with database content
+ * @returnParam StolenPagesCnt The number of pages used for miscellaneous server purposes (including procedure cache)
  * @returnParam LazyWritesPerSecVal The number of buffers written per second by the buffer manager's lazy writer
  * @returnParam CheckpointPagesPerSecVal The number of pages flushed to disk per second by a checkpoint or other operation that require all dirty pages to be flushed
  * @returnParam PageReadsPerSecVal The number of physical database page reads that are issued per second
  * @returnParam PageWritesPerSecVal The number of physical database page writes issued per second
  * @returnParam PageLifeExpectancyInt The number of seconds a page will stay in the buffer pool without references
- * @returnParam PagesInCacheCnt The number of pages found in the buffer cache from last monitoring to now
- * @returnParam PagesCnt The number of pages from last monitoring to now
- * @returnParam PagesInCacheCumCnt Total number of pages found in the buffer cache
- * @returnParam PagesCumCnt Total number of pages
- * @returnParam CacheHitRatioPct Buffer cache hit rate from last monitoring to now
- * @returnParam AccumulateCacheHitRatioPct Total buffer cache hit rate
+ * @returnParam PagesInCacheDiffCnt The number of pages found in the buffer cache from last monitoring to now
+ * @returnParam PagesDiffCnt The number of pages from last monitoring to now
+ * @returnParam PagesInCacheCnt Total number of pages found in the buffer cache
+ * @returnParam PagesCnt Total number of pages
+ * @returnParam CacheHitRatioDiffPct Buffer cache hit rate from last monitoring to now
+ * @returnParam CacheHitRatioPct Total buffer cache hit rate
  */
 JOB = [name: "SQL_Server.Performance.Buffer_Cache_Hit_Ratio"]
 
@@ -62,46 +62,46 @@ FETCHACTION = {
 	}
 	
 	convertedResult['FreeListStallsPerSecVal'] = finalResult['Free list stalls/sec']
-	convertedResult['FreePagesCumCnt'] = finalResult['Free pages']
-	convertedResult['TotalPagesCumCnt'] = finalResult['Total pages']
-	convertedResult['TargetPagesCumCnt'] = finalResult['Target pages']
-	convertedResult['DatabasePagesCumCnt'] = finalResult['Database pages']
-	convertedResult['StolenPagesCumCnt'] = finalResult['Stolen pages']
+	convertedResult['FreePagesCnt'] = finalResult['Free pages']
+	convertedResult['TotalPagesCnt'] = finalResult['Total pages']
+	convertedResult['TargetPagesCnt'] = finalResult['Target pages']
+	convertedResult['DatabasePagesCnt'] = finalResult['Database pages']
+	convertedResult['StolenPagesCnt'] = finalResult['Stolen pages']
 	convertedResult['LazyWritesPerSecVal'] = finalResult['Lazy writes/sec']
 	convertedResult['CheckpointPagesPerSecVal'] = finalResult['Checkpoint pages/sec']
 	convertedResult['PageReadsPerSecVal'] = finalResult['Page reads/sec']
 	convertedResult['PageWritesPerSecVal'] = finalResult['Page writes/sec']
 	convertedResult['PageLifeExpectancyInt'] = finalResult['Page life expectancy']
 	
-	convertedResult['PagesInCacheCnt'] = firstResult['Buffer cache hit ratio'] - (PERSISTENTDATA['PagesInCacheCumCnt'] != null ? PERSISTENTDATA['PagesInCacheCumCnt'] : 0)
-	convertedResult['PagesCnt'] = firstResult['Buffer cache hit ratio base'] - (PERSISTENTDATA['PagesCumCnt'] != null ? PERSISTENTDATA['PagesCumCnt'] : 0)
-	convertedResult['PagesInCacheCumCnt'] = firstResult['Buffer cache hit ratio']
-	convertedResult['PagesCumCnt'] = firstResult['Buffer cache hit ratio base']
+	convertedResult['PagesInCacheDiffCnt'] = firstResult['Buffer cache hit ratio'] - (PERSISTENTDATA['PagesInCacheCnt'] != null ? PERSISTENTDATA['PagesInCacheCnt'] : 0)
+	convertedResult['PagesDiffCnt'] = firstResult['Buffer cache hit ratio base'] - (PERSISTENTDATA['PagesCnt'] != null ? PERSISTENTDATA['PagesCnt'] : 0)
+	convertedResult['PagesInCacheCnt'] = firstResult['Buffer cache hit ratio']
+	convertedResult['PagesCnt'] = firstResult['Buffer cache hit ratio base']
 	
+	if(convertedResult['PagesDiffCnt'] == 0) {
+		convertedResult['CacheHitRatioDiffPct'] = null
+	} else {
+		convertedResult['CacheHitRatioDiffPct'] = (convertedResult['PagesInCacheDiffCnt']/convertedResult['PagesDiffCnt'])*100
+	}
 	if(convertedResult['PagesCnt'] == 0) {
 		convertedResult['CacheHitRatioPct'] = null
 	} else {
 		convertedResult['CacheHitRatioPct'] = (convertedResult['PagesInCacheCnt']/convertedResult['PagesCnt'])*100
 	}
-	if(convertedResult['PagesCumCnt'] == 0) {
-		convertedResult['AccumulateCacheHitRatioPct'] = null
-	} else {
-		convertedResult['AccumulateCacheHitRatioPct'] = (convertedResult['PagesInCacheCumCnt']/convertedResult['PagesCumCnt'])*100
-	}
 	
-	PERSISTENTDATA['PagesInCacheCumCnt'] = firstResult['Buffer cache hit ratio']
-	PERSISTENTDATA['PagesCumCnt'] = firstResult['Buffer cache hit ratio base']
+	PERSISTENTDATA['PagesInCacheCnt'] = firstResult['Buffer cache hit ratio']
+	PERSISTENTDATA['PagesCnt'] = firstResult['Buffer cache hit ratio base']
 	finalResultData.add(convertedResult)
 	return finalResultData
 }
-KEYEXPR = ['_sequence':['CacheHitRatioPct','AccumulateCacheHitRatioPct']]
-KEYEXPR._unit = ["FreeListStallsPerSecVal":"count/sec", "FreePagesCumCnt":"pages", "TotalPagesCumCnt":"pages", "TargetPagesCumCnt":"pages", "DatabasePagesCumCnt":"pages", "StolenPagesCumCnt":"pages", "LazyWritesPerSecVal":"count/sec", "CheckpointPagesPerSecVal":"count/sec", "PageReadsPerSecVal":"pages/sec", "PageWritesPerSecVal":"pages/sec", "PageLifeExpectancyInt":"sec", "PagesInCacheCnt":"pages/interval", "PagesCnt":"pages/interval", "PagesInCacheCumCnt":"pages", "PagesCumCnt":"pages", "CacheHitRatioPct":"%", "AccumulateCacheHitRatioPct":"%"]
+KEYEXPR = ['_sequence':['CacheHitRatioDiffPct','CacheHitRatioPct']]
+KEYEXPR._unit = ["FreeListStallsPerSecVal":"count/sec", "FreePagesCnt":"pages", "TotalPagesCnt":"pages", "TargetPagesCnt":"pages", "DatabasePagesCnt":"pages", "StolenPagesCnt":"pages", "LazyWritesPerSecVal":"count/sec", "CheckpointPagesPerSecVal":"count/sec", "PageReadsPerSecVal":"pages/sec", "PageWritesPerSecVal":"pages/sec", "PageLifeExpectancyInt":"sec", "PagesInCacheDiffCnt":"pages/interval", "PagesDiffCnt":"pages/interval", "PagesInCacheCnt":"pages", "PagesCnt":"pages", "CacheHitRatioPct":"%", "CacheHitRatioDiffPct":"%"]
 KEYEXPR._chart = [
     [
         "type": "line",
         "name": "Cache Hit Ratio",
         "chart_columns": ["CacheHitRatioPct"],
-        "hint_columns": ["CacheHitRatioPct","PagesCnt", "PagesInCacheCumCnt"] 
+        "hint_columns": ["CacheHitRatioPct","PagesDiffCnt", "PagesInCacheCnt"] 
     ],
     [
         "type": "line",
@@ -113,14 +113,8 @@ KEYEXPR._chart = [
         "type": "line",
         "name": "Page Life Expectancy",
         "chart_columns": ["PageLifeExpectancyInt"]
-    ],
-    [
-        "type": "pie",
-        "name": "Pages Buffer Pool",
-        "chart_columns": ["FreePagesCumCnt", "TotalPagesCumCnt", "TargetPagesCumCnt", "DatabasePagesCumCnt", "StolenPagesCumCnt"]
     ]
 ]
- 
 
 SENDTYPE = "Store"
 RESOURCEID = "Pf/MsBufferCHR"
