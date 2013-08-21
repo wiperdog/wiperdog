@@ -51,6 +51,7 @@ FETCHACTION={
  				 E.PagesTotalCnt,
   		  		 F.PagesFreeCnt,
   				 G.PagesDataCnt,
+  				 G2.PagesMiscCnt,
   				 H.PagesDirtyCnt
 				 FROM
   				 (SELECT GS.variable_value as ReadRequestsCumCnt FROM information_schema.global_status GS WHERE GS.variable_name = 'innodb_buffer_pool_read_requests') A,
@@ -60,6 +61,7 @@ FETCHACTION={
  				 (SELECT GS.variable_value as PagesTotalCnt FROM information_schema.global_status GS WHERE GS.variable_name = 'innodb_buffer_pool_pages_total') E,
 				 (SELECT GS.variable_value as PagesFreeCnt FROM information_schema.global_status GS WHERE GS.variable_name = 'innodb_buffer_pool_pages_free') F,
   				 (SELECT GS.variable_value as PagesDataCnt FROM information_schema.global_status GS WHERE GS.variable_name = 'innodb_buffer_pool_pages_data') G,
+  				 (SELECT GS.variable_value as PagesMiscCnt FROM information_schema.global_status GS WHERE GS.variable_name = 'Innodb_buffer_pool_pages_misc') G2,
   				 (SELECT GS.variable_value as PagesDirtyCnt FROM information_schema.global_status GS WHERE GS.variable_name = 'innodb_buffer_pool_pages_dirty') H;
 			''')
 		
@@ -70,6 +72,7 @@ FETCHACTION={
 		resultData['PagesTotalCnt'] = Integer.parseInt(data[0]['PagesTotalCnt'])
 		resultData['PagesFreeCnt'] = Integer.parseInt(data[0]['PagesFreeCnt'])
 		resultData['PagesDataCnt'] = Integer.parseInt(data[0]['PagesDataCnt'])
+		resultData['PagesMiscCnt'] = Integer.parseInt(data[0]['PagesMiscCnt'])
 		resultData['PagesDirtyCnt'] = Integer.parseInt(data[0]['PagesDirtyCnt'])
 		
 		//Set PERSISTENTDATA
@@ -78,6 +81,7 @@ FETCHACTION={
 		PERSISTENTDATA['WriteRequestsCumCnt'] = resultData['WriteRequestsCumCnt']
 		PERSISTENTDATA['WaitFreeCumCnt'] = resultData['WaitFreeCumCnt']
 		PERSISTENTDATA['PagesDataCnt'] = resultData['PagesDataCnt']
+		PERSISTENTDATA['PagesMiscCnt'] = resultData['PagesMiscCnt']
 		PERSISTENTDATA['PagesDirtyCnt'] = resultData['PagesDirtyCnt']
 		
 		assert interval != null, "This is the first execution time, interval is null, quit the job"
@@ -122,7 +126,7 @@ FETCHACTION={
 }
 KEYEXPR = [_sequence:["BufferUsedRatioPct","PagesDataCnt","PagesTotalCnt"]]
 KEYEXPR._unit = ["ReadRequestsCumCnt" : "count" , "ReadsCumCnt" : "count" , "WriteRequestsCumCnt" : "count" , "WaitFreeCumCnt" : "count" ,"PagesTotalCnt" : "pages" 
-	,"PagesFreeCnt" :"pages" ,"PagesDataCnt":"pages" , "PagesDirtyCnt" : "pages"  , "ReadRequestsRateDbl" : "count/sec" 
+	,"PagesFreeCnt" :"pages" ,"PagesDataCnt":"pages" , "PagesDirtyCnt" : "pages"  ,"PagesMiscCnt":"pages", "ReadRequestsRateDbl" : "count/sec" 
 	, "ReadsRateDbl" : "count/sec" ,"WriteRequestsRateDbl" : "count/sec" , "WaitFreeRateDbl" : "count/sec" , "HitRatioPct" : "%" 
 	,"WaitFreeRatioPct" : "%" , "BufferUsedRatioPct" : "%" , "DirtyRatioPct" : "%" , "ReadRequestsCnt" : "count/interval" 
 	, "ReadsCnt" : "count/interval" , "WriteRequestsCnt" : "count/interval" , "WaitFreeCnt" : "count/interval"]
@@ -148,8 +152,8 @@ KEYEXPR._chart = [
     [
         "type": "area",
         "name": "Buffer pool components",
-        "chart_columns": ["PagesDataCnt", "PagesDirtyCnt", "PagesFreeCnt"],
-        "hint_columns": ["PagesDataCnt", "PagesDirtyCnt", "PagesFreeCnt"]
+        "chart_columns": ["PagesDataCnt", "PagesMiscCnt", "PagesFreeCnt"],
+        "hint_columns": ["PagesDataCnt", "PagesMiscCnt", "PagesFreeCnt"]
     ],
     [
         "type": "area",
