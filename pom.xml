@@ -371,6 +371,7 @@
             <descriptor>src/main/assemble/distrib-unix.xml</descriptor>
             <descriptor>src/main/assemble/distrib-win.xml</descriptor>
           </descriptors>
+          <finalName>wiperdog-${version}</finalName>
         </configuration>
         <executions>
           <execution>
