@@ -67,7 +67,6 @@ public class DBConfigurationServlet extends HttpServlet {
 			}
 			PrintWriter out = resp.getWriter()
 			def builder2 = new JsonBuilder(message)
-			println builder2.toPrettyString()
 			out.print(builder2.toPrettyString())
 	}
 }
@@ -84,5 +83,4 @@ if (DBConfig != null) {
 
 	// safeRegisterService method is customized version of BundleContext.registerService()
 	ctx.safeRegisterService("javax.servlet.Servlet", DBConfig, props)
-	println "a DBConfigServlet registered !"
 }
