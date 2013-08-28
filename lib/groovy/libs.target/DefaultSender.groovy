@@ -222,7 +222,8 @@ public class HTTPSender implements Sender<Map>{
 	public void send(data2send){
 		if(checkCountandSize()){
 			// Write data to swap file
-			def sequence = HTTPSender.getFileName(data2send.sourceJob)
+			def jobname = (data2send.instanceName == null) ? data2send.sourceJob : (data2send.sourceJob + "_" + data2send.instanceName)
+			def sequence = HTTPSender.getFileName(jobname)
 			def swapFile = new File(properties.get(ResourceConstants.MONITORSWAP_DIRECTORY) + "/$alias/$sequence" + ".swp")
 			logger.debug("Write data of " + data2send.sourceJob + " to file " + swapFile.getName() + "\n into folder $alias")
 			def dataJson = output.toJson(data2send)
@@ -340,18 +341,22 @@ public class HTTPSender implements Sender<Map>{
 			def http
 			//Serializer date data before send
 			def serializerData = serializeDateToSend(data2send)
-			
+			def isSuccess = false
 			try {
 				http = new HTTPBuilder(destination)
 				http.auth.basic("administrator", "insight")
-				http.request(PUT,JSON){req->
+				http.request(PUT,groovyx.net.http.ContentType.JSON){req->
+						req.getParams().setParameter("http.connection.timeout", new Integer(5000));
+						req.getParams().setParameter("http.socket.timeout", new Integer(5000));
 						body = serializerData
+					 	response.success = { resp ->
+					 		isSuccess = true
+					  	}
 				}
-				return true
 			} catch (Exception e) {
 				logger.info ("Fail to send data to $destination")
-				return false
 			}
+			return isSuccess
 		}
 		
 		private String serializeDateToSend(data2send) {

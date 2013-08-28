@@ -30,7 +30,8 @@ class DefaultJobCaller {
 	def instanceJob	
 	
    	String fileName
-   	String jobName
+   	String rootJobName
+   	String instanceName
 	
 	def properties = MonitorJobConfigLoader.getProperties()
 	
@@ -54,11 +55,12 @@ class DefaultJobCaller {
 	def isJobFinishedSuccessfully 
 	
 	//Pass job filename to constructor
-	def DefaultJobCaller(objJob,fileName, jobName, DefaultSender sender) {
+	def DefaultJobCaller(objJob,fileName, rootJobName, instanceName, DefaultSender sender) {
 		
 		this.instanceJob = objJob
 		this.fileName = fileName
-		this.jobName = jobName
+		this.rootJobName = rootJobName
+		this.instanceName = instanceName
 		this.isJobFinishedSuccessfully = true
 		this.sender = sender
 	}
@@ -537,6 +539,7 @@ class DefaultJobCaller {
 		def fetchAtTime_bin
 		def istIid
 		def strSourceJob
+		def strInstance
 		def strResourceId
 		def keyExpr
 		
@@ -544,7 +547,9 @@ class DefaultJobCaller {
 		fetchAtTime = nowDate.format('yyyyMMddHHmmssz')
 		fetchAtTime_bin = (nowDate.getTime()/1000).intValue()
 		//Get sourceJob
-		strSourceJob = this.jobName
+		strSourceJob = this.rootJobName
+		//Get instance name
+		strInstance = this.instanceName
 		//Get hostId
 		envelopedResultData['hostId'] = getHostId()
 		//Get type
@@ -571,6 +576,7 @@ class DefaultJobCaller {
 		envelopedResultData['istIid'] = istIid
 		envelopedResultData['resourceId'] = strResourceId
 		envelopedResultData['sourceJob'] = strSourceJob
+		envelopedResultData['instanceName'] = strInstance
 		envelopedResultData['data'] = resultData
         
 		return envelopedResultData
