@@ -106,22 +106,18 @@ KEYEXPR._chart = [
     [
 		"type": "line",
         "name": "Query cache hit",
-        "chart_columns": ["CacheHitPct"],
-        "hint_columns": ["CacheHitPct"]
+        "chart_columns": ["CacheHitPct"]
 	
 	],
 	[
 		"type": "line",
         "name": "Query cache activities",
-        "chart_columns": ["HitsCnt", "InsertsCnt", "LowmemPrunesCnt", "NotCachedCnt", "InCacheCnt"],
-        "hint_columns": ["HitsCnt", "InsertsCnt", "LowmemPrunesCnt", "NotCachedCnt", "InCacheCnt"]
-	
+        "chart_columns": ["HitsCnt", "InsertsCnt", "LowmemPrunesCnt", "NotCachedCnt", "InCacheCnt"]
 	],
     [
         "type": "pie",
         "name": "Query cache hit",
-        "chart_columns": ["HitsCumCnt","NotCachedCnt","InsertsCnt"],
-        "hint_columns": ["HitsCumCnt","NotCachedCnt","InsertsCnt"]
+        "chart_columns": ["HitsCumCnt","NotCachedCnt","InsertsCnt"]
     ]
 ]
 SENDTYPE = "Store"

@@ -334,52 +334,44 @@ KEYEXPR._chart =
 		[
 		    "type": "pie",
 	        "name": "Ratio of used data size, index size vs data free size",
-	        "chart_columns": ["UsedDataSize","UsedIndexSize", "DataFreeSize"],
-	        "hint_columns": ["UsedDataSize","UsedIndexSize", "DataFreeSize"]
+	        "chart_columns": ["UsedDataSize","UsedIndexSize", "DataFreeSize"]
 	    ],
 		[
 		    "type": "bar",
 	        "name": "Curent usage size of each database",
-	        "chart_columns": ["UsedSize"],
-	        "hint_columns": ["UsedSize"]
+	        "chart_columns": ["UsedSize"]
 	    ],
 		[
 	        "type": "line",
 	        "name": "Space usage timeline",
-	        "chart_columns": ["UsedPct"],
-	        "hint_columns": ["UsedPct"]
+	        "chart_columns": ["UsedPct"]
 	    ],
 		[
 	        "type": "line",
 	        "name": "Increament of space used percentage",
-	        "chart_columns": ["UsedDiffPct"],
-	        "hint_columns": ["UsedDiffPct"]
+	        "chart_columns": ["UsedDiffPct"]
 	    ]
 	],
 	"M": [
 		[
 		    "type": "pie",
 	        "name": "Ratio of used data size, index size vs data free size",
-	        "chart_columns": ["UsedDataSize","UsedIndexSize", "DataFreeSize"],
-	        "hint_columns": ["UsedDataSize","UsedIndexSize", "DataFreeSize"]
+	        "chart_columns": ["UsedDataSize","UsedIndexSize", "DataFreeSize"]
 	    ],
 		[
 		    "type": "bar",
 	        "name": "Curent usage size of each database",
-	        "chart_columns": ["UsedSize"],
-	        "hint_columns": ["UsedSize"]
+	        "chart_columns": ["UsedSize"]
 	    ],
 		[
 	        "type": "line",
 	        "name": "Space usage timeline",
-	        "chart_columns": ["UsedPct"],
-	        "hint_columns": ["UsedPct"]
+	        "chart_columns": ["UsedPct"]
 	    ],
 		[
 	        "type": "line",
 	        "name": "Increament of space used percentage",
-	        "chart_columns": ["UsedDiffPct"],
-	        "hint_columns": ["UsedDiffPct"]
+	        "chart_columns": ["UsedDiffPct"]
 	    ]
 	]
 ]

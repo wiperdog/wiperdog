@@ -56,14 +56,12 @@ KEYEXPR._chart = [
     [
         "type": "line",
         "name": "InnoDB DB I/O Status",
-        "chart_columns": ["ReadsCnt", "WritesCnt"],
-        "hint_columns": ["ReadsCnt", "WritesCnt"]
+        "chart_columns": ["ReadsCnt", "WritesCnt"]
     ],
     [
         "type": "line",
         "name": "InnoDB DB I/O Status",
-        "chart_columns": ["ReadSize", "WrittenSize"],
-        "hint_columns": ["ReadSize", "WrittenSize"]
+        "chart_columns": ["ReadSize", "WrittenSize"]
     ]
 ]
 SENDTYPE = "Store"

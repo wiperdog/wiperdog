@@ -117,19 +117,19 @@ KEYEXPR._chart = [
         "type": "pie",
         "name": "Current Size Page",
         "chart_columns": ["CurrentUsedSizePageInt", "CurrentFreeSizePageInt"],
-        "hint_columns": ["CurrentUsedSizePageInt", "CurrentFreeSizePageInt", "CurrentTotalSizePageDbl", "MaxTotalSizePageDbl", "MaxFreeSizePageDbl", "MaxUsedPct"]
+        "hint_columns": ["CurrentTotalSizePageDbl", "MaxTotalSizePageDbl", "MaxFreeSizePageDbl", "MaxUsedPct"]
     ],
     [
         "type": "pie",
         "name": "Current Used Size vs Max Free Size",
         "chart_columns": ["CurrentUsedSizePageInt", "MaxFreeSizePageInt"],
-        "hint_columns": ["CurrentUsedSizePageInt", "FileSizePageInt", "MaxTotalSizePageInt", "MaxFreeSizePageInt"]
+        "hint_columns": ["FileSizePageInt", "MaxTotalSizePageInt", "MaxFreeSizePageInt"]
     ],
     [
         "type": "line",
         "name": "Database Free Utilization Rate",
         "chart_columns": ["CurrentUsedPct", "MaxUsedPct"],
-        "hint_columns": ["CurrentUsedPct", "MaxUsedPct", "MaxTotalSizePageInt", "MaxFreeSizePageInt", "FileSizePageInt", "CurrentUsedSizePageInt"]
+        "hint_columns": [ "MaxTotalSizePageInt", "MaxFreeSizePageInt", "FileSizePageInt", "CurrentUsedSizePageInt"]
     ]
 ]
 SENDTYPE = "Store"

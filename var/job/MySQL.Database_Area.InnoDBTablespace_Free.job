@@ -248,20 +248,17 @@ KEYEXPR._chart = [
     [
         "type": "pie",
         "name": "Current usage size vs current free size",
-        "chart_columns": ["CurrentUsedSizeKB", "CurrentFreeSizeKB"],
-        "hint_columns": ["CurrentUsedSizeKB", "CurrentFreeSizeKB"]
+        "chart_columns": ["CurrentUsedSizeKB", "CurrentFreeSizeKB"]
     ],
     [
         "type": "pie",
         "name": "Current usage size vs total free size",
-        "chart_columns": ["CurrentUsedSizeKB", "MaxFreeSizeKB"],
-        "hint_columns": ["CurrentUsedSizeKB", "MaxFreeSizeKB"]
+        "chart_columns": ["CurrentUsedSizeKB", "MaxFreeSizeKB"]
     ],
     [
         "type": "line",
         "name": "Max usage percentage and current used percentage",
-        "chart_columns": ["MaxUsedPct", "CurrentUsedPct"],
-        "hint_columns": ["MaxUsedPct", "CurrentUsedPct"]
+        "chart_columns": ["MaxUsedPct", "CurrentUsedPct"]
     ]    
 ]
 DBTYPE = "@MYSQL"

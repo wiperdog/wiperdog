@@ -107,19 +107,19 @@ KEYEXPR._chart = [
         "type": "line",
         "name": "Read/Write Count",
         "chart_columns": ["ReadsCnt","WritesCnt"],
-        "hint_columns": ["PhysicalName", "ReadsCnt","WritesCnt", "ReadsCumCnt", "WritesCumCnt", "ReadTimeDbl", "WriteTimeDbl"] 
+        "hint_columns": ["PhysicalName", "ReadsCumCnt", "WritesCumCnt", "ReadTimeDbl", "WriteTimeDbl"] 
     ],
     [
         "type": "line",
         "name": "Read/Write Byte",
         "chart_columns": ["BytesReadsCnt", "BytesWritesCnt"],
-        "hint_columns": ["PhysicalName", "BytesReadsCnt", "BytesWritesCnt", "BytesReadCumCnt", "BytesWriteCumCnt", "ReadsRateVal", "BytesReadRateVal", "BytesOnDiskDbl", "WritesRateVal", "BytesWritesRateVal"]
+        "hint_columns": ["PhysicalName", "BytesReadCumCnt", "BytesWriteCumCnt", "ReadsRateVal", "BytesReadRateVal", "BytesOnDiskDbl", "WritesRateVal", "BytesWritesRateVal"]
     ],
     [
         "type": "area",
         "name": "Average I/O Time",
         "chart_columns": ["AverageIOTimeDbl"],
-        "hint_columns": ["PhysicalName", "TotalTimeIODbl", "AverageIOTimeDbl", "AverageIOTimeCumDbl"]
+        "hint_columns": ["PhysicalName", "TotalTimeIODbl", "AverageIOTimeCumDbl"]
     ]
 ]
 SENDTYPE = "Store"

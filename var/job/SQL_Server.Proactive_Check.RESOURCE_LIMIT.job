@@ -109,7 +109,7 @@ KEYEXPR._chart = [
         "type": "line",
         "name": "Resource Information",
         "chart_columns": ["ResourceUsedPct"],
-        "hint_columns": ["LimitVal", "CurrentVal", "ResourceUsedPct"]
+        "hint_columns": ["LimitVal", "CurrentVal"]
     ]
 ]
 RESOURCEID = "Sr/MsRsrcLimit"

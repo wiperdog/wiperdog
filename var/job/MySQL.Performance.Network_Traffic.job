@@ -49,8 +49,7 @@ KEYEXPR._chart = [
     [
         "type": "line",
         "name": "Network traffic",
-        "chart_columns": ["BytesReceivedCnt", "BytesSentCnt"],
-        "hint_columns" : ["BytesReceivedCnt", "BytesSentCnt"]
+        "chart_columns": ["BytesReceivedCnt", "BytesSentCnt"]
     ]
 ]
 MONITORINGTYPE = "@DB"

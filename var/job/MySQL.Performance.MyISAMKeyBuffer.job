@@ -106,26 +106,22 @@ KEYEXPR._chart = [
     [
         "type": "line",
         "name": "Buffer hit information",
-        "chart_columns": ["BufferHitPct"],
-        "hint_columns": ["BufferHitPct"]
+        "chart_columns": ["BufferHitPct"]
     ],
     [
         "type": "line",
         "name": "Fragmentation Percentage",
-        "chart_columns": ["FragmentationPct"],
-        "hint_columns": ["FragmentationPct"]
+        "chart_columns": ["FragmentationPct"]
     ],    
     [
         "type": "area",
         "name": "Key Buffer Activity",
-        "chart_columns": ["ReadsCnt","WritesCnt"],
-        "hint_columns": ["ReadsCnt","WritesCnt"]
+        "chart_columns": ["ReadsCnt","WritesCnt"]
     ],
     [
         "type": "area",
         "name": "Read/Write request count",
-        "chart_columns": ["ReadRequestsCnt", "WriteRequestsCnt"],
-        "hint_columns": ["ReadRequestsCnt", "WriteRequestsCnt"]
+        "chart_columns": ["ReadRequestsCnt", "WriteRequestsCnt"]
     ]
 ]
 SENDTYPE = "Store"

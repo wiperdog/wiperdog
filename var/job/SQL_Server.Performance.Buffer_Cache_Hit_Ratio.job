@@ -101,13 +101,12 @@ KEYEXPR._chart = [
         "type": "line",
         "name": "Cache Hit Ratio",
         "chart_columns": ["CacheHitRatioPct"],
-        "hint_columns": ["CacheHitRatioPct","PagesDiffCnt", "PagesInCacheCnt"] 
+        "hint_columns": ["PagesDiffCnt", "PagesInCacheCnt"] 
     ],
     [
         "type": "line",
         "name": "Buffer Cache Activity",
-        "chart_columns": ["PageReadsPerSecVal", "PageWritesPerSecVal", "LazyWritesPerSecVal", "CheckpointPagesPerSecVal"],
-        "hint_columns": ["PageReadsPerSecVal", "PageWritesPerSecVal", "LazyWritesPerSecVal", "CheckpointPagesPerSecVal"] 
+        "chart_columns": ["PageReadsPerSecVal", "PageWritesPerSecVal", "LazyWritesPerSecVal", "CheckpointPagesPerSecVal"]
     ],
     [
         "type": "line",

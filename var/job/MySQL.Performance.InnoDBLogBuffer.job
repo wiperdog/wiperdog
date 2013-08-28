@@ -97,13 +97,13 @@ KEYEXPR._chart = [
         "type": "line",
         "name": "Logbuffer writes count",
         "chart_columns": ["WritesCnt"],
-        "hint_columns": ["WritesCnt", "WaitsCnt", "OsLogWrittenCnt", "WaitsPct"]
+        "hint_columns": ["WaitsCnt", "OsLogWrittenCnt", "WaitsPct"]
     ],
     [
         "type": "line",
         "name": "Logbuffer waits count",
         "chart_columns": ["WaitsCnt"],
-        "hint_columns": ["WritesCnt", "WaitsCnt", "OsLogWrittenCnt", "WaitsPct"]
+        "hint_columns": ["WritesCnt", "OsLogWrittenCnt", "WaitsPct"]
     ]
 ]
 SENDTYPE = "Store"

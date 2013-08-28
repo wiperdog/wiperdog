@@ -52,7 +52,7 @@ KEYEXPR._chart = [
         "type": "line",
         "name": "Wait status",
         "chart_columns": ["WaitingTasksCumCnt","WaitTimeMsCumSize"],
-        "hint_columns": ["WaitingTasksCnt","WaitTimeMsSize", "WaitingTasksCumCnt", "WaitTimeMsCumSize"] 
+        "hint_columns": ["WaitingTasksCnt","WaitTimeMsSize" ] 
     ]
 ]
 

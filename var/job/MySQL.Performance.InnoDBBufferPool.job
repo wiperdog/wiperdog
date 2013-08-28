@@ -134,32 +134,27 @@ KEYEXPR._chart = [
     [
         "type": "line",
         "name": "Percentage of buffer hit ratio",
-        "chart_columns": ["HitRatioPct"],
-        "hint_columns":  ["HitRatioPct"]
+        "chart_columns": ["HitRatioPct"]
     ],
     [
         "type": "line",
         "name": "Percentage of buffer used ratio",
-        "chart_columns": ["BufferUsedRatioPct"],
-        "hint_columns":  ["BufferUsedRatioPct"]
+        "chart_columns": ["BufferUsedRatioPct"]
     ],
     [
         "type": "line",
         "name": "Percentage of buffer dirty ratio",
-        "chart_columns": ["DirtyRatioPct"],
-        "hint_columns":  ["DirtyRatioPct"]
+        "chart_columns": ["DirtyRatioPct"]
     ],
     [
         "type": "area",
         "name": "Buffer pool components",
-        "chart_columns": ["PagesDataCnt", "PagesMiscCnt", "PagesFreeCnt"],
-        "hint_columns": ["PagesDataCnt", "PagesMiscCnt", "PagesFreeCnt"]
+        "chart_columns": ["PagesDataCnt", "PagesMiscCnt", "PagesFreeCnt"]
     ],
     [
         "type": "area",
         "name": "Buffer pool activity",
-        "chart_columns": ["ReadRequestsCnt","WriteRequestsCnt"],
-        "hint_columns": ["ReadRequestsCnt","WriteRequestsCnt"]
+        "chart_columns": ["ReadRequestsCnt","WriteRequestsCnt"]
     ]
     
 ]

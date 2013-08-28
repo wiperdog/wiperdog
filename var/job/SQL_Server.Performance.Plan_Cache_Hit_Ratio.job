@@ -72,7 +72,7 @@ KEYEXPR._chart = [
         "type": "line",
         "name": "Cache Hit Ratio",
         "chart_columns": ["PlanCacheHitRatioPct"],
-        "hint_columns": ["PlanCacheHitRatioPct", "PlanCacheHitRatioDiffPct"]
+        "hint_columns": ["PlanCacheHitRatioDiffPct"]
     ],
 	[
         "type": "line",
