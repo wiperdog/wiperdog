@@ -1,0 +1,24 @@
+/**
+ * SQL Serverのバージョン情報を監視します。<br/>
+ * <p>
+ * 現在使用しているSQL Serverのバージョン情報を取得します。<br />
+ * </p>
+ * @targetVersion 2008+
+ * @return サンプリング毎に1レコードのデータを取得します。
+ * @returnParam ProductVersionStr SQL Serverの製品バージョン
+ * @returnParam ProductLevelStr SQL Serverの製品レベル
+ * @returnParam EditionStr SQL Serverのエディション
+ */
+JOB = [name: "SQL_Server.Database_Structure.Database_Version"]
+
+QUERY = '''
+		SELECT 
+        	CONVERT(sysname, SERVERPROPERTY('productversion')) as ProductVersionStr,
+        	CONVERT(sysname, SERVERPROPERTY('productlevel')) as ProductLevelStr,     
+        	CONVERT(sysname, SERVERPROPERTY('edition')) as EditionStr;  
+		'''
+
+SENDTYPE = "Store"
+RESOURCEID = "Sr/MsDbVer"
+DBTYPE = "@MSSQL"
+DEST = parameters.dest

@@ -1,0 +1,132 @@
+/**
+ * Monitoring MyISAM Key Buffer.<br/>
+ * <p>
+ * MYISAM use a special structure called the key cache (or key buffer) contains a number of block buffers where the most-used index blocks are placed.<br/>
+ * Have features that improve key cache performance and that enable you to better control cache operation.<br/>
+ * Multiple sessions can access the cache concurrently.<br/>
+ * Can set up multiple key caches and assign table indexes to specific caches.<br/>
+ * </p>
+ * @targetVersion 5.1
+ * @return get information on the use of key buffer in MYISAM.
+ * @returnParam ReadsCumCnt The number of physical reads of a key block from disk
+ * @returnParam ReadRequestsCumCnt The number of requests to read a key block from the cache
+ * @returnParam WritesCumCnt The number of physical writes of a key block to disk
+ * @returnParam WriteRequestsCumCnt The number of requests to write a key block to the cache
+ * @returnParam TotalSize The size of the buffer
+ * @returnParam UsedSize The size of the buffer used
+ * @returnParam UnusedSize The size of the buffer unused
+ * @returnParam FragmentationPct Percent fragmentation
+ * @returnParam BufferHitPct Percent buffer hit success
+ * @returnParam ReadsCnt The number of physical reads from the last monitoring
+ * @returnParam ReadRequestsCnt The number of requests to read from the last monitoring
+ * @returnParam WritesCnt The number of physical writes from the last monitoring
+ * @returnParam WriteRequestsCnt The number of requests to write from the last monitoring
+ * @returnParam ReadsRateDbl The number of physical reads per second
+ * @returnParam ReadRequestsRateDbl The number of requests to read per second
+ * @returnParam WritesRateDbl The number of physical writes per second
+ * @returnParam WriteRequestsRateDbl The number of requests to write per second
+ * @returnParam UsedPct Percentage of cummulative buffer used via total buffer
+ */
+JOB = [name:"MySQL.Performance.MyISAMKeyBuffer"]
+FETCHACTION={
+		def prev_key_reads = PERSISTENTDATA['ReadsCumCnt'] != null ? PERSISTENTDATA['ReadsCumCnt'] : 0
+		def prev_key_read_requests = PERSISTENTDATA['ReadRequestsCumCnt'] != null ? PERSISTENTDATA['ReadRequestsCumCnt'] : 0
+		def prev_key_writes = PERSISTENTDATA['WritesCumCnt'] != null ? PERSISTENTDATA['WritesCumCnt'] : 0
+		def prev_key_write_requests = PERSISTENTDATA['WriteRequestsCumCnt'] != null ? PERSISTENTDATA['WriteRequestsCumCnt'] : 0
+		def resultData = [:]
+		def data = sql.rows('''
+						SELECT
+						    A.ReadsCumCnt,
+						    B.ReadRequestsCumCnt,
+						    C.WritesCumCnt,
+						    D.WriteRequestsCumCnt,
+						    CASE
+						        WHEN (B.ReadRequestsCumCnt = 0) THEN 0
+						        ELSE (100 - A.ReadsCumCnt/B.ReadRequestsCumCnt*100)
+						    END BufferHitPct,
+						    E.TotalSize,
+						    (G.key_blocks_used * F.key_cache_block_size) AS UsedSize,
+						    (H.key_blocks_unused * F.key_cache_block_size) AS UnusedSize,
+						    (E.TotalSize-G.key_blocks_used * F.key_cache_block_size-H.key_blocks_unused * F.key_cache_block_size)/E.TotalSize AS FragmentationPct
+						FROM
+						    (SELECT G.variable_value as ReadsCumCnt FROM information_schema.global_status G WHERE G.variable_name = 'key_reads') A,
+						    (SELECT G.variable_value as ReadRequestsCumCnt FROM information_schema.global_status G WHERE G.variable_name = 'key_read_requests') B,
+						    (SELECT G.variable_value as WritesCumCnt FROM information_schema.global_status G WHERE G.variable_name = 'key_writes') C,
+						    (SELECT G.variable_value as WriteRequestsCumCnt FROM information_schema.global_status G WHERE G.variable_name = 'key_write_requests') D,
+						    (SELECT G.variable_value as TotalSize FROM information_schema.global_variables G WHERE G.variable_name = 'key_buffer_size') E,
+						    (SELECT G.variable_value as key_cache_block_size FROM information_schema.global_variables G WHERE G.variable_name = 'key_cache_block_size') F,
+						    (SELECT G.variable_value as key_blocks_used FROM information_schema.global_status G WHERE G.variable_name = 'key_blocks_used') G,
+						    (SELECT G.variable_value as key_blocks_unused FROM information_schema.global_status G WHERE G.variable_name = 'key_blocks_unused') H;
+			''')
+		//
+		resultData['ReadsCumCnt'] = Integer.parseInt(data[0]['ReadsCumCnt'])
+		resultData['ReadRequestsCumCnt'] = Integer.parseInt(data[0]['ReadRequestsCumCnt'])
+		resultData['WritesCumCnt'] = Integer.parseInt(data[0]['WritesCumCnt'])
+		resultData['WriteRequestsCumCnt'] = Integer.parseInt(data[0]['WriteRequestsCumCnt'])		
+		resultData['TotalSize'] = Integer.parseInt(data[0]['TotalSize'])	
+		resultData['UsedSize'] = data[0]['UsedSize']
+		resultData['UnusedSize'] = data[0]['UnusedSize']
+		resultData['FragmentationPct'] = data[0]['FragmentationPct']*100
+		resultData['BufferHitPct'] = data[0]['BufferHitPct']
+        resultData['UsedPct'] = resultData['UsedSize'] / resultData['TotalSize'] * 100
+
+		//Set PERSISTENTDATA
+		PERSISTENTDATA['ReadsCumCnt'] = resultData['ReadsCumCnt']
+		PERSISTENTDATA['ReadRequestsCumCnt'] = resultData['ReadRequestsCumCnt']
+		PERSISTENTDATA['WritesCumCnt'] = resultData['WritesCumCnt']
+		PERSISTENTDATA['WriteRequestsCumCnt'] = resultData['WriteRequestsCumCnt']
+		assert interval != null, "This is the first execution time, interval is null, quit the job"
+			
+		resultData['ReadsCnt'] = resultData['ReadsCumCnt'] - prev_key_reads
+		resultData['ReadRequestsCnt'] = resultData['ReadRequestsCumCnt'] - prev_key_read_requests
+		resultData['WritesCnt'] = resultData['WritesCumCnt'] - prev_key_writes 
+		resultData['WriteRequestsCnt'] = resultData['WriteRequestsCumCnt'] - prev_key_write_requests
+
+		resultData['ReadsRateDbl'] = resultData['ReadsCnt'] / interval	
+		resultData['ReadRequestsRateDbl'] = resultData['ReadRequestsCnt'] / interval
+		resultData['WritesRateDbl'] = resultData['WritesCnt'] / interval
+		resultData['WriteRequestsRateDbl'] = resultData['WriteRequestsCnt'] / interval
+
+		def updateResultData = []
+		updateResultData.add(resultData)
+		return updateResultData
+}
+KEYEXPR = [_sequence:["BufferHitPct","ReadRequestsCumCnt","ReadsCumCnt"]]	
+KEYEXPR._unit = ["ReadsCumCnt" : "count" , "ReadRequestsCumCnt" : "count","WritesCumCnt" : "count","WriteRequestsCumCnt" : "count" ,"TotalSize" : "byte" ,
+	"UsedSize" : "byte" , "UnusedSize" : "byte" ,"FragmentationPct" : "%" , "BufferHitPct" : "%",  
+	"ReadsRateDbl":"count/sec", "ReadRequestsRateDbl":"count/sec", "WritesRateDbl":"count/sec", "WriteRequestsRateDbl":"count/sec",
+	"ReadsCnt":"count/interval", "ReadRequestsCnt":"count/interval", "WritesCnt":"count/interval", "WriteRequestsCnt":"count/interval", "UsedPct":"%"] 
+KEYEXPR._chart = [
+	[
+        "type": "line",
+        "name": "Buffer usage(%) information",
+        "chart_columns": ["UsedPct"],
+        "hint_columns": ["UsedSize","TotalSize"]
+    ],
+    [
+        "type": "line",
+        "name": "Buffer hit information",
+        "chart_columns": ["BufferHitPct"]
+    ],
+    [
+        "type": "line",
+        "name": "Fragmentation Percentage",
+        "chart_columns": ["FragmentationPct"]
+    ],    
+    [
+        "type": "area",
+        "name": "Key Buffer Activity",
+        "chart_columns": ["ReadsCnt","WritesCnt"]
+    ],
+    [
+        "type": "area",
+        "name": "Read/Write request count",
+        "chart_columns": ["ReadRequestsCnt", "WriteRequestsCnt"]
+    ]
+]
+SENDTYPE = "Store"
+DBTYPE = "@MYSQL"
+DEST = parameters.dest 
+MONITORINGTYPE = "@DB"
+RESOURCEID = "Pf/MyIsamKeyBuff"
+

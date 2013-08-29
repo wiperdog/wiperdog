@@ -1,0 +1,50 @@
+/**
+ * Display number of statements excuted by server, the diff with last monitoring time,<br/> 
+ * requence of executed statements by server
+ * @targetVersion 5.0
+ * @return Number of statements excuted by server, the diff with last monitoring time,<br/> 
+ * &emsp;frequence of executed statements by server
+ * @returnParam ExecutionsCumCnt The number of statements executed by the server. <br/>
+ * &emsp;This variable includes statements executed within stored programs, <br/>
+ * &emsp;unlike the Questions variable. It does not count COM_PING or COM_STATISTICS commands. <br/>
+ * &emsp;This variable was added in MySQL 5.1.31 
+ * @returnParam ExecutionsCnt Diff value of ExecutionsCumCnt with last monitoring time
+ * @returnParam ExecutionsRateVal ExecutionsCnt/interval
+ */
+
+JOB = [name:"MySQL.Proactive_Check.SQLExecutions"]
+FETCHACTION={
+		def prev_Executions_cum = PERSISTENTDATA['ExecutionsCumCnt'] != null ? PERSISTENTDATA['ExecutionsCumCnt'] : 0
+
+		def resultData = [:]
+		def data = sql.rows('''
+				SELECT VARIABLE_VALUE AS ExecutionsCumCnt FROM GLOBAL_STATUS G WHERE VARIABLE_NAME = 'Queries';
+			''')	
+		Long executionsCount = 	Long.parseLong(data[0]['ExecutionsCumCnt'])
+		resultData['ExecutionsCumCnt'] = executionsCount
+		
+		//Set PERSISTENTDATA
+		PERSISTENTDATA['ExecutionsCumCnt'] = resultData['ExecutionsCumCnt']
+		assert interval != null, "This is the first execution time, interval is null, quit the job"
+				
+		resultData['ExecutionsCnt'] = resultData['ExecutionsCumCnt'] - prev_Executions_cum
+		resultData['ExecutionsRateVal'] = resultData['ExecutionsCnt'] / interval
+		
+		def updateResultData = []
+		updateResultData.add(resultData)
+		return updateResultData	
+}
+KEYEXPR = [_sequence:["ExecutionsRateVal","ExecutionsCnt","ExecutionsCumCnt"]]
+KEYEXPR._unit = ["ExecutionsCumCnt": "count", "ExecutionsCnt": "count/interval", "ExecutionsRateVal": "count/sec"]
+KEYEXPR._chart = [
+    [
+        "type": "line",
+        "name": "SQL Execution",
+        "chart_columns": ["ExecutionsCnt"]
+    ]
+]
+SENDTYPE = "Store"
+DBTYPE = "@MYSQL"
+DEST = parameters.dest
+MONITORINGTYPE = "@DB"
+RESOURCEID = "Sr/MySqlExec"

@@ -1,0 +1,113 @@
+/**
+ * MySQL Performance - Log buffer of InnoDB storage engine<br />
+ * <p>
+ * Extracting information from information_schema.global_status <br/>
+ * related to log buffer of InnoDB storage engine.<br/>
+ * </p>
+ * @targetVersion 5.0
+ * @return Collection of information related to log buffer of InnoDB storage engine
+ * @returnParam WaitsCumCnt The number of times that the log buffer was too small <br/> and a wait was required for it to be flushed before continuing.
+ * @returnParam WriteRequestsCumCnt The number of log write requests. 
+ * @returnParam WritesCumCnt The number of physical writes to the log file.
+ * @returnParam OsLogWrittenCumCnt The number of bytes written to the log file. 
+ * @returnParam WaitsPct Percentage of log wait vs log write
+ * @returnParam WaitsCnt The different of number of log wait since last monitoring time
+ * @returnParam WaitsRateDbl Equals WaitsCnt/interval
+ * @returnParam WriteRequestsCnt Different value of of log write requests between <br/> this time and previous monitoring time
+ * @returnParam WriteRequestsRateDbl Equals WriteRequestsCnt/interval
+ * @returnParam WritesCnt The different of number of physical writes to log file <br/> between this time and previous monitoring time
+ * @returnParam WritesRateDbl Equals WritesCnt/interval
+ * @returnParam OsLogWrittenCnt Different value of number of bytes written to the log file <br/> between this time and previous monitoring time
+ * @returnParam OsLogWrittenRateDbl Equals OsLogWrittenCnt/interval
+ */
+
+JOB = [name:"MySQL.Performance.InnoDBLogBuffer"]
+FETCHACTION={
+		def prev_Innodb_log_waits = PERSISTENTDATA['WaitsCumCnt'] != null ? PERSISTENTDATA['WaitsCumCnt'] : 0
+		def prev_Innodb_log_write_requests = PERSISTENTDATA['WriteRequestsCumCnt'] != null ? PERSISTENTDATA['WriteRequestsCumCnt'] : 0
+		def prev_Innodb_log_writes = PERSISTENTDATA['WritesCumCnt'] != null ? PERSISTENTDATA['WritesCumCnt'] : 0
+		def prev_Innodb_os_log_written = PERSISTENTDATA['OsLogWrittenCumCnt'] != null ? PERSISTENTDATA['OsLogWrittenCumCnt'] : 0
+		def resultData = [:]
+
+		def data = sql.rows('''
+				      SELECT  
+						A.WaitsCumCnt,  
+						B.WriteRequestsCumCnt, 
+						C.WritesCumCnt, 
+						D.OsLogWrittenCumCnt
+       					FROM
+				       (SELECT G.`variable_value` as WaitsCumCnt
+				       FROM `information_schema`.GLOBAL_STATUS G
+				       where G.variable_name = "Innodb_log_waits" )  A,
+				       (SELECT G.`variable_value` as WriteRequestsCumCnt
+				       FROM `information_schema`.GLOBAL_STATUS G
+				       where G.variable_name = "Innodb_log_write_requests" )  B,
+				       (SELECT G.`variable_value` as WritesCumCnt
+				       FROM `information_schema`.GLOBAL_STATUS G
+				       where G.variable_name = "Innodb_log_writes" )  C,
+				       (SELECT G.`variable_value` as OsLogWrittenCumCnt
+				       FROM `information_schema`.GLOBAL_STATUS G
+				       where G.variable_name = "Innodb_os_log_written" )  D;
+				''')
+		
+		resultData['WaitsCumCnt'] = Integer.parseInt(data[0]['WaitsCumCnt'])
+		resultData['WriteRequestsCumCnt'] = Integer.parseInt(data[0]['WriteRequestsCumCnt'])
+		resultData['WritesCumCnt'] = Integer.parseInt(data[0]['WritesCumCnt'])
+		resultData['OsLogWrittenCumCnt'] = Integer.parseInt(data[0]['OsLogWrittenCumCnt'])
+		
+		//Set PERSISTENTDATA
+		PERSISTENTDATA['WaitsCumCnt'] = resultData['WaitsCumCnt']
+		PERSISTENTDATA['WriteRequestsCumCnt']  = resultData['WriteRequestsCumCnt']
+		PERSISTENTDATA['WritesCumCnt'] = resultData['WritesCumCnt']
+		PERSISTENTDATA['OsLogWrittenCumCnt']  = resultData['OsLogWrittenCumCnt']
+		assert interval != null, "This is the first execution time, interval is null, quit the job"
+		
+		if (resultData['WritesCumCnt'] == 0) {
+				resultData['WaitsPct'] = null
+		} else{
+				resultData['WaitsPct'] = resultData['WaitsCumCnt'] / resultData['WritesCumCnt'] * 100
+		}
+		
+		resultData['WaitsCnt'] = resultData['WaitsCumCnt'] - prev_Innodb_log_waits
+		resultData['WaitsRateDbl'] = resultData['WaitsCnt'] / interval
+			
+		resultData['WriteRequestsCnt'] = resultData['WriteRequestsCumCnt'] - prev_Innodb_log_write_requests
+		resultData['WriteRequestsRateDbl'] = resultData['WriteRequestsCnt'] / interval
+			
+		resultData['WritesCnt'] = resultData['WritesCumCnt'] - prev_Innodb_log_writes
+		resultData['WritesRateDbl'] = resultData['WritesCnt'] / interval
+			
+		resultData['OsLogWrittenCnt'] = resultData['OsLogWrittenCumCnt'] - prev_Innodb_os_log_written
+		resultData['OsLogWrittenRateDbl'] = resultData['OsLogWrittenCnt'] / interval
+			
+		
+		
+		def updateResultData = []
+		updateResultData.add(resultData)
+		return updateResultData
+			
+}
+KEYEXPR = [_sequence:["WaitsPct","OsLogWrittenRateDbl","WritesRateDbl"]]	
+KEYEXPR._unit = ["WaitsCumCnt":"count" , "WriteRequestsCumCnt" : "count" ,"WritesCumCnt" : "count" , "OsLogWrittenCumCnt" : "count" , "WaitsPct" : "%",
+	"WaitsCnt":"count/interval","WriteRequestsCnt":"count/interval","WritesCnt":"count/interval",
+	"OsLogWrittenCnt":"count/interval","OsLogWrittenRateDbl":"count/sec","WritesRateDbl":"count/sec"
+	,"WriteRequestsRateDbl":"count/sec","WaitsRateDbl":"count/sec" ]
+KEYEXPR._chart = [   
+    [
+        "type": "line",
+        "name": "Logbuffer writes count",
+        "chart_columns": ["WritesCnt"],
+        "hint_columns": ["WaitsCnt", "OsLogWrittenCnt", "WaitsPct"]
+    ],
+    [
+        "type": "line",
+        "name": "Logbuffer waits count",
+        "chart_columns": ["WaitsCnt"],
+        "hint_columns": ["WritesCnt", "OsLogWrittenCnt", "WaitsPct"]
+    ]
+]
+SENDTYPE = "Store"
+DBTYPE = "@MYSQL"
+DEST = parameters.dest
+MONITORINGTYPE = "@DB"
+RESOURCEID = "Pf/MyInnoLogBuff"

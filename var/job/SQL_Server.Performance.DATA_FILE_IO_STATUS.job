@@ -1,0 +1,129 @@
+/**
+ * Monitoring data file I/O。<br/>
+ * <p>
+ * with query is not saved on Plan cache, recompiled each time the system will be run as query first time <br/>
+ * </p>
+ * @targetVersion 2008
+ * @return get information I/O of data file or log file with each database。
+ * @returnParam DatabaseName Database name
+ * @returnParam PhysicalName File name
+ * @returnParam FileId File Id
+ * @returnParam ReadsCumCnt Total Reads times
+ * @returnParam BytesReadCumCnt Total bytes were read
+ * @returnParam ReadTimeDbl Total time for reading (ms)
+ * @returnParam WritesCumCnt Total writes times
+ * @returnParam BytesWriteCumCnt Total bytes were written
+ * @returnParam WriteTimeDbl Total time for writing (ms)
+ * @returnParam TotalTimeIODbl Total time for IO (ms)
+ * @returnParam BytesOnDiskDbl File's physical size on disk (Bytes)
+ * @returnParam ReadsCnt Number of reads from the last monitoring
+ * @returnParam BytesReadsCnt Bytes read from the last monitoring
+ * @returnParam WritesCnt Number of writes from the last monitoring
+ * @returnParam BytesWritesCnt Bytes written from the last monitoring
+ * @returnParam ReadsRateVal Number of reads per second
+ * @returnParam BytesReadRateVal Bytes read per second
+ * @returnParam WritesRateVal Number of Writes per second
+ * @returnParam BytesWritesRateVal Bytes written per second
+ * @returnParam AverageIOTimeDbl Avarage time for I/O
+ * @returnParam AverageIOTimeCumDbl Total avarage time for I/O
+ */
+JOB = [name: "SQL_Server.Performance.DATA_FILE_IO_STATUS"]
+GROUPKEY = ["PhysicalName"]
+FETCHACTION = {
+	def resultData = sql.rows('''
+		SELECT 
+	            DB_NAME(mf.database_id) AS DatabaseName,
+	            REPLACE(mf.physical_name,\'\\\',\'/\') as PhysicalName,
+	            mf.file_id as FileId,
+	            NumberReads as ReadsCumCnt, 
+	            BytesRead as BytesReadCumCnt,
+	            IoStallReadMS as ReadTimeDbl,
+	            NumberWrites as WritesCumCnt,
+	            BytesWritten as BytesWriteCumCnt,
+	            IoStallWriteMS as WriteTimeDbl,
+	            IoStallMS as TotalTimeIODbl,
+	            BytesOnDisk as BytesOnDiskDbl
+		FROM 
+		     sys.fn_virtualfilestats(NULL, NULL) AS fv
+		JOIN sys.master_files AS mf ON mf.database_id = fv.DbId
+		AND mf.file_id = fv.FileId
+	'''
+	)
+	return resultData
+}
+
+ACCUMULATE = {
+		assert interval != null, "First time, we cannot return calculating values"
+		if(prevOUTPUT != null && !prevOUTPUT.isEmpty()) {
+			OUTPUT.each { rec ->
+				if(prevOUTPUT[rec.PhysicalName] != null && prevOUTPUT[rec.PhysicalName] == rec.PhysicalName) {
+					rec['ReadsCnt'] = rec['ReadsCumCnt'] - prevOUTPUT[rec.PhysicalName]['ReadsCumCnt']
+					rec['BytesReadsCnt'] = rec['BytesReadCumCnt'] - prevOUTPUT[rec.PhysicalName]['BytesReadCumCnt']
+					rec['WritesCnt'] = rec['WritesCumCnt'] - prevOUTPUT[rec.PhysicalName]['WritesCumCnt']
+					rec['BytesWritesCnt'] = rec['BytesWriteCumCnt'] - prevOUTPUT[rec.PhysicalName]['BytesWriteCumCnt']
+				} else {
+					rec['ReadsCnt'] = rec['ReadsCumCnt']
+		    		rec['BytesReadsCnt'] = rec['BytesReadCumCnt']
+		    		rec['WritesCnt'] = rec['WritesCumCnt']
+		    		rec['BytesWritesCnt'] = rec['BytesWriteCumCnt']
+				}
+			}
+		} else {
+			OUTPUT.each { rec ->
+		    		rec['ReadsCnt'] = rec['ReadsCumCnt']
+		    		rec['BytesReadsCnt'] = rec['BytesReadCumCnt']
+		    		rec['WritesCnt'] = rec['WritesCumCnt']
+		    		rec['BytesWritesCnt'] = rec['BytesWriteCumCnt']
+	    	}
+		}
+		OUTPUT.each { rec ->
+				rec['ReadsRateVal'] = rec['ReadsCnt']/interval
+				rec['BytesReadRateVal'] = rec['BytesReadsCnt']/interval
+				rec['WritesRateVal'] = rec['WritesCnt']/interval
+				rec['BytesWritesRateVal'] = rec['BytesWritesCnt']/interval
+				def totalTimeIODiff
+				if(prevOUTPUT[rec.PhysicalName] != null) {
+					totalTimeIODiff = rec['TotalTimeIODbl'] - prevOUTPUT[rec.PhysicalName]['TotalTimeIODbl']
+				} else {
+					totalTimeIODiff = rec['TotalTimeIODbl']
+				}
+				if((rec['ReadsCnt'] + rec['WritesCnt']) != 0) {
+					rec['AverageIOTimeDbl'] = totalTimeIODiff/(rec['ReadsCnt'] + rec['WritesCnt'])
+				} else {
+					rec['AverageIOTimeDbl'] = null
+				}
+				if((rec['ReadsCumCnt'] + rec['WritesCumCnt']) != 0) {
+					rec['AverageIOTimeCumDbl'] = rec['TotalTimeIODbl']/(rec['ReadsCumCnt'] + rec['WritesCumCnt'])
+				} else {
+					rec['AverageIOTimeCumDbl'] = null
+				}
+		}
+}
+
+KEYEXPR = ['_root':['DatabaseName','FileId'],'_sequence':['AverageIOTimeDbl','AverageIOTimeCumDbl']]
+KEYEXPR._unit = ["ReadsCumCnt":"count", "BytesReadCumCnt":"byte", "ReadTimeDbl":"msec", "WritesCumCnt":"count", "BytesWriteCumCnt":"byte", "WriteTimeDbl":"msec", "TotalTimeIODbl":"msec", "BytesOnDiskDbl":"byte", "ReadsCnt":"count/interval", "BytesReadsCnt":"byte/interval", "WritesCnt":"count/interval", "BytesWritesCnt":"byte/interval", "ReadsRateVal":"count/sec", "BytesReadRateVal":"byte/sec", "WritesRateVal":"count/sec", "BytesWritesRateVal":"byte/sec", "AverageIOTimeDbl":"msec"]
+KEYEXPR._chart = [
+    [
+        "type": "line",
+        "name": "Read/Write Count",
+        "chart_columns": ["ReadsCnt","WritesCnt"],
+        "hint_columns": ["PhysicalName", "ReadsCumCnt", "WritesCumCnt", "ReadTimeDbl", "WriteTimeDbl"] 
+    ],
+    [
+        "type": "line",
+        "name": "Read/Write Byte",
+        "chart_columns": ["BytesReadsCnt", "BytesWritesCnt"],
+        "hint_columns": ["PhysicalName", "BytesReadCumCnt", "BytesWriteCumCnt", "ReadsRateVal", "BytesReadRateVal", "BytesOnDiskDbl", "WritesRateVal", "BytesWritesRateVal"]
+    ],
+    [
+        "type": "area",
+        "name": "Average I/O Time",
+        "chart_columns": ["AverageIOTimeDbl"],
+        "hint_columns": ["PhysicalName", "TotalTimeIODbl", "AverageIOTimeCumDbl"]
+    ]
+]
+SENDTYPE = "Store"
+RESOURCEID = "Pf/MsDtFileIoStat"
+MONITORINGTYPE = "@DB"
+DBTYPE = "@MSSQL"
+DEST = parameters.dest

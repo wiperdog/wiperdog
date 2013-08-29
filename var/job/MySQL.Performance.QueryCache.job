@@ -1,0 +1,127 @@
+/**
+ * Monitoring query cache hit.<br/>
+ * <p>
+ * The query cache stores the text of a SELECT statement together with the corresponding result that was sent to the client.<br/>
+ * The query cache does not work in an environment where you have multiple mysqld servers updating the same MyISAM tables.<br/>
+ * To disable the query cache at server startup, set the query_cache_size system variable to 0.<br/>
+ * When we want use query cache, needs setup a minimum size of query_cache_size of about 40KB to allocate its structures.<br/>
+ * </p>
+ * @targetVersion 5.1
+ * @return get information on the use of query cache.
+ * @returnParam FreeBlocksCnt The number of free memory blocks in the query cache
+ * @returnParam FreeMemorySize The amount of free memory for the query cache
+ * @returnParam HitsCumCnt Total number of query cache hits
+ * @returnParam InsertsCumCnt Total number of queries added to the query cache
+ * @returnParam LowmemPrunesCumCnt Total number of queries that were deleted from the query cache because of low memory
+ * @returnParam NotCachedCumCnt Total number of noncached queries (not cacheable, or not cached due to the query_cache_type setting)
+ * @returnParam QueriesInCacheCumCnt Total number of queries registered in the query cache
+ * @returnParam TotalBlocksCnt The total number of blocks in the query cache
+ * @returnParam HitsCnt The number of query cache hits from last monitoring
+ * @returnParam InsertsCnt The number of queries added to the query cache from last monitoring
+ * @returnParam LowmemPrunesCnt The number of queries that were deleted from the query cache because of low memory from last monitoring
+ * @returnParam NotCachedCnt The number of noncached queries from last monitoring
+ * @returnParam InCacheCnt The number of queries registered in the query cache from last monitoring
+ * @returnParam CacheHitPct Query cache hit percent
+ * @returnParam CacheHitCumPct Accumulate query cache hit percent
+ * @returnParam UsedPct Percentage of used cache size via total cache size
+ */
+ 
+JOB = [name:"MySQL.Performance.QueryCache"]
+FETCHACTION={
+		def prev_Qcache_hits_diff = PERSISTENTDATA['HitsCumCnt'] != null ? PERSISTENTDATA['HitsCumCnt'] : 0
+		def prev_Qcache_inserts_diff = PERSISTENTDATA['InsertsCumCnt'] != null ? PERSISTENTDATA['InsertsCumCnt'] : 0
+		def prev_Qcache_lowmem_prunes_diff = PERSISTENTDATA['LowmemPrunesCumCnt'] != null ? PERSISTENTDATA['LowmemPrunesCumCnt'] : 0
+		def prev_Qcache_not_cached_diff = PERSISTENTDATA['NotCachedCumCnt'] != null ? PERSISTENTDATA['NotCachedCumCnt'] : 0
+		def prev_Qcache_queries_in_cache_diff = PERSISTENTDATA['QueriesInCacheCumCnt'] != null ? PERSISTENTDATA['QueriesInCacheCumCnt'] : 0
+		def resultData = [:]
+		def data = sql.rows('''
+					SELECT
+					 A.FreeBlocksCnt,
+					 B.FreeMemorySize,
+					 C.HitsCumCnt,
+					 D.InsertsCumCnt,
+					 E.LowmemPrunesCumCnt,
+					 F.NotCachedCumCnt,
+					 G.QueriesInCacheCumCnt,
+					 H.TotalBlocksCnt
+					FROM
+					 (SELECT G.variable_value AS FreeBlocksCnt FROM information_schema.global_status G WHERE G.variable_name = 'Qcache_free_blocks') A,
+					 (SELECT G.variable_value AS FreeMemorySize FROM information_schema.global_status G WHERE G.variable_name = 'Qcache_free_memory') B,
+					 (SELECT G.variable_value AS HitsCumCnt FROM information_schema.global_status G WHERE G.variable_name = 'Qcache_hits') C,
+					 (SELECT G.variable_value AS InsertsCumCnt FROM information_schema.global_status G WHERE G.variable_name = 'Qcache_inserts') D,
+					 (SELECT G.variable_value AS LowmemPrunesCumCnt FROM information_schema.global_status G WHERE G.variable_name = 'Qcache_lowmem_prunes') E,
+					 (SELECT G.variable_value AS NotCachedCumCnt FROM information_schema.global_status G WHERE G.variable_name = 'Qcache_not_cached') F,
+					 (SELECT G.variable_value AS QueriesInCacheCumCnt FROM information_schema.global_status G WHERE G.variable_name = 'Qcache_queries_in_cache') G,
+					 (SELECT G.variable_value AS TotalBlocksCnt FROM information_schema.global_status G WHERE G.variable_name = 'Qcache_total_blocks') H;
+				''')
+		
+		resultData['FreeBlocksCnt'] = Long.parseLong(data[0]['FreeBlocksCnt'])
+		resultData['FreeMemorySize'] = Long.parseLong(data[0]['FreeMemorySize'])
+		resultData['HitsCumCnt'] = Long.parseLong(data[0]['HitsCumCnt'])
+		resultData['InsertsCumCnt'] = Long.parseLong(data[0]['InsertsCumCnt'])
+		resultData['LowmemPrunesCumCnt'] = Long.parseLong(data[0]['LowmemPrunesCumCnt'])
+		resultData['NotCachedCumCnt'] = Long.parseLong(data[0]['NotCachedCumCnt'])
+		resultData['QueriesInCacheCumCnt'] = Long.parseLong(data[0]['QueriesInCacheCumCnt'])
+		resultData['TotalBlocksCnt'] = Long.parseLong(data[0]['TotalBlocksCnt'])
+		resultData['UsedPct'] = (resultData['TotalBlocksCnt'] - resultData['FreeBlocksCnt']) / resultData['TotalBlocksCnt'] * 100
+		//Set PERSISTENTDATA
+		PERSISTENTDATA['HitsCumCnt'] = resultData['HitsCumCnt']
+		PERSISTENTDATA['InsertsCumCnt'] = resultData['InsertsCumCnt']
+		PERSISTENTDATA['LowmemPrunesCumCnt'] = resultData['LowmemPrunesCumCnt']
+		PERSISTENTDATA['NotCachedCumCnt'] = resultData['NotCachedCumCnt']
+		PERSISTENTDATA['QueriesInCacheCumCnt'] = resultData['QueriesInCacheCumCnt']
+			
+		resultData['HitsCnt'] = resultData['HitsCumCnt'] - prev_Qcache_hits_diff
+		resultData['InsertsCnt'] = resultData['InsertsCumCnt'] - prev_Qcache_inserts_diff
+		resultData['LowmemPrunesCnt']= resultData['LowmemPrunesCumCnt'] - prev_Qcache_lowmem_prunes_diff
+		resultData['NotCachedCnt']= resultData['NotCachedCumCnt'] - prev_Qcache_not_cached_diff
+		resultData['InCacheCnt'] = resultData['QueriesInCacheCumCnt'] - prev_Qcache_queries_in_cache_diff
+		if ((resultData['HitsCnt'] + resultData['NotCachedCnt']+resultData['InsertsCnt']) == 0){
+			resultData['CacheHitPct'] = null
+		} else {
+			resultData['CacheHitPct']= resultData['HitsCnt']*100/(resultData['HitsCnt'] + resultData['NotCachedCnt'] + resultData['InsertsCnt'])
+		}
+		//Cache hit rate from DBMS starts
+		if ((resultData['HitsCumCnt'] + resultData['NotCachedCumCnt'] + resultData['InsertsCumCnt']) == 0){
+			resultData['CacheHitCumPct'] = null
+		} else {
+			resultData['CacheHitCumPct'] = resultData['HitsCumCnt'] *100 / (resultData['HitsCumCnt'] + resultData['NotCachedCumCnt'] + resultData['InsertsCumCnt'] )
+		}
+		def updateResultData = []
+		updateResultData.add(resultData)
+		return updateResultData
+}
+KEYEXPR = [_sequence:["CacheHitPct","HitsCnt","NotCachedCnt"]]	  
+KEYEXPR._unit = ["FreeBlocksCnt" :"blocks" , "FreeMemorySize" : "MB" , "HitsCumCnt" :"count","InsertsCumCnt" : "count",
+	"LowmemPrunesCumCnt" :"count" , "NotCachedCumCnt" : "count" , "TotalBlocksCnt":"blocks", "QueriesInCacheCumCnt":"count","CacheHitPct":"%", 
+	"CacheHitCumPct":"%", "HitsCnt":"count/interval", "InsertsCnt":"count/interval","LowmemPrunesCnt":"count/interval","NotCachedCnt":"count/interval",
+	"InCacheCnt":"count/interval", "HitsCnt":"count/interval", "UsedPct":"%"]
+KEYEXPR._chart = [
+	[
+        "type": "line",
+        "name": "Buffer usage(%) information",
+        "chart_columns": ["UsedPct"],
+        "hint_columns": ["TotalBlocksCnt","FreeBlocksCnt"]
+    ],
+    [
+		"type": "line",
+        "name": "Query cache hit",
+        "chart_columns": ["CacheHitPct"]
+	
+	],
+	[
+		"type": "line",
+        "name": "Query cache activities",
+        "chart_columns": ["HitsCnt", "InsertsCnt", "LowmemPrunesCnt", "NotCachedCnt", "InCacheCnt"]
+	],
+    [
+        "type": "pie",
+        "name": "Query cache hit",
+        "chart_columns": ["HitsCumCnt","NotCachedCnt","InsertsCnt"]
+    ]
+]
+SENDTYPE = "Store"
+DBTYPE = "@MYSQL"
+DEST = parameters.dest
+MONITORINGTYPE = "@DB"
+RESOURCEID = "Pf/MyQueryCHR"

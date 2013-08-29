@@ -1,0 +1,118 @@
+/**
+ * Monitoring configuration option value in the system.<br/>
+ * <p>
+ * Job execution on the computer SQL Server need monitor.<br/>
+ * </p>
+ * @targetVersion 2008
+ * @return get information for each configuration per each record.
+ * @returnParam ResourceName Configuration's name
+ * @returnParam LimitVal Limit value of data config
+ * @returnParam CurrentVal Value of current config
+ * @returnParam ResourceUsedPct Usage rate of configuration
+ */
+JOB = [name: "SQL_Server.Proactive_Check.RESOURCE_LIMIT"]
+FETCHACTION = {
+	def mapConfig
+	def resultData = []
+	// get limit value of data config
+	def dataConfig = sql.rows('''
+			SELECT 
+				name,
+				CAST(value_in_use AS INT) AS value,
+				CAST(minimum AS INT) AS minimum,
+				CAST(maximum AS INT) AS maximum
+			FROM 
+				sys.configurations
+			WHERE
+				name IN ('locks', 'max worker threads', 'user connections')
+		''')
+	if(dataConfig != null && dataConfig.size > 0){
+		dataConfig.each{config->
+			mapConfig = [:]
+			mapConfig["ResourceName"] = config.name
+			mapConfig["LimitVal"] = config.value
+			if(config.value == 0) {
+				mapConfig["LimitVal"] = config.maximum
+			} 
+			if(config.value != 0 && config.value <= config.minimum) {
+				mapConfig["LimitVal"] = config.minimum
+			}
+			resultData.add(mapConfig)
+		}
+	}
+	//get limit value of memory config
+	def memoryConfig = sql.firstRow('''
+		SELECT 
+			counter_name AS name,
+			CAST(cntr_value AS INT) AS value
+		FROM 
+			sys.dm_os_performance_counters
+		WHERE 
+			object_name LIKE '%Memory Manager%'
+		AND
+			counter_name LIKE '%Target Server Memory%'
+		''')
+	mapConfig = [:]
+	mapConfig["ResourceName"] = memoryConfig.name.trim()
+	mapConfig["LimitVal"] = memoryConfig.value
+	resultData.add(mapConfig)
+	
+	//get data current config
+	def currentConfig = sql.firstRow('''
+			SELECT 
+				 E.CurrentSessionsInt,
+				 L.CurrentLocksInt,
+				 T.CurrentThreadsInt,
+				 M.CurrentMemoryInt
+			FROM 
+				(SELECT COUNT(*) AS CurrentSessionsInt FROM sys.dm_exec_sessions) E,
+				(SELECT cntr_value AS CurrentLocksInt 
+		 			FROM sys.dm_os_performance_counters
+					WHERE object_name LIKE '%General Statistics%'
+	   			  	AND counter_name LIKE '%Processes blocked%') L,
+				(SELECT COUNT(*) AS CurrentThreadsInt 
+					FROM sys.dm_os_tasks
+					WHERE worker_address IS NOT NULL) T,
+				(SELECT cntr_value AS CurrentMemoryInt 
+					FROM sys.dm_os_performance_counters
+			WHERE object_name LIKE '%Memory Manager%'
+			AND counter_name LIKE '%Total Server Memory%') M
+		''')
+	//statistic data
+	resultData.each {result->
+		if(result.ResourceName == "user connections") {
+			result["CurrentVal"] = currentConfig["CurrentSessionsInt"]
+		}
+		if(result.ResourceName == "locks") {
+			result["CurrentVal"] = currentConfig["CurrentLocksInt"]
+		}
+		if(result.ResourceName == "max worker threads") {
+			result["CurrentVal"] = currentConfig["CurrentThreadsInt"]
+		}
+		if(result.ResourceName == "Target Server Memory (KB)") {
+			result["CurrentVal"] = currentConfig["CurrentMemoryInt"]
+		}
+		if(result["LimitVal"] != 0) {
+			result["ResourceUsedPct"] = (result["CurrentVal"]/result["LimitVal"])*100
+		} else {
+			result["ResourceUsedPct"] = null
+		}
+	}
+	return resultData
+}
+
+SENDTYPE = "Store"
+KEYEXPR = ["_root":["ResourceName"],"_sequence":["ResourceUsedPct"]]
+KEYEXPR._unit = ["ResourceUsedPct":"%"]
+KEYEXPR._chart = [
+    [
+        "type": "line",
+        "name": "Resource Information",
+        "chart_columns": ["ResourceUsedPct"],
+        "hint_columns": ["LimitVal", "CurrentVal"]
+    ]
+]
+RESOURCEID = "Sr/MsRsrcLimit"
+MONITORINGTYPE = "@DB"
+DBTYPE = "@MSSQL"
+DEST = parameters.dest

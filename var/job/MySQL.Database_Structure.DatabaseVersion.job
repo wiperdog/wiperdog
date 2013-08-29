@@ -1,0 +1,38 @@
+/**
+ * MySQLのバージョン情報を監視します。<br/>
+ * <p>
+ * 現在使用しているMySQLのバージョン情報を取得します。
+ * </p> 
+ * @targetVersion 5.1+
+ * @return サンプリング毎に1レコードのデータを取得します。
+ * @returnParam ProtocolVersionTxt クライアント/サーバー間のプロトコルバージョン番号
+ * @returnParam VersionTxt MySQLサーバのバージョン番号
+ * @returnParam VersionCommentTxt MySQLサーバのバージョンコメント
+ * @returnParam VersionCompileMachineTxt MySQLがコンパイル/ビルドされたマシンの種類(x86_64など)
+ * @returnParam VersionCompileOsTxt MySQLがコンパイル/ビルドされたマシンのOS(Win64など)
+ */
+JOB = [ name: "MySQL.Database_Structure.DatabaseVersion" ]
+QUERY = '''
+	SELECT A.ProtocolVersionTxt, B.VersionTxt, C.VersionCommentTxt, D.VersionCompileMachineTxt, E.VersionCompileOsTxt
+	FROM
+	(SELECT G.`variable_value` as ProtocolVersionTxt
+	FROM `information_schema`.GLOBAL_VARIABLES G
+	where G.variable_name = "protocol_version" ) A,
+	(SELECT G.`variable_value` as VersionTxt
+	FROM `information_schema`.GLOBAL_VARIABLES G
+	where G.variable_name = "version" ) B,
+	(SELECT G.`variable_value` as VersionCommentTxt
+	FROM `information_schema`.GLOBAL_VARIABLES G
+	where G.variable_name = "version_comment" ) C,
+	(SELECT G.`variable_value` as VersionCompileMachineTxt
+	FROM `information_schema`.GLOBAL_VARIABLES G
+	where G.variable_name = "version_compile_machine" ) D,
+	(SELECT G.`variable_value` as VersionCompileOsTxt
+	FROM `information_schema`.GLOBAL_VARIABLES G
+	where G.variable_name = "version_compile_os" ) E;
+'''
+SENDTYPE = "Store"
+MONITORINGTYPE = "@DB"
+RESOURCEID = "Sr/MyDbVer"
+DBTYPE = "@MYSQL"
+DEST = parameters.dest

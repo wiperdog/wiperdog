@@ -1,0 +1,80 @@
+/**
+ * Monitoring buffer cache.<br />
+ * <p>
+ * Showing all information used buffer cache in database: number of buffer cache free, used, dirty, ... <br />
+ * Create extension pg_buffercache to get data monitornig.<br />
+ *
+ * Dirty buffer is an area was taken memory but do not nothing. So, if dirty buffers is large will affect to speed access buffer other activities. <br />
+ * </p>
+ * @targetVersion From 8.3
+ * @return Information use buffer cache
+ * @returnParam SharedBuffersCnt Total number of buffer cache was allocated
+ * @returnParam UnusedBuffersCnt Number of buffer cache was not used
+ * @returnParam UsedBuffersCnt Number of buffer cache was used
+ * @returnParam DirtyBuffersCnt Number of buffer cache was dirtied
+ * @returnParam UsedCacheRatioPct Percentage of buffer cache was used
+ * @returnParam DirtyCacheRatioPct Percentage of buffer cache was dirtied
+ */
+JOB = [name:"Postgres.Performance.Buffer_Cache_Usage"]
+FETCHACTION = {
+	// Declared a map to store data monitoring
+	def map_data = [:]
+	// Create query to get data monitoring
+	def query_buffer_cache_usage = """
+			SELECT
+				shared_buff.shared_buffers,
+				unused.unused_buffers,
+				(shared_buff.shared_buffers - unused.unused_buffers) AS used_buffers,
+				dirty.dirty_buffers,
+				ROUND((((shared_buff.shared_buffers - unused.unused_buffers)*100.0)/(shared_buff.shared_buffers*100.0)*100.0),2) AS used_cache_ratio,
+				ROUND(((dirty.dirty_buffers*100.0)/(shared_buff.shared_buffers*100.0))*100.0,2) AS dirty_cache_ratio
+			FROM
+				(SELECT count(*) as shared_buffers
+				FROM pg_buffercache) AS shared_buff,
+				(SELECT count(*) as unused_buffers
+				FROM pg_buffercache
+				WHERE relfilenode is null and reltablespace is null and reldatabase is null
+				and relblocknumber is null and relforknumber is null and isdirty is null and usagecount is null ) AS unused,
+				(SELECT count(*) as dirty_buffers
+				FROM pg_buffercache
+				WHERE isdirty = true) AS dirty
+		"""
+	// Execute query
+	def resultQuery = sql.rows(query_buffer_cache_usage)
+	// Get data monitoring
+	map_data['SharedBuffersCnt'] = resultQuery.shared_buffers[0]
+	map_data['UnusedBuffersCnt'] = resultQuery.unused_buffers[0]
+	map_data['UsedBuffersCnt'] = resultQuery.used_buffers[0]
+	map_data['DirtyBuffersCnt'] = resultQuery.dirty_buffers[0]
+	map_data['UsedCacheRatioPct'] = resultQuery.used_cache_ratio[0]
+	map_data['DirtyCacheRatioPct'] = resultQuery.dirty_cache_ratio[0]
+	// Return data monitoring
+	def resultData = []
+	resultData.add(map_data)
+	return resultData
+}
+KEYEXPR = [_sequence:["UsedCacheRatioPct","SharedBuffersCnt","UsedBuffersCnt"]]
+KEYEXPR._unit = [ "SharedBuffersCnt" : "count", "UnusedBuffersCnt": "count", "UsedBuffersCnt" : "count", "DirtyBuffersCnt": "count",
+	"UsedCacheRatioPct": "%", "DirtyCacheRatioPct": "%"]
+KEYEXPR._chart = [
+	[
+		type:"line",
+		name:"Ratio Percent Of Used Cache" , 
+		chart_columns:["UsedCacheRatioPct"]
+	],
+	[
+		type:"line",
+		name:"Ratio Percent Of Dirty Cache" , 
+		chart_columns:["DirtyCacheRatioPct"]
+	],
+	[
+		type:"area",
+		name:"Number Of Buffer Cache Was Not Used, Used And Dirtied" , 
+		chart_columns:["UnusedBuffersCnt", "UsedBuffersCnt", "DirtyBuffersCnt"]
+	]
+]
+DBTYPE = "@PGSQL"
+MONITORINGTYPE = "@DB"
+RESOURCEID = "Pf/PgBufferCUsage"
+SENDTYPE = "Store"
+DEST = parameters.dest

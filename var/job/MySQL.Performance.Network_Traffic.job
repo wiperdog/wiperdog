@@ -1,0 +1,59 @@
+/**
+ * MySQL Performance Network Traffic
+ * <p>
+ * Gettign information of network traffic from information_schema.global_status
+ * </p> 
+ * @targetVersion 5.0
+ * @return 
+ * @returnParam BytesReceivedCumCnt The number of bytes received from all clients. 
+ * @returnParam BytesSentCumCnt The number of bytes sent to all clients. 
+ * @returnParam BytesReceivedCnt different value with last monitoring time of <code>BytesReceivedCumCnt</code>
+ * @returnParam BytesSentCnt different value with last monitoring time of <code>BytesSentCumCnt</code>
+ */
+JOB = [ name: "MySQL.Performance.Network_Traffic" ]
+QUERY = '''
+	SELECT 
+	 	SUM(t.BytesReceivedCumCnt) AS BytesReceivedCumCnt ,
+	 	SUM(t.BytesSentCumCnt) AS BytesSentCumCnt,
+		(SELECT variable_value AS Compression
+		FROM information_schema.global_status
+		WHERE variable_name LIKE 'COMPRESSION') AS CompressionStr
+	FROM
+	(
+	SELECT 
+			variable_value AS BytesReceivedCumCnt,
+		    0 AS BytesSentCumCnt
+		FROM information_schema.global_status 
+		WHERE variable_name LIKE 'BYTES_RECEIVED'
+		UNION 
+		SELECT 
+		 	0 AS BytesReceivedCumCnt,
+		    variable_value AS BytesSentCumCnt
+		FROM information_schema.global_status 
+		WHERE variable_name LIKE 'BYTES_SENT'
+		
+	) AS t
+'''
+ACCUMULATE = {
+	assert interval != null : "First time ,we can not get meaniningful values"
+	assert (prevOUTPUT != null && prevOUTPUT[0] != null ) : "Can not get previous monitoring data !"
+	OUTPUT.each{ rec ->
+		rec['BytesReceivedCnt'] = rec['BytesReceivedCumCnt'] - prevOUTPUT[0]['BytesReceivedCumCnt']
+		rec['BytesSentCnt'] = rec['BytesSentCumCnt'] - prevOUTPUT[0]['BytesSentCumCnt']
+	}
+}
+SENDTYPE = "Store"
+KEYEXPR = [:]
+KEYEXPR._unit = [ "BytesReceivedCumCnt" : "count" , "BytesSentCumCnt" : "count", "BytesReceivedCnt":"count/interval","BytesSentCnt":"count/interval"]
+KEYEXPR._chart = [
+    [
+        "type": "line",
+        "name": "Network traffic",
+        "chart_columns": ["BytesReceivedCnt", "BytesSentCnt"]
+    ]
+]
+MONITORINGTYPE = "@DB"
+RESOURCEID = "Sr/MyPerfNetworkTraffic"
+DBTYPE = "@MYSQL"
+DEST = parameters.dest
+    

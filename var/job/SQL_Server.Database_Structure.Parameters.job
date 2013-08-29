@@ -1,0 +1,33 @@
+/**
+ * Monitoring parameters.<br/>
+ * @targetVersion 2008
+ * @return get data of parameters for each record
+ * @returnParam ParameterName Name of the configuration option
+ * @returnParam ValueInt Configured value for this option
+ * @returnParam MinimumInt Minimum value for the configuration option
+ * @returnParam MaximumInt Maximum value for the configuration option
+ * @returnParam ValueInUseInt Running value currently in effect for this option
+ */
+JOB = [name: "SQL_Server.Database_Structure.Parameters"]
+
+FETCHACTION = {
+	def resultData = sql.rows('''
+		SELECT 
+		    a.name as ParameterName,
+			CAST(a.value AS int) AS ValueInt,
+			CAST(a.minimum AS int) AS MinimumInt,
+      		CAST(a.maximum AS int) AS MaximumInt,
+     		CAST(a.value_in_use AS int) AS ValueInUseInt
+		FROM 
+		    sys.configurations as a
+	'''
+	)
+	return resultData
+}
+
+KEYEXPR = ['_root':['ParameterName']]
+SENDTYPE = "Store"
+RESOURCEID = "Sr/MsParameter"
+MONITORINGTYPE = "@DB"
+DBTYPE = "@MSSQL"
+DEST = parameters.dest

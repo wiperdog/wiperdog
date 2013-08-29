@@ -27,7 +27,8 @@ class GroovyScheduledJob implements JobExecutable {
 	def logger = Logger.getLogger("org.wiperdog.scriptsupport.groovyrunner")
 
 	def paramsInstances = null
-	def instJobName = null
+	def rootJobName = null
+	def instanceName = null
 	
 	DefaultSender sender
 	List<Sender> senderList = new ArrayList<Sender>()
@@ -45,12 +46,13 @@ class GroovyScheduledJob implements JobExecutable {
 		this.sender = sender
 	}
 	
-	GroovyScheduledJob(fullPathOfFile, classOfJob, paramsInstances, instJobName, DefaultSender sender) {
+	GroovyScheduledJob(fullPathOfFile, classOfJob, paramsInstances, rootJobName, instanceName, DefaultSender sender) {
 		this.classOfJob = classOfJob		
 		this.fullPathOfFile = fullPathOfFile
 		this.fileName = new	File(this.fullPathOfFile).getName()	
 		this.paramsInstances = paramsInstances
-		this.instJobName = instJobName
+		this.rootJobName = rootJobName
+		this.instanceName = instanceName
 		properties = MonitorJobConfigLoader.getProperties()
 		this.sender = sender
 	}
@@ -61,6 +63,13 @@ class GroovyScheduledJob implements JobExecutable {
 		def jobName		
 		def jobFileName = (new File(this.fullPathOfFile)).getName().replaceFirst(~/\.[^\.]+$/, '')
 		def params = []
+		
+		//Get instance job name
+		def instJobName = null
+		if ((this.rootJobName != null) && (this.instanceName != null)) {
+			instJobName = this.rootJobName + "_" + this.instanceName
+		}
+		
 		//Get job name		
 		if ( vJob[ResourceConstants.DEF_JOB_NAME] == null ) {
 			//def jobFileFirstLine
@@ -94,17 +103,26 @@ class GroovyScheduledJob implements JobExecutable {
 		o.run()
 		if (binding.hasVariable(ResourceConstants.DEF_JOB)) {
 			vJob = binding.getVariable(ResourceConstants.DEF_JOB)
+			if ((this.rootJobName == null) && (vJob[ResourceConstants.DEF_JOB_NAME] != null)) {
+				this.rootJobName = vJob[ResourceConstants.DEF_JOB_NAME]
+			}
 		} else {
 			if(instJobName != null) {
 				vJob[ResourceConstants.DEF_JOB_NAME] = instJobName
 			} else {
-				vJob[ResourceConstants.DEF_JOB_NAME] = jobFileName			
+				vJob[ResourceConstants.DEF_JOB_NAME] = jobFileName
+				this.rootJobName = jobFileName
 			}
 		}
 		return o
 	}
 
 	def getJOBDefinition() {
+		//Get instance job name
+		def instJobName = null
+		if ((this.rootJobName != null) && (this.instanceName != null)) {
+			instJobName = this.rootJobName + "_" + this.instanceName
+		}
 		
 		if (vJob ==[:]) {
 		def jobFileName = (new File(this.fullPathOfFile)).getName().replaceFirst(~/\.[^\.]+$/, '')
@@ -169,7 +187,7 @@ class GroovyScheduledJob implements JobExecutable {
 			// call Process to load and store Data
 			initMonitoringJobData(binding, PERSISTENTDATA_File, prevOUTPUT_File, lastExecution_File);
 			logger.debug("fileName: " + fileName + " ---Start Execute Job---")
-			def jobCaller = new DefaultJobCaller(objJob,fileName, vJob[ResourceConstants.DEF_JOB_NAME], this.sender)
+			def jobCaller = new DefaultJobCaller(objJob,fileName, this.rootJobName, this.instanceName, this.sender)
 			rv = jobCaller.start(null, senderList)
 			isJobFinishedSuccessfully = jobCaller.isJobFinishedSuccessfully
 			logger.debug("fileName: " + fileName + " ---Finish Execute Job---")

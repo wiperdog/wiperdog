@@ -20,6 +20,7 @@ class ResourceConstants{
 	public static final String JOB_PARAMETERS_DIRECTORY= "monitorjobfw.directory.jobparameters"
 	public static final String DEFAULT_PARAMETERS_DIRECTORY= "monitorjobfw.directory.defaultparameters"
 	public static final String MONITORJOBDATA_DIRECTORY= "monitorjobfw.directory.monitorjobdata"
+	public static final String LOG_DIRECTORY = "monitorjobfw.directory.log"
 	
 	/** EncryptedDBConnectionSourceImpl **/
 	public static final String DEF_ORACLE_DRIVER = "oracle.jdbc.driver.OracleDriver"
@@ -40,7 +41,9 @@ class ResourceConstants{
 	public static final String DEF_DEST = "DEST"
 	public static final String DEF_FETCHACTION = "FETCHACTION"
 	public static final String DEF_QUERY = "QUERY"
+	public static final String DEF_DBEXEC = "DBEXEC"
 	public static final String DEF_QUERY_VARIABLE = "QUERY_VARIABLE"
+	public static final String DEF_DBEXEC_VARIABLE = "DBEXEC_VARIABLE"	
 	public static final String DEF_FINALLY = "FINALLY"
 	public static final String DEF_DBTYPE = "DBTYPE"
 	public static final String ORACLE = "@ORA"

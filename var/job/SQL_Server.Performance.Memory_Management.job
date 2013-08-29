@@ -1,0 +1,107 @@
+/**
+ * Monitoring overall server memory usage.<br/>
+ * <p>
+ * For gauge user activity, resource usage and bottlenecks.<br/>
+ * </p>
+ * @targetVersion 2008
+ * @return get information on the use of memory.
+ * @returnParam ConnectionMemoryKBDbl Total amount of dynamic memory the server is using for maintaining connections 
+ * @returnParam GrantedWorkspaceMemoryKBDbl Total amount of memory currently granted to executing processes
+ * @returnParam LockMemoryKBDbl Total amount of dynamic memory the server is using for locks
+ * @returnParam LockBlocksAllocatedDbl Current number of allocated lock blocks
+ * @returnParam LockOwnerBlocksAllocatedDbl Current number of allocated lock owner blocks
+ * @returnParam LockBlocksDbl Current number of lock blocks in use on the server
+ * @returnParam LockOwnerBlocksDbl The number of lock owner blocks currently in use on the server 
+ * @returnParam MaximumWorkspaceMemoryKBDbl Maximum amount of memory available for executing processes 
+ * @returnParam MemoryGrantsOutstandingDbl Total number of processes that have successfully acquired a workspace memory grant
+ * @returnParam MemoryGrantsPendingDbl Total number of processes waiting for a workspace memory grant
+ * @returnParam OptimizerMemoryKBDbl Total amount of dynamic memory the server is using for query optimization
+ * @returnParam SQLCacheMemoryKBDbl Total amount of dynamic memory the server is using for the dynamic SQL cache
+ * @returnParam TargetServerMemoryKBDbl Total amount of dynamic memory the server can consume
+ * @returnParam TotalServerMemoryKBDbl The committed memory from the buffer pool
+ */
+JOB = [name: "SQL_Server.Performance.Memory_Management"]
+
+FETCHACTION = {
+	def resultData = sql.rows('''
+		SELECT
+			counter_name,
+			cntr_value
+		FROM
+			sys.dm_os_performance_counters
+		WHERE object_name like '%Memory Manager%'
+		AND
+		counter_name in (
+			'Connection Memory (KB)',
+			'Granted Workspace Memory (KB)',
+			'Lock Memory (KB)',
+			'Lock Blocks Allocated',
+			'Lock Owner Blocks Allocated',
+			'Lock Blocks',
+			'Lock Owner Blocks',
+			'Maximum Workspace Memory (KB)',
+			'Memory Grants Outstanding',
+			'Memory Grants Pending',
+			'Optimizer Memory (KB)',
+			'SQL Cache Memory (KB)',
+			'Target Server Memory (KB)',
+			'Total Server Memory (KB)'
+		)
+	'''
+	)
+	def finalResult = [:]
+	def convertedData = [:]
+	def finalResultData = []
+	resultData.each{
+		it['counter_name'] = it['counter_name'].trim()
+		finalResult[it['counter_name']] = it['cntr_value']
+	}
+	
+	convertedData['ConnectionMemoryKBDbl'] = finalResult['Connection Memory (KB)']
+	convertedData['GrantedWorkspaceMemoryKBDbl'] = finalResult['Granted Workspace Memory (KB)']
+	convertedData['LockMemoryKBDbl'] = finalResult['Lock Memory (KB)']
+	convertedData['LockBlocksAllocatedDbl'] = finalResult['Lock Blocks Allocated']
+	convertedData['LockOwnerBlocksAllocatedDbl'] = finalResult['Lock Owner Blocks Allocated']
+	convertedData['LockBlocksDbl'] = finalResult['Lock Blocks']
+	convertedData['LockOwnerBlocksDbl'] = finalResult['Lock Owner Blocks']
+	convertedData['MaximumWorkspaceMemoryKBDbl'] = finalResult['Maximum Workspace Memory (KB)']
+	convertedData['MemoryGrantsOutstandingDbl'] = finalResult['Memory Grants Outstanding']
+	convertedData['MemoryGrantsPendingDbl'] = finalResult['Memory Grants Pending']
+	convertedData['OptimizerMemoryKBDbl'] = finalResult['Optimizer Memory (KB)']
+	convertedData['SQLCacheMemoryKBDbl'] = finalResult['SQL Cache Memory (KB)']
+	convertedData['TargetServerMemoryKBDbl'] = finalResult['Target Server Memory (KB)']
+	convertedData['TotalServerMemoryKBDbl'] = finalResult['Total Server Memory (KB)']
+	finalResultData.add(convertedData)
+	return finalResultData
+}
+
+KEYEXPR = [:]
+KEYEXPR._unit = ["ConnectionMemoryKBDbl":"KB", "GrantedWorkspaceMemoryKBDbl":"KB", "LockMemoryKBDbl":"KB", "LockBlocksAllocatedDbl":"blocks", "LockOwnerBlocksAllocatedDbl":"blocks", "LockBlocksDbl":"blocks", "LockOwnerBlocksDbl":"blocks", "MaximumWorkspaceMemoryKBDbl":"KB", "MemoryGrantsOutstandingDbl":"count", "MemoryGrantsPendingDbl":"count", "OptimizerMemoryKBDbl":"KB", "SQLCacheMemoryKBDbl":"KB", "TargetServerMemoryKBDbl":"KB", "TotalServerMemoryKBDbl":"KB"]
+KEYEXPR._chart = [
+	[
+        "type": "line",
+        "name": "Memory Component Information",
+        "chart_columns": ["TargetServerMemoryKBDbl", "TotalServerMemoryKBDbl"]
+    ],
+    [
+        "type": "area",
+        "name": "Total Server Memory Information",
+        "chart_columns": ["ConnectionMemoryKBDbl", "GrantedWorkspaceMemoryKBDbl", "OptimizerMemoryKBDbl", "SQLCacheMemoryKBDbl", "LockMemoryKBDbl"]
+    ],
+    [
+        "type": "line",
+        "name": "Number of Block Lock",
+        "chart_columns": ["LockBlocksAllocatedDbl", "LockOwnerBlocksAllocatedDbl", "LockBlocksDbl", "LockOwnerBlocksDbl"]
+    ],
+    [
+        "type": "line",
+        "name": "Grants Workspace Memory",
+        "chart_columns": ["MemoryGrantsOutstandingDbl", "MemoryGrantsPendingDbl"]
+    ]
+]
+
+SENDTYPE = "Store"
+RESOURCEID = "Pf/MsMemMgmt"
+MONITORINGTYPE = "@DB"
+DBTYPE = "@MSSQL"
+DEST = parameters.dest

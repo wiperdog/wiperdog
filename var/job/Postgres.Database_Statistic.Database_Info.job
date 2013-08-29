@@ -1,0 +1,128 @@
+/**
+ * Monitoring Database Statistic.<br />
+ * <p>
+ * Each row corresponds to a database. Showing informations of that database as: name, size, number of connection, number of commited, ....<br />
+ * </p>
+ * @targetVersion All version
+ * @return All information related to database
+ * @returnParam DatabaseName Name of monitoring database
+ * @returnParam DatabaseSizeCumVal Size of monitoring database
+ * @returnParam NumOfCurrentConnectionsCnt Number of current connections established to database
+ * @returnParam NumOfCommitedCumCnt Number of transactions were committed
+ * @returnParam NumOfRollbackCumCnt Number of transactions were rollbacked
+ * @returnParam NumOfBlockReadCnt Number of block read of database
+ * @returnParam NumOfBufferHitCnt Number of buffer hit of database
+ * @returnParam NumOfReturnedRowCumCnt Number of rows were returned by  queries occuried in this database
+ * @returnParam NumOfInsertedRowCumCnt Number of rows were inserted by  queries occuried in this database
+ * @returnParam NumOfUpdatedRowCumCnt Number of rows were updateted by  queries occuried in this database
+ * @returnParam NumOfDeletedRowCumCnt Number of rows were deleted by  queries occuried in this database
+ * @returnParam NumOfCanceledQueryCumCnt Number of calcelled query due to conflicts with recovery in this database
+ * @returnParam TimeStatsResetTm The last time which this database statistic were reset
+ * @returnParam DatabaseSizeVal The increase or decrease of  database size since last monitoring
+ * @returnParam AverageDatabaseSizeVal Average of increase or decrease of database size per  second
+ * @returnParam NumberOfCommitedCnt The increase or decrease of commited transactions since last monitoring
+ * @returnParam NumberOfRollbackCnt The increase or decrease of  rollbacked trasactions since last monitoring
+ */
+JOB = [ name: "Postgres.Database_Statistic.Database_Info" ]
+GROUPKEY = ["DatabaseName"]
+FETCHACTION = {
+	// Get version PostgreSQL
+	def query_get_version = sql.rows('SELECT version()')
+	def version = query_get_version[0]['version']
+	// Store resultRecord
+	def resultData = []
+	def query_version_newer = """
+			SELECT
+				psd.datname AS "DatabaseName",
+				pg_database_size(psd.datname)/1024 AS "DatabaseSizeCumVal",
+				psd.numbackends  AS  "NumOfCurrentConnectionsCnt",
+				psd.xact_commit  AS "NumOfCommitedCumCnt",
+				psd.xact_rollback AS "NumOfRollbackCumCnt",
+				psd.blks_read AS "NumOfBlockReadCnt",
+				psd.blks_hit AS "NumOfBufferHitCnt",
+				psd.tup_returned AS "NumOfReturnedRowCumCnt",
+				psd.tup_inserted AS "NumOfInsertedRowCumCnt",
+				psd.tup_updated AS "NumOfUpdatedRowCumCnt",
+				psd.tup_deleted AS "NumOfDeletedRowCumCnt",
+				psd.conflicts AS "NumOfCanceledQueryCumCnt",
+				psd.stats_reset AS "TimeStatsResetTm"
+			FROM    pg_stat_database psd ,pg_database pd
+			WHERE psd.datid = pd.oid AND pd.datistemplate = false
+		"""
+	def query_version_older = """
+			SELECT
+				psd.datname AS "DatabaseName",
+				pg_database_size(psd.datname)/1024 AS "DatabaseSizeCumVal",
+				psd.numbackends  AS  "NumOfCurrentConnectionsCnt",
+				psd.xact_commit  AS "NumOfCommitedCumCnt",
+				psd.xact_rollback AS "NumOfRollbackCumCnt",
+				psd.blks_read AS "NumOfBlockReadCnt",
+				psd.blks_hit AS "NumOfBufferHitCnt"
+			FROM    pg_stat_database psd,pg_database pd
+			WHERE psd.datid = pd.oid AND pd.datistemplate = false
+		"""
+	if(version >= "PostgreSQL 8.3") {
+		resultData = sql.rows(query_version_newer)
+	} else {
+		resultData = sql.rows(query_version_older)
+		resultData.each {
+			it['NumOfReturnedRowCumCnt'] = "NULL"
+			it['NumOfInsertedRowCumCnt'] = "NULL"
+			it['NumOfUpdatedRowCumCnt'] = "NULL"
+			it['NumOfDeletedRowCumCnt'] = "NULL"
+			it['NumOfCanceledQueryCumCnt'] = "NULL"
+			it['TimeStatsResetTm'] = "NULL"
+		}
+	}
+	return resultData
+}
+ACCUMULATE = {
+	assert interval != null, "First time, we cannot return meaningful values"
+	if (prevOUTPUT != null) {
+		OUTPUT.each { rec ->
+			if(prevOUTPUT[rec.DatabaseName] != null) {
+				rec['IncreaseDatabaseSizeVal'] = rec['DatabaseSizeCumVal'] - prevOUTPUT[rec.DatabaseName]['DatabaseSizeCumVal']
+				rec['AverageIncreaseDatabaseSizeVal'] = (rec['IncreaseDatabaseSizeVal']/interval).doubleValue()
+				rec['NumberOfCommitedCnt'] = rec['NumOfCommitedCumCnt'] - prevOUTPUT[rec.DatabaseName]['NumOfCommitedCumCnt']
+				rec['NumberOfRollbackCnt'] = rec['NumOfRollbackCumCnt'] - prevOUTPUT[rec.DatabaseName]['NumOfRollbackCumCnt']
+				
+				rec['NumOfReturnedRowCnt'] = rec['NumOfReturnedRowCumCnt'] - prevOUTPUT[rec.DatabaseName]['NumOfReturnedRowCumCnt']
+				rec['NumOfInsertedRowCnt'] = rec['NumOfInsertedRowCumCnt'] - prevOUTPUT[rec.DatabaseName]['NumOfInsertedRowCumCnt']
+				rec['NumOfUpdatedRowCnt'] = rec['NumOfUpdatedRowCumCnt'] - prevOUTPUT[rec.DatabaseName]['NumOfUpdatedRowCumCnt']
+				rec['NumOfDeletedRowCnt'] = rec['NumOfDeletedRowCumCnt'] - prevOUTPUT[rec.DatabaseName]['NumOfDeletedRowCumCnt']
+			} else {
+				rec['IncreaseDatabaseSizeVal'] = rec['DatabaseSizeCumVal']
+				rec['AverageIncreaseDatabaseSizeVal'] = (rec['IncreaseDatabaseSizeVal']/interval).doubleValue()
+				rec['NumberOfCommitedCnt'] = rec['NumOfCommitedCumCnt']
+				rec['NumberOfRollbackCnt'] = rec['NumOfRollbackCumCnt']
+				
+				rec['NumOfReturnedRowCnt'] = rec['NumOfReturnedRowCumCnt']
+				rec['NumOfInsertedRowCnt'] = rec['NumOfInsertedRowCumCnt']
+				rec['NumOfUpdatedRowCnt'] = rec['NumOfUpdatedRowCumCnt']
+				rec['NumOfDeletedRowCnt'] = rec['NumOfDeletedRowCumCnt']
+			}
+		}
+	}
+}
+KEYEXPR = [_root:["DatabaseName"],_meta:["TimeStatsResetTm":"UNIXEPOCH:yyyy-MM-dd'T'HH:mm:ss+SSSZ"]]
+KEYEXPR._unit = ["DatabaseSizeCumVal": "KB", "NumOfCurrentConnectionsCnt": "count", "NumOfCommitedCumCnt": "count", "NumOfRollbackCumCnt": "count",
+	"NumOfBlockReadCnt": "count", "NumOfBufferHitCnt": "count", "NumOfReturnedRowCumCnt": "count", "NumOfInsertedRowCumCnt": "count",
+	"NumOfUpdatedRowCumCnt": "count", "NumOfDeletedRowCumCnt": "count", "NumOfCanceledQueryCumCnt": "count", "IncreaseDatabaseSizeVal": "KB/interval",
+	"AverageIncreaseDatabaseSizeVal": "KB/sec", "NumberOfCommitedCnt": "count/interval", "NumberOfRollbackCnt": "count/interval" ]
+KEYEXPR._chart = [
+		[
+			type:"area",
+			name:"Transaction Informations",
+			chart_columns:["NumberOfCommitedCnt", "NumberOfRollbackCnt"]
+		],
+		[
+			type:"area",
+			name:"Query Informations",
+			chart_columns:["NumOfReturnedRowCnt", "NumOfInsertedRowCnt", "NumOfUpdatedRowCnt", "NumOfDeletedRowCnt"]
+		]
+	]
+SENDTYPE = "Store"
+DBTYPE = "@PGSQL"
+MONITORINGTYPE = "@DB"
+RESOURCEID = "Sr/PgDbInfo"
+DEST = parameters.dest

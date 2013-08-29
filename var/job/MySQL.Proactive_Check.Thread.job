@@ -1,0 +1,75 @@
+/**
+ * Monitoring thread inside MySQL server
+ * <p>
+ * Monitoring threads which are currently connected, avtive, cached inside an instance of
+ * </p> 
+ * @targetVersion 5.0
+ * @return count of each kind of thread, connected, active, cached, running.
+ * @returnParam CachedCnt The number of threads in the thread cache since MySQL version 3.23.17
+ * @returnParam ConnectedCnt The number of currently open connections
+ * @returnParam CreatedCumCnt The number of threads created to handle connections
+ * @returnParam RunningCnt The number of threads that are not sleeping
+ * @returnParam MaxUsedConnectionsCnt The maximum number of connections that have been in use simultaneously since the server started.
+ * @returnParam CachedDiffCnt different value with last monitoring time of <code>CachedCnt</code>
+ * @returnParam ConnectedDiffCnt different value with last monitoring time of <code>ConnectedCnt</code>
+ * @returnParam CreatedCnt different value with last monitoring time of <code>CreatedCumCnt</code>
+ * @returnParam RunningDiffCnt different value with last monitoring time of <code>RunningCnt</code>
+ * @returnParam MaxUsedConnectionsDiffCnt different value with last monitoring time of <code>MaxUsedConnectionsCnt</code>
+ */
+JOB = [name:"MySQL.Proactive_Check.Thread"]
+FETCHACTION = {
+	def query = """
+		SELECT 
+			A.CachedCnt As CachedCnt, 
+			B.ConnectedCnt As ConnectedCnt, 
+			C.CreatedCumCnt As CreatedCumCnt, 
+			D.RunningCnt As RunningCnt,
+			E.MaxUsedConnectionsCnt As MaxUsedConnectionsCnt
+		FROM
+		(SELECT CONVERT(variable_value, UNSIGNED INTEGER) as CachedCnt
+		FROM information_schema.GLOBAL_STATUS G
+		where G.variable_name = "Threads_cached" ) A,
+		(SELECT CONVERT(variable_value, UNSIGNED INTEGER) as ConnectedCnt
+		FROM information_schema.GLOBAL_STATUS G
+		where G.variable_name = "Threads_connected" ) B,
+		(SELECT CONVERT(variable_value, UNSIGNED INTEGER) as CreatedCumCnt
+		FROM information_schema.GLOBAL_STATUS G
+		where G.variable_name = "Threads_created" ) C,
+		(SELECT CONVERT(variable_value, UNSIGNED INTEGER) as RunningCnt
+		FROM information_schema.GLOBAL_STATUS G
+		where G.variable_name = "Threads_running" ) D,
+		(SELECT CONVERT(variable_value, UNSIGNED INTEGER) as MaxUsedConnectionsCnt
+		FROM information_schema.GLOBAL_STATUS G
+		where G.variable_name = "max_used_connections" ) E
+		;
+	"""
+	def resultData = sql.rows(query)
+}
+ACCUMULATE = {
+	assert interval != null : "First time ,we can not get meaniningful values"
+	assert (prevOUTPUT != null && prevOUTPUT[0] != null ) : "Can not get previous monitoring data !"
+	OUTPUT.each{ rec ->
+		rec['CachedDiffCnt'] = rec['CachedCnt'] - prevOUTPUT[0]['CachedCnt']
+		rec['ConnectedDiffCnt'] = rec['ConnectedCnt'] - prevOUTPUT[0]['ConnectedCnt']
+		rec['CreatedCnt'] = rec['CreatedCumCnt'] - prevOUTPUT[0]['CreatedCumCnt']
+		rec['RunningDiffCnt'] = rec['RunningCnt'] - prevOUTPUT[0]['RunningCnt']
+		rec['MaxUsedConnectionsDiffCnt'] = rec['MaxUsedConnectionsCnt'] - prevOUTPUT[0]['MaxUsedConnectionsCnt']
+	}
+}
+KEYEXPR=[_sequence:["RunningCnt"]]
+KEYEXPR._unit = ["CachedCnt": "count", "ConnectedCnt": "count", "CreatedCumCnt": "count", "RunningCnt": "count",
+		"MaxUsedConnectionsCnt":"count","CachedDiffCnt":"count/interval","ConnectedDiffCnt":"count/interval"
+		,"CreatedCnt":"count/interval","RunningDiffCnt":"count/interval"
+		, "MaxUsedConnectionsDiffCnt":"count/interval" ]
+KEYEXPR._chart = [
+    [
+        "type": "line",
+        "name": "Thread information",
+        "chart_columns": ["CachedCnt","ConnectedCnt","RunningCnt","MaxUsedConnectionsCnt"]
+    ]
+]
+SENDTYPE = "Store"
+DBTYPE = "@MYSQL"
+DEST = parameters.dest
+MONITORINGTYPE = "@DB"
+RESOURCEID = "Sr/MyThread"

@@ -1,0 +1,110 @@
+/**
+ * Monitoring Datafile I/O Information.<br />
+ * <p>
+ * One row for each table in the current database, showing statistics about I/O on that specific table. Except that only user tables are shown.<br />
+ * </p>
+ * @targetVersion All version
+ * @return Number of blocks read from disk
+ * @returnParam HeapBlocksReadCumCnt Total heap blocks were read
+ * @returnParam IndexBlocksReadCumCnt Total index blocks were read
+ * @returnParam ToastBlocksReadCumCnt Total toast blocks were read
+ * @returnParam TidxBlocksReadCumCnt Total index blocks of toast table were read
+ * @returnParam HeapBlocksReadCnt increase or descrease amount of total heap blocks
+ * @returnParam IndexBlocksReadCnt increase or descrease amount of total index blocks
+ * @returnParam ToastBlocksReadCnt increase or descrease amount of total toast blocks
+ * @returnParam TidxBlocksReadCnt increase or descrease amount of total index blocks of toast table
+ * @returnParam HeapBlocksReadRate Average  of increase or descrease amount of total heap blocks per second
+ * @returnParam IndexBlocksReadRate Average  of increase or descrease amount of total index blocks per second
+ * @returnParam ToastBlocksReadRate Average  of increase or descrease amount of total toast blocks per second
+ * @returnParam TidxBlocksReadRate Average  of increase or descrease amount of total index toast blocks
+ * @returnParam BlkReadTimeCumCnt Total time the statement spent reading blocks, in milliseconds (version PostgreSQL >= 9.2)
+ * @returnParam BlkWriteTimeCumCnt Total time the statement spent writing blocks, in milliseconds (version PostgreSQL >= 9.2)
+ * @returnParam BlkReadTimeCnt increase or descrease amount of total time the statement spent reading blocks, in milliseconds (version PostgreSQL >= 9.2)
+ * @returnParam BlkWriteTimeCnt increase or descrease amount of total time the statement spent writing blocks, in milliseconds (version PostgreSQL >= 9.2)
+ */
+JOB = [name:"Postgres.Performance.Datafile_IO_Info"]
+FETCHACTION = {
+	def resultData = sql.rows('''
+								SELECT	(
+									  CASE
+									  WHEN SUM(heap_blks_read) IS NULL THEN 0
+									  ELSE SUM(heap_blks_read)
+									  END
+									 )  AS "HeapBlocksReadCumCnt",
+									(
+									  CASE
+									  WHEN SUM(idx_blks_read)  IS NULL THEN 0
+									  ELSE SUM(idx_blks_read)
+									  END
+									 )  AS "IndexBlocksReadCumCnt",
+									(
+									  CASE
+									  WHEN SUM(toast_blks_read) IS NULL THEN 0
+									  ELSE SUM(toast_blks_read)
+									  END
+									 ) AS "ToastBlocksReadCumCnt",
+									(
+									  CASE
+									  WHEN SUM(tidx_blks_read)  IS NULL THEN 0
+									  ELSE SUM(tidx_blks_read)
+									  END
+									 ) AS "TidxBlocksReadCumCnt"
+								FROM pg_statio_user_tables
+							''');
+	def postgresVersion = sql.rows("SELECT version();")[0][0]
+	def blk_read_write_time = null
+	if(postgresVersion >= "PostgreSQL 9.2") {
+		blk_read_write_time = sql.rows("SELECT blk_read_time,blk_write_time FROM pg_stat_statements;")[0]
+	}
+	resultData[0]['BlkReadTimeCumCnt'] = null
+	resultData[0]['BlkWriteTimeCumCnt'] = null
+	if(blk_read_write_time != null) {
+		resultData[0]['BlkReadTimeCumCnt'] = blk_read_write_time.blk_read_time
+		resultData[0]['BlkWriteTimeCumCnt'] = blk_read_write_time.blk_write_time
+	}
+	return resultData
+}
+ACCUMULATE = {
+	assert interval != null, "First time, we cannot return meaningful values"
+	if( prevOUTPUT != null && prevOUTPUT[0] != null ){
+		OUTPUT.each { rec->
+			rec['HeapBlocksReadCnt'] = rec['HeapBlocksReadCumCnt'] - ((prevOUTPUT[0]['HeapBlocksReadCumCnt']) != null ? prevOUTPUT[0]['HeapBlocksReadCumCnt'] : 0)
+			rec['IndexBlocksReadCnt'] = rec['IndexBlocksReadCumCnt'] - ((prevOUTPUT[0]['IndexBlocksReadCumCnt']) != null ? prevOUTPUT[0]['IndexBlocksReadCumCnt'] : 0)
+			rec['ToastBlocksReadCnt'] = rec['ToastBlocksReadCumCnt'] - ((prevOUTPUT[0]['ToastBlocksReadCumCnt']) != null ? prevOUTPUT[0]['ToastBlocksReadCumCnt'] : 0)
+			rec['TidxBlocksReadCnt']  = rec['TidxBlocksReadCumCnt'] - ((prevOUTPUT[0]['TidxBlocksReadCumCnt']) != null ? prevOUTPUT[0]['TidxBlocksReadCumCnt'] : 0)
+			rec['HeapBlocksReadRate'] = rec['HeapBlocksReadCnt']/interval
+			rec['IndexBlocksReadRate'] = rec['IndexBlocksReadCnt']/interval
+			rec['ToastBlocksReadRate'] = rec['ToastBlocksReadCnt'] /interval
+			rec['TidxBlocksReadRate'] = rec['TidxBlocksReadCnt']/interval
+			if(rec['BlkReadTimeCumCnt'] != null && rec['BlkWriteTimeCumCnt'] != null) {
+				rec['BlkReadTimeCnt']  = rec['BlkReadTimeCumCnt'] - ((prevOUTPUT[0]['BlkReadTimeCumCnt']) != null ? prevOUTPUT[0]['BlkReadTimeCumCnt'] : 0)
+				rec['BlkWriteTimeCnt']  = rec['BlkWriteTimeCumCnt'] - ((prevOUTPUT[0]['BlkWriteTimeCumCnt']) != null ? prevOUTPUT[0]['BlkWriteTimeCumCnt'] : 0)
+			} else {
+				rec['BlkReadTimeCnt']  = null
+				rec['BlkWriteTimeCnt']  = null
+			}
+		}
+	}
+}
+KEYEXPR = [_sequence:["HeapBlocksReadCumCnt","IndexBlocksReadCumCnt"]]
+KEYEXPR._unit = [ "HeapBlocksReadCumCnt" : "count", "IndexBlocksReadCumCnt": "count", "ToastBlocksReadCumCnt" : "count", "TidxBlocksReadCumCnt": "count",
+	"HeapBlocksReadCnt" : "count/interval", "IndexBlocksReadCnt": "count/interval", "ToastBlocksReadCnt" : "count/interval", "TidxBlocksReadCnt": "count/interval",
+	"HeapBlocksReadRate" : "count/sec", "IndexBlocksReadRate": "count/sec", "ToastBlocksReadRate" : "count/sec", "TidxBlocksReadRate": "count/sec",
+	"BlkReadTimeCumCnt": "milliseconds", "BlkWriteTimeCumCnt": "milliseconds", "BlkReadTimeCnt": "milliseconds/interval", "BlkWriteTimeCnt": "milliseconds/interval" ]
+KEYEXPR._chart = [
+	[
+		type:"line",
+		name:"Datafile I/O Information",
+		chart_columns:["HeapBlocksReadCumCnt","IndexBlocksReadCumCnt","ToastBlocksReadCumCnt","TidxBlocksReadCumCnt"]
+	],
+	[
+		type:"area",
+		name:"PostgreSQL Version >= 9.2: Block Read And Write Time From Previous Monitoring To Current Monitoring",
+		chart_columns:["BlkReadTimeCnt", "BlkWriteTimeCnt"]
+	]
+]
+SENDTYPE = "Store"
+DBTYPE = "@PGSQL"
+MONITORINGTYPE = "@DB"
+RESOURCEID = "Pf/PgDtFileIoInfo"
+DEST = parameters.dest

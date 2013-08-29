@@ -6,8 +6,14 @@ import groovyx.net.http.URIBuilder
 import static groovyx.net.http.Method.PUT
 import static groovyx.net.http.ContentType.JSON
 import java.text.MessageFormat
+import com.gmongo.GMongo
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder;
+import com.mongodb.DB
+import com.mongodb.MongoException;
+import com.mongodb.DBObject
+import com.mongodb.util.JSON
+
 import org.apache.log4j.Logger;
 
 import org.apache.commons.codec.binary.Base64;
@@ -21,6 +27,7 @@ import org.codehaus.jackson.map.ser.CustomSerializerFactory;
 import java.text.SimpleDateFormat
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue
+import com.gmongo.internal.Patcher
 
 /**
  * DefaultSender Send data to host or write out to console/file
@@ -28,6 +35,7 @@ import java.util.concurrent.LinkedBlockingQueue
 class DefaultSender {
 	def mapMessage = [:]
 	public listHttpSender = []
+	public listMongoDBSender = []
 	def properties = MonitorJobConfigLoader.getProperties()
 	
 	public DefaultSender(){
@@ -94,6 +102,23 @@ class DefaultSender {
 				}
 				if(dest.https != null){
 					// Check and create HTTPSender same as http
+				}
+				if(dest.mongoDB != null){
+					boolean mongoDBSenderExist = false
+					def destination = dest.mongoDB
+					if(listMongoDBSender.size() > 0){
+						listMongoDBSender.each{mongoSender->
+							if(mongoSender.destination == destination){
+								mongoDBSenderExist = true;
+								senderListForEachJob.add(mongoSender)
+							}
+						}
+					}
+					if(!mongoDBSenderExist){
+						def mongoSender = new MongoDBSender(destination)
+						senderListForEachJob.add(mongoSender)
+						listMongoDBSender.add(mongoSender)
+					}
 				}
 			}
 		} else	{
@@ -197,7 +222,8 @@ public class HTTPSender implements Sender<Map>{
 	public void send(data2send){
 		if(checkCountandSize()){
 			// Write data to swap file
-			def sequence = HTTPSender.getFileName(data2send.sourceJob)
+			def jobname = (data2send.instanceName == null) ? data2send.sourceJob : (data2send.sourceJob + "_" + data2send.instanceName)
+			def sequence = HTTPSender.getFileName(jobname)
 			def swapFile = new File(properties.get(ResourceConstants.MONITORSWAP_DIRECTORY) + "/$alias/$sequence" + ".swp")
 			logger.debug("Write data of " + data2send.sourceJob + " to file " + swapFile.getName() + "\n into folder $alias")
 			def dataJson = output.toJson(data2send)
@@ -315,18 +341,22 @@ public class HTTPSender implements Sender<Map>{
 			def http
 			//Serializer date data before send
 			def serializerData = serializeDateToSend(data2send)
-			
+			def isSuccess = false
 			try {
 				http = new HTTPBuilder(destination)
 				http.auth.basic("administrator", "insight")
-				http.request(PUT,JSON){req->
+				http.request(PUT,groovyx.net.http.ContentType.JSON){req->
+						req.getParams().setParameter("http.connection.timeout", new Integer(5000));
+						req.getParams().setParameter("http.socket.timeout", new Integer(5000));
 						body = serializerData
+					 	response.success = { resp ->
+					 		isSuccess = true
+					  	}
 				}
-				return true
 			} catch (Exception e) {
 				logger.info ("Fail to send data to $destination")
-				return false
 			}
+			return isSuccess
 		}
 		
 		private String serializeDateToSend(data2send) {
@@ -337,6 +367,84 @@ public class HTTPSender implements Sender<Map>{
 			return mapper.writeValueAsString(data2send)
 		}
 	}
+}
+
+public class MongoDBSender implements Sender<Map>{
+	def logger = Logger.getLogger("org.wiperdog.scriptsupport.groovyrunner")
+	def properties = MonitorJobConfigLoader.getProperties()
+	def destination //String destination
+	def mapDetailDestination = [:] //Map [host:a, port:b, db:c]
+	GMongo mongo;
+	long sleep_time = Long.valueOf(this.properties.get(ResourceConstants.SLEEP_TIME_MS))
+	
+	public MongoDBSender(String destination){
+		try{
+			this.destination = destination
+			mapDetailDestination['host'] = destination.substring(0, destination.indexOf(":") != -1 ? destination.indexOf(":") : destination.indexOf("/"))
+			if(destination.indexOf(":") != -1 && destination.indexOf("/") != -1){
+				mapDetailDestination['port'] = destination.substring(destination.indexOf(":") + 1, destination.indexOf("/"))
+			}	
+			mapDetailDestination['db'] = destination.substring(destination.indexOf("/") + 1)
+		}catch(IndexOutOfBoundsException oobex){
+			logger.debug("Destination string is in a wrong format!\nFormat must be host:port/db or host/db")
+		}
+	}
+
+	def createConnection(mapDetailDestination){
+		logger.debug("Try to connect to mongoDB with $mapDetailDestination")
+		try{
+			def port = mapDetailDestination['port']
+			def host = mapDetailDestination['host']
+			def dbName = mapDetailDestination['db']
+			if(host == "localhost" && port == null){
+				mongo = new GMongo()
+			}else if(host == "localhost" && port != null){
+				mongo = new GMongo(host + ":" + port)
+			}else if(host != null && port != null){
+				mongo = new GMongo(host, Integer.valueOf(port))
+			}
+		}catch(Exception ex){
+			mongo = null
+		}
+		return mongo
+	}
+	
+	@Override
+	public void send(Object data) {
+	    def data_serialzeDate = serializeDateToSend(data)
+	   	DB db
+		DBObject dbObject = (DBObject) com.mongodb.util.JSON.parse(data_serialzeDate)
+		for(int i = 0; i < 20; i++){
+			try{
+				mongo = createConnection(mapDetailDestination)
+				if(mongo != null){
+					db = mongo.getDB(mapDetailDestination['db'])
+					def jobName = data.sourceJob
+					def istIid = data.istIid
+					def col = db.getCollection(jobName + "." + istIid)
+					col.insert(dbObject)
+					mongo.close()
+					println "-Done send data to mongo DB at ${mapDetailDestination['host']}-"
+					break;
+				}
+			}catch(MongoException mex){
+				logger.debug("Could not connect to mongoDB! Sleep before retrying...")
+				Thread.currentThread().sleep(sleep_time)
+			}catch(Exception ex){
+				logger.debug(ex)
+			}
+		}
+	}
+
+	private String serializeDateToSend(data2send) {
+		CustomSerializerFactory sfactory = new CustomSerializerFactory();
+		ObjectMapper mapper = new ObjectMapper();
+		mapper.setSerializerFactory(sfactory);
+		sfactory.addGenericMapping(java.util.Date.class, new DateSerializer());
+		return mapper.writeValueAsString(data2send)
+	}	
+	
+	
 }
 
 /**
@@ -354,3 +462,4 @@ class DateSerializer extends JsonSerializer<Date> {
 		}
 	}
 }
+

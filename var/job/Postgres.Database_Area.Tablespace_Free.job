@@ -1,0 +1,91 @@
+/**
+ * テーブルスペースの空きサイズ等の情報を表示します。<br />
+ * <p>
+ * テーブルスペースはオブジェクトを格納する事が出来ます。<br />
+ * テーブルスペースの使用率が100%になると、空きサイズが無くなったという事が分かります。<br />
+ * テーブルスペースを監視する事で、空きサイズが十分か確認する事ができます。
+ * </p>
+ * @targetVersion 9.1+
+ * @return サンプリング毎にテーブルスペースの数だけレコードを取得します。
+ * @returnParam TablespaceName テーブルスペース名
+ * @returnParam Usename 所有者
+ * @returnParam LocationTxt テーブルスペースへのディレクトリパス
+ * @returnParam CurrentUsedSizeKbLong 現在のテーブルスペースの使用サイズ(KB)
+ * @returnParam CurrentFreeSizeKbLong 現在のテーブルスペースの空きサイズ(KB)
+ * @returnParam TotalSizeKbVal 現在のテーブルスペースのサイズ(KB)
+ * @returnParam UsedPct 現在のテーブルスペース使用率
+ * @returnParam DiffUsedSizeKbVal 前回監視からの使用サイズ(KB)
+ * @returnParam DiffSizePerSecPct 前回監視からの使用率
+ */
+JOB = [ name: "Postgres.Database_Area.Tablespace_Free"]
+GROUPKEY = ["TablespaceName"]
+FETCHACTION = {	
+	def resultData = []
+	def resultQuery = sql.rows('''
+				SELECT 	
+					pg_tablespace.spcname as TablespaceName,
+					pg_shadow.usename,
+					pg_tablespace.spclocation as Location,
+					pg_tablespace_size(oid)/1024 as CurrentUsedSizeKb
+				FROM pg_tablespace, pg_shadow	
+				WHERE pg_shadow.usesysid = pg_tablespace.spcowner
+				'''
+				)
+	resultQuery.each {
+		def resultRecord = [:]
+		resultRecord['TablespaceName'] = it.TablespaceName
+		resultRecord['UserName'] = it.usename
+		resultRecord['LocationTxt'] = it.Location
+		resultRecord['CurrentUsedSizeKbLong'] = it.CurrentUsedSizeKb
+		resultData.add(resultRecord)
+	}
+	return resultData
+}
+ACCUMULATE = {
+	assert interval != null, "First time, we cannot return meaningful values"
+	def location
+		if (prevOUTPUT != null) {
+	    	OUTPUT.each { rec ->
+	    		if(rec['LocationTxt'] != null && rec['LocationTxt'] != "") {
+		    		location = rec['LocationTxt']
+			    } else {
+			   		location = sql.datadirectory
+			   	}
+			   	File file = new File(location)
+	       		rec['CurrentFreeSizeKbLong'] = (file.getUsableSpace())/1024
+	       		rec['TotalSizeKbVal'] = rec['CurrentFreeSizeKbLong'] + rec['CurrentUsedSizeKbLong']
+	       		if(rec['TotalSizeKbVal'] != 0) {
+	       			rec['UsedPct'] = rec['CurrentUsedSizeKbLong'] / rec['TotalSizeKbVal'] * 100
+		       	} else {
+		       		rec['UsedPct'] = null
+		       	}
+	       		// If add new tablespace
+			   	if(prevOUTPUT[rec.TablespaceName] == null || prevOUTPUT[rec.TablespaceName] == "") {
+			   		rec['DiffUsedSizeKbVal'] = rec['CurrentUsedSizeKbLong']
+			   		rec['DiffSizePerSecPct'] = rec['DiffUsedSizeKbVal'] / interval
+				} else {
+		       		rec['DiffUsedSizeKbVal'] = rec['CurrentUsedSizeKbLong'] - prevOUTPUT[rec.TablespaceName]['CurrentUsedSizeKbLong']
+		       		rec['DiffSizePerSecPct'] = rec['DiffUsedSizeKbVal'] / interval
+		       	}
+	    	}
+	  	}
+}
+KEYEXPR = [_root:["TablespaceName"],_sequence:["UsedPct","TotalSizeKbVal","CurrentUsedSizeKbLong"]]
+KEYEXPR._unit = [ "CurrentUsedSizeKbLong" : "KB", "CurrentFreeSizeKbLong": "KB", "TotalSizeKbVal" : "KB", "UsedPct": "%", "DiffUsedSizeKbVal": "KB/interval", "DiffSizePerSecPct": "KB/sec" ]
+KEYEXPR._chart = [
+	[
+		type:"line",
+		name:"Use Size Of Tablespace At Current Time",
+		chart_columns:["CurrentUsedSizeKbLong"]
+	],
+	[
+		type:"bar",
+		name:"Use Size Of Tablespace At Current Time",
+		chart_columns:["CurrentUsedSizeKbLong"]
+	]
+]
+SENDTYPE = "Store"
+DBTYPE = "@PGSQL"
+MONITORINGTYPE = "@DB"
+RESOURCEID = "As/PgTbsFree"
+DEST = parameters.dest

@@ -1,0 +1,56 @@
+/**
+ * Monitoring Transactions.<br />
+ * <p>
+ * Showing number of transactions in database that havebeen commited, rolled back, ...<br />
+ * </p>
+ * @targetVersion All version
+ * @return Basic informations of transactions.
+ * @returnParam TransactionsCumCnt Total transactions in all database that have been commited and rolled back.
+ * @returnParam CommitTransactionCumCnt Total transactions in all database that have been commited.
+ * @returnParam RollbackTransactionCumCnt Total transactions in all database that have been rolled back.
+ * @returnParam TransactionsCnt Total transactions in all database that have been commited and rolled back from previous monitoring to current monitoring.
+ * @returnParam CommitTransactionCnt Total transactions in all database that have been commited from previous monitoring to current monitoring.
+ * @returnParam RollbackTransactionCnt Total transactions in all database that have been rolled back from previous monitoring to current monitoring.
+ * @returnParam CommitRateVal CommitTransactionCnt/TransactionsCnt ratio.
+ */
+JOB = [name:"Postgres.Proactive_Check.Transactions"]
+FETCHACTION = {
+	def query_get_trans = """
+		SELECT sum( xact_commit + xact_rollback ) AS "TransactionsCumCnt",
+			sum(xact_commit) AS "CommitTransactionCumCnt",
+			sum(xact_rollback) AS "RollbackTransactionCumCnt"
+		FROM   pg_stat_database
+	"""
+	def resultData = sql.rows(query_get_trans)
+	return resultData
+}
+ACCUMULATE = {
+	assert interval != null, "First time, we cannot return meaningful values"
+	if( prevOUTPUT != null && prevOUTPUT[0] != null ){
+		OUTPUT.each { rec->
+			rec['CommitTransactionCnt'] = rec['CommitTransactionCumCnt'] - ((prevOUTPUT[0]['CommitTransactionCumCnt']) != null ? prevOUTPUT[0]['CommitTransactionCumCnt'] : 0)
+			rec['RollbackTransactionCnt'] = rec['RollbackTransactionCumCnt'] - ((prevOUTPUT[0]['RollbackTransactionCumCnt']) != null ? prevOUTPUT[0]['RollbackTransactionCumCnt'] : 0)
+			rec['TransactionsCnt'] = rec['CommitTransactionCnt'] + rec['RollbackTransactionCnt']
+			rec['CommitRateVal'] = rec['CommitTransactionCnt'] / rec['TransactionsCnt']
+		}
+	}
+}
+KEYEXPR = [:]
+KEYEXPR._chart = [
+	[
+		type:"area",
+		name:"Number Of Transactions Have Been Commited And Rolled Back Between Two Monitoring",
+		chart_columns:["CommitTransactionCnt", "RollbackTransactionCnt"]
+	],
+	[
+		type:"line",
+		name:"CommitTransactionCnt/TransactionsCnt Ratio",
+		chart_columns:["CommitRateVal"],
+		hint_columns:["TransactionsCnt", "CommitTransactionCnt", "RollbackTransactionCnt", "TransactionsCumCnt", "CommitTransactionCumCnt", "RollbackTransactionCumCnt"]
+	]
+]
+DBTYPE = "@PGSQL" 
+MONITORINGTYPE = "@DB"
+RESOURCEID = "Sr/PgTransactions"
+SENDTYPE = "Store"
+DEST = parameters.dest

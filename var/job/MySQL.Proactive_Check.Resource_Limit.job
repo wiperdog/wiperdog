@@ -1,0 +1,99 @@
+/**
+ * Monitoring MySQL server Resource Limit
+ * <p>
+ * <li> Max prepared statements: limit max number of prepared statement are allowed
+ * <li> MAX_INSERT_DELAYED_THREADS related to Max_delayed_threads: <br> 
+ * &emsp;max number of threads to handle INSERT DELAYED statements
+ * <li> MAX_CONNECTIONS: Maximum connection can be made to server instance
+ * <li> TABLE_OPEN_CACHE: Maximum number of open tables for all threads
+ * </p> 
+ * @targetVersion 5.0
+ * @return get information for each variables per each record
+ * @returnParam ResourceName Name of the resource, can be one of 04 resource described above
+ * @returnParam LimitVal Limitation value of this resource
+ * @returnParam CurrentVal Current used value of the resource
+ * @returnParam FreeVal Current free value of the resource
+ * @returnParam ResourceUsedPct Percentage of usage of the resource
+ */
+JOB = [name:"MySQL.Proactive_Check.Resource_Limit"]
+FETCHACTION={
+	def resultData = []
+	
+	def maxPreparedStmtQuery = "show variables like 'MAX_PREPARED_STMT_COUNT';"
+	def currentPreparedStmtQuery = "select * from information_schema.global_status where variable_name like 'PREPARED_STMT_COUNT';"
+	
+	def maxInsertDelayThreadQuery = "show variables like 'MAX_INSERT_DELAYED_THREADS';"
+	def currentInsertDelayThreadQuery = "select * from information_schema.global_status where variable_name like 'DELAYED_INSERT_THREADS';"
+	
+	def maxConnectionsQuery = "show variables like 'MAX_CONNECTIONS';"
+	def currentConnectionsQuery = "select * from information_schema.global_status where variable_name like 'THREADS_CONNECTED';"
+	
+	def maxTableCacheQuery = "show variables like 'TABLE_OPEN_CACHE';"
+	def currentOpenTableQuery = "show open tables;"
+	
+	def maxPreparedStmtResult = sql.rows(maxPreparedStmtQuery)
+	assert maxPreparedStmtResult != null && maxPreparedStmtResult.size() >0, "MAX_PREPARED_STMT_COUNT not set "
+	def currentPreparedStmtResult = sql.rows(currentPreparedStmtQuery)
+		
+	def maxInsertDelayThreadResult = sql.rows(maxInsertDelayThreadQuery)
+	assert maxInsertDelayThreadResult != null && maxInsertDelayThreadResult.size() >0, "MAX_INSERT_DELAYED_THREADS not set "		
+	def currentInsertDelayThreadResult = sql.rows(currentInsertDelayThreadQuery)
+		
+	def maxConnectionsResult = sql.rows(maxConnectionsQuery)
+	assert maxConnectionsResult != null && maxConnectionsResult.size() >0, "MAX_CONNECTIONS not set "
+	def currentConnectionsResult = sql.rows(currentConnectionsQuery)
+		
+	def maxTableCacheResult = sql.rows(maxTableCacheQuery)
+	assert maxTableCacheResult != null && maxTableCacheResult.size() >0, "TABLE_OPEN_CACHE not set "
+	def currentOpenTableResult = sql.rows(currentOpenTableQuery)
+	def resultMap = [:]
+	resultMap['ResourceName'] = "PreparedStatement"
+	resultMap['LimitVal'] = (maxPreparedStmtResult != null && maxPreparedStmtResult.size()>0)?maxPreparedStmtResult.get(0)['Value'].toLong():-1
+	resultMap['CurrentVal'] = (currentPreparedStmtResult != null && currentPreparedStmtResult.size()>0)?currentPreparedStmtResult.get(0)['Variable_Value'].toLong():-1
+	resultMap['FreeVal'] = resultMap['LimitVal'] - resultMap['CurrentVal']
+	resultData.add(resultMap)
+	
+	resultMap = [:]
+	resultMap['ResourceName'] = "InsertDelayedThreads"
+	resultMap['LimitVal']  = (maxInsertDelayThreadResult != null && maxInsertDelayThreadResult.size()>0)?maxInsertDelayThreadResult.get(0)['Value'].toLong():-1
+	resultMap['CurrentVal']  = (currentInsertDelayThreadResult != null && currentInsertDelayThreadResult.size()>0)?currentInsertDelayThreadResult.get(0)['Variable_Value'].toLong():-1
+	resultMap['FreeVal'] = resultMap['LimitVal'] - resultMap['CurrentVal']
+	resultData.add(resultMap)
+	
+	resultMap = [:]
+	resultMap['ResourceName'] = "Connections"
+	resultMap['LimitVal'] = (maxConnectionsResult != null && maxConnectionsResult.size()>0)?maxConnectionsResult.get(0)['Value'].toLong():-1
+	resultMap['CurrentVal'] = (currentConnectionsResult != null && currentConnectionsResult.size()>0)?currentConnectionsResult.get(0)['Variable_Value'].toLong():-1
+	resultMap['FreeVal'] = resultMap['LimitVal'] - resultMap['CurrentVal']
+	resultData.add(resultMap)
+	
+	resultMap = [:]
+	resultMap['ResourceName'] = "TableOpen"
+	resultMap['LimitVal'] = (maxTableCacheResult != null && maxTableCacheResult.size()>0)?maxTableCacheResult.get(0)['Value'].toLong():-1
+	resultMap['CurrentVal'] = (currentOpenTableResult != null && currentOpenTableResult.size()>0)?currentOpenTableResult.size().toLong():-1
+	resultMap['FreeVal'] = resultMap['LimitVal'] - resultMap['CurrentVal']		
+	resultData.add(resultMap)
+	
+	resultData.each { data->
+		if(data['LimitVal'] == 0) {
+			data['ResourceUsedPct'] = null
+		} else {
+			data['ResourceUsedPct'] = data['CurrentVal']*100/data['LimitVal']
+		}
+	}
+	return resultData
+}
+KEYEXPR = [_root:["ResourceName"]]
+KEYEXPR._unit = ["LimitVal":"count", "CurrentVal":"count","ResourceUsedPct":"%", "FreeVal":"count"]
+SENDTYPE = "Store"
+KEYEXPR._chart = [
+    [
+        "type": "line",
+        "name": "Resource usage",
+        "chart_columns": ["ResourceUsedPct"]
+    ]
+]
+DBTYPE = "@MYSQL"
+DEST = parameters.dest
+MONITORINGTYPE = "@DB"
+RESOURCEID = "Sr/MyResourceLimit"

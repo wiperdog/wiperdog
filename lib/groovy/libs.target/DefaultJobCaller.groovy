@@ -30,7 +30,8 @@ class DefaultJobCaller {
 	def instanceJob	
 	
    	String fileName
-   	String jobName
+   	String rootJobName
+   	String instanceName
 	
 	def properties = MonitorJobConfigLoader.getProperties()
 	
@@ -54,11 +55,12 @@ class DefaultJobCaller {
 	def isJobFinishedSuccessfully 
 	
 	//Pass job filename to constructor
-	def DefaultJobCaller(objJob,fileName, jobName, DefaultSender sender) {
+	def DefaultJobCaller(objJob,fileName, rootJobName, instanceName, DefaultSender sender) {
 		
 		this.instanceJob = objJob
 		this.fileName = fileName
-		this.jobName = jobName
+		this.rootJobName = rootJobName
+		this.instanceName = instanceName
 		this.isJobFinishedSuccessfully = true
 		this.sender = sender
 	}
@@ -133,6 +135,7 @@ class DefaultJobCaller {
 	 * @param dbInfo connect DB information
 	 * @return resultData data after executing query
 	 */
+	
 	def runQuery(queryString, strQueryVariable, dbInfo) {
 		List resultData = null
 		def binding = instanceJob.getBinding()
@@ -163,6 +166,37 @@ class DefaultJobCaller {
 		return resultData
 	}
 	
+	def runDbExec(queryString, strQueryVariable, dbInfo){
+		def resultData = [:]
+		def binding = instanceJob.getBinding()
+				
+		def conInt = new ConnectionInit()
+		synchronized (mapDBConnections) {
+			def db = conInt.getDbConnection(mapDBConnections, iDBConnectionSource, binding, dbInfo)
+			
+			if (db != null) {
+				try {
+					//Get data
+					if (strQueryVariable == null) {
+						db.execute(queryString)
+					} else {
+						db.execute(queryString, strQueryVariable)
+					}
+					resultData["Result"] = "SUCCESS"
+				} catch (SQLException e) {
+					logger.info (MessageFormat.format(mapMessage['ERR002'], "'" + queryString + "'", e.getErrorCode(), e.getMessage()))
+					isJobFinishedSuccessfully = false
+					resultData["Result"] = "FAIL"
+				}
+			
+			} else {
+				logger.info('after of 20 times of connections, connect to database falsed.')
+				isJobFinishedSuccessfully = false
+				resultData["Result"] = "FAIL"
+			}
+		}
+		return resultData
+	}
 	/**
 	 * Prepare data to run job
 	 * Error messages, math functions, interval, etc..
@@ -227,8 +261,10 @@ class DefaultJobCaller {
 			def mapDest = null
 			def cFetchAction = null
 			def strQuery = null
+			def strDbExec = null			
 			def strFinally = null
 			def strQueryVariable = null
+			def strDbExecVariable = null			
 			def strCon = null
 			def strDbType = null
 			def strHostId = null
@@ -251,10 +287,14 @@ class DefaultJobCaller {
 			cFetchAction = getVarFromBinding(binding, ResourceConstants.DEF_FETCHACTION)
 			//Get QUERY
 			strQuery = getVarFromBinding(binding, ResourceConstants.DEF_QUERY)
+			//Get DBEXEC
+			strDbExec = getVarFromBinding(binding, ResourceConstants.DEF_DBEXEC)			
 			//Get FINALLY
 			strFinally = getVarFromBinding(binding, ResourceConstants.DEF_FINALLY)
 			//Get QUERY_VARIABLE
 			strQueryVariable = getVarFromBinding(binding, ResourceConstants.DEF_QUERY_VARIABLE)
+			//Get DBEXEC_VARIABLE
+			strDbExecVariable = getVarFromBinding(binding, ResourceConstants.DEF_DBEXEC_VARIABLE)			
 			//Get type of DB (ORACLE, MYSQL...)
 			strDbType = getVarFromBinding(binding, ResourceConstants.DEF_DBTYPE)
 			// Get params of job
@@ -320,6 +360,17 @@ class DefaultJobCaller {
 					logger.debug("fileName: " + fileName + " ---End Process Query---")
 				}
 			}
+
+			if (cFetchAction == null && strDbExec != null) {
+				if (strCon == null || strDbType == null || strUser == null) {
+					logger.info (mapMessage['ERR006'])
+				} else {
+					logger.debug("fileName: " + fileName + " ---Start Process DBEXEC---")
+					resultData = runDbExec(strDbExec, strDbExecVariable, dbInfo)
+					logger.debug("fileName: " + fileName + " ---End Process DBEXEC---")
+				}
+			}            
+            			
 			// Get ACCUMULATE
 			strAccumulate = getVarFromBinding(binding, ResourceConstants.DEF_ACCUMULATE)
 			// Get GROUPKEY
@@ -488,25 +539,33 @@ class DefaultJobCaller {
 		def fetchAtTime_bin
 		def istIid
 		def strSourceJob
+		def strInstance
 		def strResourceId
+		def strDBType
 		def keyExpr
 		
 		//Get fetchAtTime & fetchedAt_bin
 		fetchAtTime = nowDate.format('yyyyMMddHHmmssz')
 		fetchAtTime_bin = (nowDate.getTime()/1000).intValue()
 		//Get sourceJob
-		strSourceJob = this.jobName
+		strSourceJob = this.rootJobName
+		//Get instance name
+		strInstance = this.instanceName
 		//Get hostId
 		envelopedResultData['hostId'] = getHostId()
 		//Get type
 		envelopedResultData['type'] = getType(binding,resultData)
 		//Get sid
 		envelopedResultData['sid'] = getSid()
+		//Get dbType
+		strDBType = (binding.hasVariable(ResourceConstants.DEF_DBTYPE) ? binding.getVariable(ResourceConstants.DEF_DBTYPE) : null)
 		//Get istIid
+		istIid = envelopedResultData['hostId']
+		if(strDBType != null){
+			istIid += "-" + strDBType
+		}
 		if(envelopedResultData['sid'] != null){
-			istIid = envelopedResultData['hostId'] + "-" + envelopedResultData['sid']
-		}else{
-			istIid = envelopedResultData['hostId']
+			istIid += "-" + envelopedResultData['sid']
 		}
 		//Get resourceId
 		strResourceId = (binding.hasVariable(ResourceConstants.RESOURCEID) ? binding.getVariable(ResourceConstants.RESOURCEID) : "")
@@ -522,6 +581,7 @@ class DefaultJobCaller {
 		envelopedResultData['istIid'] = istIid
 		envelopedResultData['resourceId'] = strResourceId
 		envelopedResultData['sourceJob'] = strSourceJob
+		envelopedResultData['instanceName'] = strInstance
 		envelopedResultData['data'] = resultData
         
 		return envelopedResultData

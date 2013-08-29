@@ -1,0 +1,48 @@
+/**
+ * Monitoring total session and current sessions /limit session ratio.<br/>
+ * <p>
+ * Showing information of session in current time: number of limit session, current session and ratio
+ * </p>
+ * @targetVersion All version
+ * @return Total session and current sessions /limit session ratio
+ * @returnParam LimitSessionCnt Number of limit session 
+ * @returnParam CurrentSessionCnt Number of current session
+ * @returnParam PercentSessionPct Limit session/current session ratio
+ */
+JOB = [name:"Postgres.Proactive_Check.Resource_Limit"]
+FETCHACTION = {
+	def get_limit_session = sql.rows(" SELECT setting AS Limit_Session FROM pg_settings WHERE  name = 'max_connections' ")
+	def get_current_session = sql.rows(" SELECT count(*) AS Current_Session FROM pg_stat_activity ")
+	def limit_session = get_limit_session['limit_session'][0] as int
+	def map_data=[:] 
+	map_data['LimitSessionCnt'] = limit_session
+	def current_session = get_current_session['current_session'][0] as int
+	map_data['CurrentSessionCnt'] = current_session
+	if(limit_session == 0 || limit_session == null) {
+		map_data['PercentSessionPct'] = null
+	} else {
+		map_data['PercentSessionPct'] = current_session*100/limit_session
+	}
+	def resultData = []
+	resultData.add(map_data)
+	return resultData
+}
+KEYEXPR = [_sequence:["PercentSessionPct","CurrentSessionCnt","LimitSessionCnt"]]
+KEYEXPR._unit = [ "LimitSessionCnt" : "count", "CurrentSessionCnt": "count", "PercentSessionPct" : "%" ]
+KEYEXPR._chart = [
+	[
+		type:"line",
+		name:"Resource_Limit: Number Of Current Session", 
+		chart_columns:["CurrentSessionCnt"]
+	],
+	[
+		type:"line",
+		name:"Resource_Limit: Limit Session/Current Session Ratio", 
+		chart_columns:["PercentSessionPct"]
+	]
+]
+SENDTYPE = "Store"
+DBTYPE = "@PGSQL" 
+MONITORINGTYPE = "@DB"
+RESOURCEID = "Sr/PgRsrcLimit"
+DEST = parameters.dest

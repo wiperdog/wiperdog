@@ -1,0 +1,87 @@
+/**
+ * Monitoring cached execution plan.<br/>
+ * <p>
+ * Plan cache like as Procedure Cache, located in the region of memory SQL Server called the Memory Pool.<br/>
+ * SQL Server uses memory to store objects such as stored procedures, ad hoc and prepared Transact-SQL statements, and triggers.<br/>
+ * </p>
+ * @targetVersion 2008 
+ * @return get information on the use of plan cache for execute query.
+ * @returnParam CacheRequestDiffCnt The number of Cache Hit Ratio from the last monitoring
+ * @returnParam LookupRequestDiffCnt The number of Cache Hit Ratio Base from the last monitoring 
+ * @returnParam LookupRequestCnt Cache Hit Ratio Base
+ * @returnParam CacheRequestCnt Cache Hit Ratio
+ * @returnParam CachePagesCnt The number of pages used by cache objects
+ * @returnParam CacheObjectCnt The number of cache objects in the cache
+ * @returnParam CacheObjectsInUseCnt The number of cache objects in use
+ * @returnParam PlanCacheHitRatioPct Percent of cache hit
+ * @returnParam PlanCacheHitRatioDiffPct Percent of cache hit from the last monitoring
+ */
+JOB = [name: "SQL_Server.Performance.Plan_Cache_Hit_Ratio"]
+
+FETCHACTION = {
+	def resultData = sql.rows('''
+		SELECT 
+				counter_name,
+				cntr_value
+		FROM
+				sys.dm_os_performance_counters 
+		WHERE 
+				OBJECT_NAME like '%Plan Cache%'
+				AND instance_name = '_Total'
+	'''
+	)
+	def finalData = [:]
+	def convertedData = [:]
+	def finalResultData = []
+	
+	resultData.each{
+		it['counter_name'] = it['counter_name'].trim()
+		finalData[it['counter_name']] = it['cntr_value']
+	}
+	
+	convertedData["CacheRequestDiffCnt"] = finalData["Cache Hit Ratio"] - (PERSISTENTDATA['CacheRequestCnt'] != null ? PERSISTENTDATA['CacheRequestCnt'] : 0)
+	convertedData["LookupRequestDiffCnt"] = finalData["Cache Hit Ratio Base"] - (PERSISTENTDATA['LookupRequestCnt'] != null ? PERSISTENTDATA['LookupRequestCnt'] : 0)
+	convertedData["LookupRequestCnt"] = finalData["Cache Hit Ratio Base"]
+	convertedData["CacheRequestCnt"] = finalData["Cache Hit Ratio"]
+	
+	convertedData["CachePagesCnt"] = finalData["Cache Pages"]
+	convertedData["CacheObjectCnt"] = finalData["Cache Object Counts"]
+	convertedData["CacheObjectsInUseCnt"] = finalData["Cache Objects in use"]
+
+	if(convertedData["LookupRequestCnt"] == 0) {
+		convertedData['PlanCacheHitRatioPct'] = null
+	} else {
+		convertedData['PlanCacheHitRatioPct'] = (convertedData["CacheRequestCnt"]/convertedData["LookupRequestCnt"])*100
+	}
+	
+	if(convertedData["LookupRequestCnt"] == 0) {
+		convertedData['PlanCacheHitRatioDiffPct'] = null
+	} else {
+		convertedData['PlanCacheHitRatioDiffPct'] = (convertedData["CacheRequestDiffCnt"]/convertedData["LookupRequestDiffCnt"])*100
+	}
+	
+	PERSISTENTDATA['CacheRequestCnt'] = finalData["Cache Hit Ratio"]
+	PERSISTENTDATA['LookupRequestCnt'] = finalData["Cache Hit Ratio Base"]
+	finalResultData.add(convertedData)
+	return finalResultData
+}
+KEYEXPR = ['_sequence':['PlanCacheHitRatioDiffPct','PlanCacheHitRatioPct']]
+KEYEXPR._unit = ["CacheRequestDiffCnt":"count/interval", "LookupRequestDiffCnt":"count/interval", "LookupRequestCnt":"count", "CacheRequestCnt":"count", "CachePagesCnt":"pages", "CacheObjectCnt":"count", "CacheObjectsInUseCnt":"count", "PlanCacheHitRatioDiffPct":"%","PlanCacheHitRatioPct":"%"]
+KEYEXPR._chart = [
+	[
+        "type": "line",
+        "name": "Cache Hit Ratio",
+        "chart_columns": ["PlanCacheHitRatioPct"],
+        "hint_columns": ["PlanCacheHitRatioDiffPct"]
+    ],
+	[
+        "type": "line",
+        "name": "Plan Cache Activity",
+        "chart_columns": ["CacheRequestCnt", "LookupRequestCnt"]
+    ]
+]
+SENDTYPE = "Store"
+RESOURCEID = "Pf/MsPlanCHR"
+MONITORINGTYPE = "@DB"
+DBTYPE = "@MSSQL"
+DEST = parameters.dest

@@ -1,0 +1,139 @@
+/**
+ * データベースファイルの空きサイズ等を監視します。<br/>
+ * <p>
+ * 各データベースは、データファイルとログファイルを持っています。 <br/>
+ * データベースファイルには現在のサイズと最大拡張済みサイズがあり、 <br/>
+ * 最大拡張後のテーブルスペース使用率が100%になると、空きサイズが無くなったという事が分かります。
+ * </p>
+ * @targetVersion 2008+
+ * @return サンプリング毎に各データベースの数だけレコードを取得します。
+ * @returnParam DBName データベース名
+ * @returnParam DBFileName ファイル名
+ * @returnParam FileSizePageInt ファイルのサイズ(ページ単位)
+ * @returnParam LocationAddr ファイルの場所
+ * @returnParam CurrentUsedSizePageInt 現在の使用サイズ(ページ単位)
+ * @returnParam CurrentFreeSizePageInt 現在の空きサイズ(ページ単位)
+ * @returnParam CurrentUsedPct 現在の使用率
+ * @returnParam MaxTotalSizePageInt 最大拡張時のファイルサイズ(ページ単位)
+ * @returnParam MaxFreeSizePageInt 最大拡張時のファイルの空きサイズ(ページ単位)
+ * @returnParam MaxUsedPct 最大拡張時のファイルサイズでの使用率
+ */
+
+JOB = [name: "SQL_Server.Database_Area.Database_free"]
+
+FETCHACTION = {
+	def query = '''
+		CREATE TABLE #TempTable
+ 			  (     DBName nvarchar(50),
+                    DBFileName nvarchar(50) NOT NULL,
+                    FileSizePageInt int,
+        			LocationAddr nvarchar(500) NOT NULL,
+                    CurrentUsedSizePageInt int,
+                    CurrentFreeSizePageInt int, 
+                    CurrentUsedPct numeric(5,2),
+                    MaxTotalSizePageInt int
+ 			   )
+		DECLARE @db varchar(50)
+		DECLARE @SqlQuery varchar(max)
+		DECLARE @stringQuery varchar(max)
+		DECLARE db_cursor CURSOR FOR
+		 SELECT name
+		 FROM sys.databases
+		 WHERE name NOT IN 
+		  (\'master\', \'tempdb\', \'model\', \'msdb\', \'ReportServer$SQLEXPRESS\', \'ReportServer$SQLEXPRESSTempDB\');
+		OPEN db_cursor ;
+		FETCH NEXT FROM db_cursor INTO @db;
+		WHILE @@FETCH_STATUS = 0
+		BEGIN
+		                SELECT @stringQuery = \'
+                                              select
+                									   DBName,
+                                                       DBFileName,
+                                                       FileSizePageInt, 
+            										   LocationAddr,
+                                                       CurrentUsedSizePageInt, 
+                                                       CurrentFreeSizePageInt, 
+                                                       CurrentUsedPct = convert(numeric(10,2),(CurrentUsedSizePageInt/(FileSizePageInt)))*100,
+                                                       MaxTotalSizePageInt
+                                               from
+                                                          (select
+                                                                        \'\'\' + @db +\'\'\' as DBName,
+                                                                        convert(numeric(10,2),sum(a.size)) as FileSizePageInt,
+                                                                        convert(numeric(10,2),sum(fileproperty( a.name,\'\'\' + \'SpaceUsed\' + \'\'\'))) as CurrentUsedSizePageInt,
+                                                                        convert(numeric(10,2),sum((a.size-fileproperty( a.name,\'\'\' + \'SpaceUsed\' + \'\'\')))) as CurrentFreeSizePageInt,
+                                                                        a.name as DBFileName,
+            															a.filename as LocationAddr,
+                                                                        a.maxsize as MaxTotalSizePageInt
+                                                           from
+                                                                        sysfiles a
+                                                           group by
+                                                                        groupid,
+                                                                        a.name,
+            															a.filename,
+                                                                        a.maxsize
+                                                          having
+                                                                       a.groupid is null or
+                                                                       a.name is not null or
+                                                                       a.maxsize is not null or
+            														   a.filename is not null
+                                                                       ) as T
+                                     \';
+                 SELECT @SqlQuery = \'use \' + @db + \' \' + @stringQuery;
+                 INSERT INTO #TempTable EXEC(@SqlQuery);
+                 FETCH NEXT FROM db_cursor INTO @db;
+	END
+	CLOSE db_cursor ;
+	DEALLOCATE db_cursor;
+			'''
+	def resultData = []
+	sql.execute(query)	
+	resultData = sql.rows('SELECT * FROM #TempTable')
+	sql.execute('DROP TABLE #TempTable')
+	
+	def location
+	def DiskFreeSizePage
+	def MaxFreeSizePageInt
+	def MaxUsedPct
+	def UsedPct
+	resultData.each {
+		location = it.LocationAddr
+		File file = new File(location)
+		DiskFreeSizePage = file.getFreeSpace()/(8*1024)
+		if(it.MaxTotalSizePageInt == -1 || it.MaxTotalSizePageInt > DiskFreeSizePage) {
+			it.MaxTotalSizePageInt = it.FileSizePageInt + DiskFreeSizePage
+		}
+		MaxFreeSizePageInt = it.MaxTotalSizePageInt - it.CurrentUsedSizePageInt
+		MaxUsedPct = it.CurrentUsedSizePageInt*100/it.MaxTotalSizePageInt
+		it['MaxFreeSizePageInt'] = MaxFreeSizePageInt
+		it['MaxUsedPct'] = MaxUsedPct
+	}
+	return resultData
+}
+
+KEYEXPR = ['_root':['DBName','DBFileName'], '_sequence':['CurrentUsedPct','FileSizePageInt','CurrentUsedSizePageInt']]
+KEYEXPR._unit = ["CurrentUsedSizePageInt":"pages","CurrentFreeSizePageInt":"pages","CurrentUsedPct":"%","MaxTotalSizePageInt": "pages","MaxFreeSizePageInt":"pages","FileSizePageInt":"pages","MaxUsedPct":"%"]
+KEYEXPR._chart = [
+	[
+        "type": "pie",
+        "name": "Current Size Page",
+        "chart_columns": ["CurrentUsedSizePageInt", "CurrentFreeSizePageInt"],
+        "hint_columns": ["CurrentTotalSizePageDbl", "MaxTotalSizePageDbl", "MaxFreeSizePageDbl", "MaxUsedPct"]
+    ],
+    [
+        "type": "pie",
+        "name": "Current Used Size vs Max Free Size",
+        "chart_columns": ["CurrentUsedSizePageInt", "MaxFreeSizePageInt"],
+        "hint_columns": ["FileSizePageInt", "MaxTotalSizePageInt", "MaxFreeSizePageInt"]
+    ],
+    [
+        "type": "line",
+        "name": "Database Free Utilization Rate",
+        "chart_columns": ["CurrentUsedPct", "MaxUsedPct"],
+        "hint_columns": [ "MaxTotalSizePageInt", "MaxFreeSizePageInt", "FileSizePageInt", "CurrentUsedSizePageInt"]
+    ]
+]
+SENDTYPE = "Store"
+RESOURCEID = "As/MsDbFree"
+MONITORINGTYPE = "@DB"
+DBTYPE = "@MSSQL"
+DEST = parameters.dest

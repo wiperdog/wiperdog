@@ -1,0 +1,122 @@
+/**
+ * Monitoring buffer cache hit ratio.<br/>
+ * <p>
+ * Buffer Manager object to monitor how SQL Server uses: Memory to store data pages or monitor the physical I/O as SQL Server reads and writes database pages.<br/>
+ * A page equivalent with 8 KB.<br/>
+ * </p>
+ * @targetVersion 2008
+ * @return get data on the use of buffer cache.
+ * @returnParam FreeListStallsPerSecVal The number of requests per second that had to wait for a free page
+ * @returnParam FreePagesCnt Total number of pages on all free lists
+ * @returnParam TotalPagesCnt The number of pages in the buffer pool (includes database, free, and stolen pages)
+ * @returnParam TargetPagesCnt Ideal number of pages in the buffer pool
+ * @returnParam DatabasePagesCnt The number of pages in the buffer pool with database content
+ * @returnParam StolenPagesCnt The number of pages used for miscellaneous server purposes (including procedure cache)
+ * @returnParam LazyWritesPerSecVal The number of buffers written per second by the buffer manager's lazy writer
+ * @returnParam CheckpointPagesPerSecVal The number of pages flushed to disk per second by a checkpoint or other operation that require all dirty pages to be flushed
+ * @returnParam PageReadsPerSecVal The number of physical database page reads that are issued per second
+ * @returnParam PageWritesPerSecVal The number of physical database page writes issued per second
+ * @returnParam PageLifeExpectancyInt The number of seconds a page will stay in the buffer pool without references
+ * @returnParam PagesInCacheDiffCnt The number of pages found in the buffer cache from last monitoring to now
+ * @returnParam PagesDiffCnt The number of pages from last monitoring to now
+ * @returnParam PagesInCacheCnt Total number of pages found in the buffer cache
+ * @returnParam PagesCnt Total number of pages
+ * @returnParam CacheHitRatioDiffPct Buffer cache hit rate from last monitoring to now
+ * @returnParam CacheHitRatioPct Total buffer cache hit rate
+ */
+JOB = [name: "SQL_Server.Performance.Buffer_Cache_Hit_Ratio"]
+
+FETCHACTION = {
+	def resultData = sql.rows('''
+		SELECT 
+		     counter_name,
+		     cntr_value
+		FROM sys.dm_os_performance_counters
+		WHERE object_name like '%Buffer Manager%'
+		 AND 
+		     counter_name IN ('Buffer cache hit ratio',
+		     'Buffer cache hit ratio base',
+		     'Free list stalls/sec',
+		     'Free pages',
+		     'Total pages',
+		     'Target pages',
+		     'Database pages',
+		     'Stolen pages',
+		     'Lazy writes/sec',
+		     'Checkpoint pages/sec',
+		     'Page reads/sec',
+		     'Page writes/sec',
+		     'Page life expectancy')
+	'''
+	)
+	def firstResult = [:]
+	def finalResult = [:]
+	def finalResultData = []
+	def convertedResult = [:]
+	resultData.each{
+		it['counter_name'] = it['counter_name'].trim()
+		firstResult[it['counter_name']] = it['cntr_value']
+		if((it['counter_name'] != 'Buffer cache hit ratio') && (it['counter_name'] != 'Buffer cache hit ratio base')){
+			finalResult[it['counter_name']] = it['cntr_value']	
+		}
+	}
+	
+	convertedResult['FreeListStallsPerSecVal'] = finalResult['Free list stalls/sec']
+	convertedResult['FreePagesCnt'] = finalResult['Free pages']
+	convertedResult['TotalPagesCnt'] = finalResult['Total pages']
+	convertedResult['TargetPagesCnt'] = finalResult['Target pages']
+	convertedResult['DatabasePagesCnt'] = finalResult['Database pages']
+	convertedResult['StolenPagesCnt'] = finalResult['Stolen pages']
+	convertedResult['LazyWritesPerSecVal'] = finalResult['Lazy writes/sec']
+	convertedResult['CheckpointPagesPerSecVal'] = finalResult['Checkpoint pages/sec']
+	convertedResult['PageReadsPerSecVal'] = finalResult['Page reads/sec']
+	convertedResult['PageWritesPerSecVal'] = finalResult['Page writes/sec']
+	convertedResult['PageLifeExpectancyInt'] = finalResult['Page life expectancy']
+	
+	convertedResult['PagesInCacheDiffCnt'] = firstResult['Buffer cache hit ratio'] - (PERSISTENTDATA['PagesInCacheCnt'] != null ? PERSISTENTDATA['PagesInCacheCnt'] : 0)
+	convertedResult['PagesDiffCnt'] = firstResult['Buffer cache hit ratio base'] - (PERSISTENTDATA['PagesCnt'] != null ? PERSISTENTDATA['PagesCnt'] : 0)
+	convertedResult['PagesInCacheCnt'] = firstResult['Buffer cache hit ratio']
+	convertedResult['PagesCnt'] = firstResult['Buffer cache hit ratio base']
+	
+	if(convertedResult['PagesDiffCnt'] == 0) {
+		convertedResult['CacheHitRatioDiffPct'] = null
+	} else {
+		convertedResult['CacheHitRatioDiffPct'] = (convertedResult['PagesInCacheDiffCnt']/convertedResult['PagesDiffCnt'])*100
+	}
+	if(convertedResult['PagesCnt'] == 0) {
+		convertedResult['CacheHitRatioPct'] = null
+	} else {
+		convertedResult['CacheHitRatioPct'] = (convertedResult['PagesInCacheCnt']/convertedResult['PagesCnt'])*100
+	}
+	
+	PERSISTENTDATA['PagesInCacheCnt'] = firstResult['Buffer cache hit ratio']
+	PERSISTENTDATA['PagesCnt'] = firstResult['Buffer cache hit ratio base']
+	finalResultData.add(convertedResult)
+	return finalResultData
+}
+KEYEXPR = ['_sequence':['CacheHitRatioDiffPct','CacheHitRatioPct']]
+KEYEXPR._unit = ["FreeListStallsPerSecVal":"count/sec", "FreePagesCnt":"pages", "TotalPagesCnt":"pages", "TargetPagesCnt":"pages", "DatabasePagesCnt":"pages", "StolenPagesCnt":"pages", "LazyWritesPerSecVal":"count/sec", "CheckpointPagesPerSecVal":"count/sec", "PageReadsPerSecVal":"pages/sec", "PageWritesPerSecVal":"pages/sec", "PageLifeExpectancyInt":"sec", "PagesInCacheDiffCnt":"pages/interval", "PagesDiffCnt":"pages/interval", "PagesInCacheCnt":"pages", "PagesCnt":"pages", "CacheHitRatioPct":"%", "CacheHitRatioDiffPct":"%"]
+KEYEXPR._chart = [
+    [
+        "type": "line",
+        "name": "Cache Hit Ratio",
+        "chart_columns": ["CacheHitRatioPct"],
+        "hint_columns": ["PagesDiffCnt", "PagesInCacheCnt"] 
+    ],
+    [
+        "type": "line",
+        "name": "Buffer Cache Activity",
+        "chart_columns": ["PageReadsPerSecVal", "PageWritesPerSecVal", "LazyWritesPerSecVal", "CheckpointPagesPerSecVal"]
+    ],
+    [
+        "type": "line",
+        "name": "Page Life Expectancy",
+        "chart_columns": ["PageLifeExpectancyInt"]
+    ]
+]
+
+SENDTYPE = "Store"
+RESOURCEID = "Pf/MsBufferCHR"
+MONITORINGTYPE = "@DB"
+DBTYPE = "@MSSQL"
+DEST = parameters.dest

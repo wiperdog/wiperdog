@@ -1,0 +1,62 @@
+/**
+ * MySQL ProactiveCheck - Aborted Information
+ * <p>
+ * Getting aborted information from information_schema.global_status
+ * </p> 
+ * @targetVersion 5.0
+ * @return Aborted Information
+ * @returnParam AbortedClientsCumCnt The number of connections that were aborted because the client died without closing the connection properly
+ * @returnParam AbortedConnectsCumCnt The number of failed attempts to connect to the MySQL server
+ * @returnParam AbortedClientsCnt Different value of <code>AbortedClientsCumCnt</code> with last monitoring time
+ * @returnParam AbortedConnectsCnt Different value of <code>AbortedConnectsCumCnt</code> with last monitoring time
+ */
+JOB = [ name: "MySQL.Proactive_Check.Aborted_Information" ]
+QUERY = '''
+	SELECT 
+	 	SUM(t.AbortedClientsCumCnt) AS AbortedClientsCumCnt ,
+	 	SUM(t.AbortedConnectsCumCnt) AS AbortedConnectsCumCnt
+	FROM
+	(
+    	SELECT 
+		 	variable_value AS AbortedClientsCumCnt,
+		    0 AS AbortedConnectsCumCnt
+		FROM information_schema.global_status 
+		WHERE variable_name LIKE 'ABORTED_CLIENTS'
+		UNION 
+		SELECT 
+		 	0 AS AbortedClientsCumCnt,
+		    variable_value AS AbortedConnectsCumCnt
+		FROM information_schema.global_status 
+		WHERE variable_name LIKE 'ABORTED_CONNECTS'
+	) AS t
+'''
+ACCUMULATE = {
+	assert interval != null : "First time ,we can not get meaniningful values"
+	assert (prevOUTPUT != null && prevOUTPUT[0] != null ) : "Can not get previous monitoring data !"
+	OUTPUT.each{ rec ->
+		rec['AbortedClientsCnt'] = rec['AbortedClientsCumCnt'] - prevOUTPUT[0]['AbortedClientsCumCnt']
+		rec['AbortedConnectsCnt'] = rec['AbortedConnectsCumCnt'] - prevOUTPUT[0]['AbortedConnectsCumCnt']
+	}
+}
+
+SENDTYPE = "Store"
+KEYEXPR = [:]
+KEYEXPR._unit = [ "AbortedClientsCumCnt" : "count" , "AbortedConnectsCumCnt" : "count"
+	,"AbortedClientsCnt":"count/interval"
+	,"AbortedConnectsCnt":"count/interval"]
+KEYEXPR._chart = [
+    [
+        "type": "line",
+        "name": "Aborted Information Differ",
+        "chart_columns": ["AbortedClientsCnt", "AbortedConnectsCnt"]
+    ],
+     [
+        "type": "line",
+        "name": "Aborted Information Cummulative",
+        "chart_columns": ["AbortedClientsCumCnt", "AbortedConnectsCumCnt"]
+    ]
+]
+MONITORINGTYPE = "@DB"
+RESOURCEID = "Sr/MyProChkAbortedInformation"
+DBTYPE = "@MYSQL"
+DEST = parameters.dest

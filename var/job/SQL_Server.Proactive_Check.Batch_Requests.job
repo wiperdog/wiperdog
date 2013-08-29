@@ -1,0 +1,53 @@
+/**
+ * Monitoring Batch Requests.<br/>
+ * <p>
+ * This statistic is affected by all constraints (such as I/O, number of users, cache size, complexity of requests, and so on).<br/> 
+ * High batch requests mean good throughput.<br/>
+ * This peak throughput is heavily dependent on the architectural design of the system, including procedures, tables, and index design.<br/>
+ * </p>
+ * @targetVersion 2008
+ * @return one record store information of batch requests.
+ * @returnParam BatchRequestsCumCnt Total number of Transact-SQL command batches received
+ * @returnParam BatchRequestsCnt The number of Transact-SQL command batches received from the last monitoring
+ */
+JOB = [name: "SQL_Server.Proactive_Check.Batch_Requests"]
+FETCHACTION = {
+	def persistentdata
+	def execute = sql.firstRow('''
+		SELECT cntr_value as BatchRequestsCumCnt
+		FROM sys.dm_os_performance_counters
+		WHERE object_name like '%:SQL Statistics%' 
+		AND counter_name = 'Batch Requests/sec'
+	'''
+	)
+	def finalResult = [:]
+	def finalResultData = []
+	if(execute['BatchRequestsCumCnt'] != null){
+		finalResult['BatchRequestsCumCnt'] = execute['BatchRequestsCumCnt']
+	}
+	persistentdata = PERSISTENTDATA['BatchRequestsCumCnt']
+	assert interval != null, "First time, we cannot return calculating values"
+	if(persistentdata != null && execute['BatchRequestsCumCnt'] != null){	
+		finalResult['BatchRequestsCnt'] = execute['BatchRequestsCumCnt'] - persistentdata
+	} else {
+		finalResult['BatchRequestsCnt'] = 0
+	}
+	PERSISTENTDATA['BatchRequestsCumCnt'] = execute['BatchRequestsCumCnt']
+	finalResultData.add(finalResult)
+	return finalResultData
+}
+
+KEYEXPR = ["_sequence":["BatchRequestsCnt","BatchRequestsCumCnt"]]
+KEYEXPR._unit = ["BatchRequestsCumCnt":"count", "BatchRequestsCnt":"count/interval"]
+KEYEXPR._chart = [
+    [
+        "type": "line",
+        "name": "Batch Request",
+        "chart_columns": ["BatchRequestsCumCnt"]
+    ]
+]
+SENDTYPE = "Store"
+RESOURCEID = "Sr/MsBatRq"
+MONITORINGTYPE = "@DB"
+DBTYPE = "@MSSQL"
+DEST = parameters.dest

@@ -14,7 +14,8 @@ if "%DIRNAME%" == "" set DIRNAME=.\
 
 set PREFIX=%~dp0..
 for %%i in ("%PREFIX%") do set PREFIX=%%~fsi
-call "%PREFIX%\etc\java.env.bat"
+
+:: call "%PREFIX%\etc\java.env.bat"
 
 "%DIRNAME%\startGroovy.bat" "%DIRNAME%" groovy.ui.GroovyMain %*
 

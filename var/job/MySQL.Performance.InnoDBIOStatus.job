@@ -1,0 +1,71 @@
+/**
+ * MySQL Performance InnoDB Data I/O Status
+ * <p>
+ * Getting information from information_schema.global_status about data I/O related to InnoDB tables.
+ * </p>
+ * @targetVersion 5.0
+ * @return Information of Data I/O such as READ/WRITE count and amount of bytes.
+ * @returnParam ReadsCumCnt The amount of data read since the server was started.
+ * @returnParam ReadCumSize The total number of data reads as byte.
+ * @returnParam WritesCumCnt The total number of data writes.
+ * @returnParam WrittenCumSize The amount of data written so far as byte.
+ * @returnParam WritesCnt Different of WritesCumCnt with the last monitoring
+ * @returnParam WrittenSize Different of WrittenCumSize with the last monitoring
+ * @returnParam ReadSize Different of ReadCumSize with the last monitoring
+ * @returnParam ReadsCnt Different of ReadsCumCnt with the last monitoring
+ */
+JOB = [name:"MySQL.Performance.InnoDBIOStatus"]
+FETCHACTION={
+	def query =
+		"""
+		SELECT 
+			A.WritesCumCnt,
+			B.WrittenCumSize,
+			C.ReadCumSize,
+			D.ReadsCumCnt
+		FROM
+		  (SELECT CONVERT(variable_value, UNSIGNED INTEGER) AS WritesCumCnt FROM information_schema.global_status G
+		      WHERE G.variable_name = "innodb_data_writes") A,
+		  (SELECT CONVERT(variable_value, UNSIGNED INTEGER) AS WrittenCumSize FROM information_schema.global_status G
+		      WHERE G.variable_name = "innodb_data_written") B,
+		  (SELECT CONVERT(variable_value, UNSIGNED INTEGER) AS ReadCumSize FROM information_schema.global_status G
+		      WHERE G.variable_name = "innodb_data_read") C,
+		  (SELECT CONVERT(variable_value, UNSIGNED INTEGER) AS ReadsCumCnt FROM information_schema.global_status G
+		      WHERE G.variable_name = "innodb_data_reads") D
+		  ;
+		"""
+	def data = sql.rows(query)
+	return data
+}
+ACCUMULATE = {
+	assert interval != null : "First time ,we can not get meaniningful values"
+	assert (prevOUTPUT != null && prevOUTPUT[0] != null ) : "Can not get previous monitoring data !"
+	OUTPUT.each{ rec ->
+		rec['WritesCnt']  = rec['WritesCumCnt']       - prevOUTPUT[0]['WritesCumCnt']
+		rec['WrittenSize'] = rec['WrittenCumSize'] - prevOUTPUT[0]['WrittenCumSize']
+		rec['ReadSize']    = rec['ReadCumSize']    - prevOUTPUT[0]['ReadCumSize']
+		rec['ReadsCnt']   = rec['ReadsCumCnt']        - prevOUTPUT[0]['ReadsCumCnt']
+	}
+}
+KEYEXPR = [:]
+KEYEXPR._unit = ["WritesCumCnt":"count","WrittenCumSize":"byte"
+	,"ReadsCumCnt":"count","ReadCumSize":"byte"
+	,"WritesCnt":"count/interval","WrittenSize":"byte/interval"
+	,"ReadSize":"byte/interval","ReadsCnt":"count/interval"]
+KEYEXPR._chart = [
+    [
+        "type": "line",
+        "name": "InnoDB DB I/O Status",
+        "chart_columns": ["ReadsCnt", "WritesCnt"]
+    ],
+    [
+        "type": "line",
+        "name": "InnoDB DB I/O Status",
+        "chart_columns": ["ReadSize", "WrittenSize"]
+    ]
+]
+SENDTYPE = "Store"
+DBTYPE = "@MYSQL"
+DEST = parameters.dest
+MONITORINGTYPE = "@DB"
+RESOURCEID = "Pf/MyInnoDBDataIo"

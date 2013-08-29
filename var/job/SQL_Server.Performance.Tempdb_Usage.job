@@ -1,0 +1,48 @@
+/**
+ * Monitoring objects in tempdb.<br/>
+ * <p>
+ * Tempdb is one of the system databases in SQL server.<br/>
+ * It is a global resource that is available to all users connected to the instance of SQL Server.<br/>
+ * The tempdb default size is 8 MB when the service starts.<br/>
+ * </p>
+ * @targetVersion from 2005 
+ * @return get size allocated in tempdb for objects.
+ * @returnParam UsrObjKbSize Total size allocated for the User Object
+ * @returnParam InternalObjKbSize Total size allocated for the Internal Object
+ * @returnParam VersionStoreKbSize Total size allocated for the Version Store
+ * @returnParam FreespaceKbSize Total size unallocated in the file
+ * @returnParam MixEdextentKbSize Total size allocated and unallocated
+ */
+JOB = [name: "SQL_Server.Performance.Tempdb_Usage"]
+FETCHACTION = {
+	def resultData = sql.rows('''
+		use tempdb
+		SELECT 
+			SUM (user_object_reserved_page_count)*8 AS UsrObjKbSize,
+			SUM (internal_object_reserved_page_count)*8 AS InternalObjKbSize,
+			SUM (version_store_reserved_page_count)*8  AS VersionStoreKbSize,
+			SUM (unallocated_extent_page_count)*8 AS FreespaceKbSize,
+			SUM (mixed_extent_page_count)*8 AS MixEdextentKbSize
+		FROM 
+			sys.dm_db_file_space_usage
+		Where 
+			DB_NAME(database_id) = 'tempdb'
+	'''
+	)
+	return resultData
+}
+
+KEYEXPR = [:]
+KEYEXPR._unit = ["UsrObjKbSize":"KB", "InternalObjKbSize":"KB", "VersionStoreKbSize":"KB", "FreespaceKbSize":"KB", "MixEdextentKbSize":"KB"]
+KEYEXPR._chart = [
+    [
+        "type": "area",
+        "name": "Size Allocated of Object",
+        "chart_columns": ["UsrObjKbSize", "InternalObjKbSize", "VersionStoreKbSize", "FreespaceKbSize", "MixEdextentKbSize"]
+    ]
+]
+SENDTYPE = "Store"
+RESOURCEID = "Pf/MsTempDbUsage"
+MONITORINGTYPE = "@DB"
+DBTYPE = "@MSSQL"
+DEST = parameters.dest

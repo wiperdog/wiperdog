@@ -1,0 +1,21 @@
+/**
+ * サーバーのステータス変数に関する情報を監視します。<br />
+ * <p>
+ * GLOBAL_VARIABLESテーブルからサーバーのステータスに関する情報を取得します。<br />
+ * この情報からは、サーバーへの最大同時接続数などを確認する事が出来ます。
+ * </p>
+ * @targetVersion 5.1+
+ * @return サンプリング毎に、ステータス変数分のレコードを取得します。
+ * @returnParam VariableNameTxt ステータス変数の名前
+ * @returnParam VariableValueTxt ステータス変数の値
+ */
+JOB = [ name: "MySQL.Database_Structure.Parameter" ]
+QUERY='''
+		SELECT G.`VARIABLE_NAME` As VariableNameTxt, G.`VARIABLE_VALUE` As VariableValueTxt FROM information_schema.GLOBAL_VARIABLES G;
+	'''
+KEYEXPR = ["VariableNameTxt"]
+SENDTYPE = "Store"
+MONITORINGTYPE = "@DB"
+RESOURCEID = "Sr/MyParameter"
+DBTYPE = "@MYSQL"
+DEST = parameters.dest

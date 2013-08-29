@@ -1,0 +1,104 @@
+#!/bin/sh
+#
+# Wiper dog  This shell script takes care of starting and stopping
+#               the wiper dog system.
+#
+# chkconfig: - 64 36
+# description: Wiper dog database monitoring system.
+# processname: startWiperdog.sh
+# config:
+# pidfile: /home/luvina/wiperdog/wiperdog.pid
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+WIPERDOGHOME=/home/luvina/wiperdog
+
+# Source networking configuration.
+. /etc/sysconfig/network
+execCmd=${WIPERDOGHOME}/bin/startWiperdog.sh
+lockFile=${WIPERDOGHOME}/var/run/wiperdog.lck
+pidiFile=${WIPERDOGHOME}/var/run/wiperdog.pid
+
+start(){
+    [ -x $execCmd ] || exit 5
+    # check to see if it's already running
+    if [ -e $lockFile ]; then
+        # already running, do nothing
+        echo  "Wiperdog is already running: " /bin/true
+        ret=0
+    else
+        /bin/sh $execCmd > /dev/null 2>&1 &
+        /bin/touch $lockFile
+        export output=`ps -ef | grep Dfelix.home|grep java`
+        set -- $output
+        action $"Wiperdog started "$2 /bin/true
+    fi
+}
+debug(){
+    [ -x $execCmd ] || exit 5
+    # check to see if it's already running
+
+    if [ -e $lockFile ]; then
+        # already running, do nothing
+        echo "Wiperdog is already running: " /bin/true
+        ret=0
+    else
+        /bin/sh $execCmd 2>&1 &
+        /bin/touch $lockFile
+        export output=`ps -ef | grep Dfelix.home|grep java`
+        set -- $output
+        action $"Wiperdog started. "$2 /bin/true
+    fi
+}
+stop(){
+    [ -x $stopCmd ] || exit 5
+    # check to see if it's already running
+
+    if [ -x $lockFile ]; then
+        # not running, do nothing
+        action $"Wiperdog is not running: " /bin/true
+        ret=0
+    else
+        export output=`ps -ef | grep Dfelix.home|grep java`
+        set -- $output
+        action $"Stoping Wiperdog with PID: "$2 /bin/true
+        /bin/kill -9 $2
+        /bin/rm -f $lockFile
+    fi
+}
+
+status(){
+    if [ -e $lockFile ]; then
+        # already running, do nothing
+        echo "Wiperdog is running..."
+    else
+        echo "Wiperdog has been stopped..."
+    fi
+
+}
+
+# See how we were called.
+case "$1" in
+  start)
+    start
+    ;;
+  debug)
+    debug
+    ;;
+  stop)
+    stop
+    ;;
+  status)
+    status
+    ;;
+  restart)
+    stop
+    start
+    ;;
+  *)
+    echo $"Usage: $0 {start|debug|stop|status|restart}"
+    exit 2
+esac
+
+exit $?

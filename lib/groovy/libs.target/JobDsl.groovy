@@ -360,7 +360,7 @@ class JobDsl {
 						tmpTextParesd = tmpTextParesd.replace(jobName,job_inst)
 					}
 					def clsJob = loader.parseClass(tmpTextParesd, job_inst)
-					def scheduledJob = new GroovyScheduledJob(jobfile.absolutePath, clsJob, element_listinst.params, job_inst, sender)
+					def scheduledJob = new GroovyScheduledJob(jobfile.absolutePath, clsJob, element_listinst.params, jobName, element_listinst.instancesName, sender)
 					try {
 						jobfacade.createJob(scheduledJob)
 					} catch (Exception e) {

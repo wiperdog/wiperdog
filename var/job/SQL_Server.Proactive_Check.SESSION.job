@@ -1,0 +1,51 @@
+/**
+ * Monitoring sessions.<br/>
+ * <p>
+ * Session is the session was created by user for execute the request send to DBMS and feedback.<br/>
+ * When the session does not execute any request or with data too large and this session will become waiting.<br/>
+ * </p>
+ * @targetVersion 2008
+ * @return one record about number of the current session, inactive and waiting. 
+ * @returnParam CurrentSessionsCnt The number of current sessions
+ * @returnParam InactiveSessionsCnt The number of inactive sessions
+ * @returnParam WaitSessionsCnt The number of sessions waiting for locks
+ */
+JOB = [name: "SQL_Server.Proactive_Check.SESSION"]
+
+FETCHACTION = {
+	def resultData = sql.rows('''
+	SELECT
+	 	CurrentSessionsCnt,
+	 	InactiveSessionsCnt,
+	 	WaitSessionsCnt
+	FROM
+		( SELECT count(session_id) AS CurrentSessionsCnt 
+		 FROM sys.dm_exec_sessions 
+		 WHERE is_user_process  = 1 AND status IN ('Running', 'Sleeping')) AS CurrentSessionsCnt,
+		( SELECT count(session_id) AS InactiveSessionsCnt 
+		  FROM sys.dm_exec_sessions 
+		  WHERE is_user_process  = 1 AND status <> 'Running') AS InactiveSessionsCnt,
+		( SELECT count(session_id) AS WaitSessionsCnt
+		  FROM sys.dm_exec_sessions ds 
+		  INNER JOIN 
+		  sys.dm_tran_locks dt 
+		  ON 
+		  ds.session_id = dt.request_session_id       
+	 WHERE is_user_process  = 1 and status IN ('Running', 'Sleeping')) AS WaitSessionsCnt
+	'''
+	)
+}
+KEYEXPR = ["_sequence":["CurrentSessionsCnt"]]
+KEYEXPR._unit = ["CurrentSessionsCnt":"sessions", "InactiveSessionsCnt":"sessions", "WaitSessionsCnt":"sessions"]
+KEYEXPR._chart = [
+    [
+        "type": "line",
+        "name": "Sessions information",
+        "chart_columns": ["CurrentSessionsCnt", "InactiveSessionsCnt", "WaitSessionsCnt"]
+    ]
+]
+SENDTYPE = "Store"
+RESOURCEID = "Sr/MsSession"
+MONITORINGTYPE = "@DB"
+DBTYPE = "@MSSQL"
+DEST = parameters.dest

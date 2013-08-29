@@ -1,0 +1,268 @@
+/**
+ * InnoDBテーブルスペースの空きサイズを監視します。<br/>
+ * <p>
+ * テーブルスペースはオブジェクトを格納する事が出来ます。<br />
+ * テーブルスペースには現在のサイズと最大拡張済みサイズがあり、<br />
+ * 最大拡張後のテーブルスペース使用率が100%になると、空きサイズが無くなったという事が分かります。<br/>
+ * このジョブはinnodb_file_per_table = offの場合実行する事がで出来ません。
+ * </p>
+ * @targetVersion 5.1+
+ * @return サンプリング毎に1レコードのデータを取得します。
+ * @returnParam TablespaceName テーブルスペース名
+ * @returnParam CurrentUsedSizeKB 現在のテーブルスペースの使用サイズ(KB)
+ * @returnParam CurrentTotalSizeKB 現在のテーブルスペースのサイズ(KB)
+ * @returnParam CurrentFreeSizeKB 現在のテーブルスペースの空きサイズ(KB)
+ * @returnParam CurrentUsedPct 現在のテーブルスペース使用率
+ * @returnParam MaxTotalSizeKB 最大拡張時におけるテーブルスペースのサイズ(KB)
+ * @returnParam MaxFreeSizeKB 最大拡張時におけるテーブルスペースの空きサイズ(KB)
+ * @returnParam MaxUsedPct 最大データ領域でのテーブルスペース使用率
+ */
+JOB = [ name: "MySQL.Database_Area.InnoDBTablespace_Free" ]	
+FETCHACTION={
+/**
+	Concept of Design 
+	Monitor table space size ONLY WHEN innodb_file_per_table = OFF.
+	Information will be extracted from information_schema.tables (remind as tables later)
+	Result data should contain:
+		+ TablespaceName="INNODB_TABLESPACE"
+		+ CurrentTotalSizeKB
+		  *) Sum of all current total size: SUM(Max(tables.data_length, InitializeSizeByteLong))
+		+ CurrentFreeSizeKB
+		  *) CurrentTotalSizeKB - SUM(tables.data_length)
+		+ CurrentUsedSizeKB
+		  *) Sum of all current total size: SUM(tables.data_length)
+		+ CurrentUsedPct
+		  *) CurrentUsedSizeKB*100/CurrentTotalSizeKB
+		+ MaxTotalSizeKB
+			*) If max size were set for all: MIN(Sum(max size of innodb data files), disk free space)
+	    	*) In case user did not specified max for any one of data files:  CurrentUsedSizeKB + disk free space
+		+ MaxFreeSizeKB: 
+			MaxTotalSizeKB - CurrentUsedSizeKB
+		+ MaxUsedPct
+		    CurrentUsedSizeKB*100 /MaxTotalSizeKB
+*/	
+	// mapResult is an array, store key and the value of some variable
+	def mapResult = [:]
+	// Store value of datadir variable
+	def diskPath
+	// Free size of the partition which keep the data file
+	def diskFreeSize
+	// Store the status of innodb_file_per_table variable 
+	def innodbFilePerTable
+	// Get datadir to sql
+	def diskSize = []
+	// Get data free size of disk
+	def dataFreeSize
+	// Path to disk create
+	def pathCreate
+	// Path of file create
+	def pathFile
+	// Max file size
+	def max_file_size
+	// Get value of innodb_file_per_table
+	def innodbPerTable
+	// Get value of innodb_data_file_path
+	def innodbFilePath
+	// Get data
+	def resultData = []
+	// Value of free size of innodb tablespace
+	def innodb_tablespace_free_size = 0
+	//step 1:get data from information_schema.tables
+	def data = sql.rows('''
+		SELECT 'INNODB_TABLESPACE' as 'TablespaceName',  SUM(data_length + index_length)/1024 as CurrentUsedSizeKB
+		FROM information_schema.tables
+		WHERE engine = 'innodb' AND table_schema NOT IN ('information_schema','mysql','performance_schema')
+	''')
+	
+
+	
+	// get free size of disk
+	diskSize = sql.rows('''
+		select variable_value from information_schema.global_variables where variable_name = 'datadir';
+	''')
+	diskSize.each{
+		mapResult['datadir'] = it['variable_value']
+	}
+	diskPath = mapResult['datadir']
+			
+	dataFreeSize = new File(diskPath)
+	diskFreeSize = dataFreeSize.getUsableSpace()/1024
+	
+	//-- assert free size = 0, cause by permission
+	assert diskFreeSize > 0, "Permission error: disk free size = 0, may cause by user permission while accessing data folder"
+	
+	innodbPerTable = sql.rows('''
+			select variable_value from information_schema.global_variables where variable_name = 'innodb_file_per_table';	
+	''')
+	if(innodbPerTable != null && innodbPerTable != []) {
+		innodbPerTable.each{
+			mapResult['innodb_file_per_table']=it['variable_value']
+		}
+	}
+	innodbFilePerTable	= mapResult['innodb_file_per_table']
+	
+	/* innodb_file_per_table should not be null */
+	assert innodbFilePerTable != null, "Configuration error: variable innodb_file_per_table should not be null"
+	assert innodbFilePerTable.equalsIgnoreCase("OFF"), "Configuration error: innodb_file_per_table should be set to off"
+	def innodbFilePath_tmp
+	innodbFilePath_tmp = sql.rows('''
+			select variable_value from information_schema.global_variables where variable_name = 'innodb_data_file_path'	
+	''')
+	
+	if(innodbFilePath_tmp != null && innodbFilePath_tmp != []){
+		innodbFilePath = innodbFilePath_tmp.getAt(0)['variable_value']
+	} 
+	/* innodb_file_per_table should not be null */
+	assert innodbFilePath != null, "Configuration error: variable innodb_data_file_path should not be null"
+	//-----------------------------------------------------------------------------------------------	
+	//get tablespace max size of innodb tablespace
+
+	def dataFileList = (innodbFilePath != null)?innodbFilePath.split(';'):[]
+	// Define max table space size	
+	Long initDataFileSize = 0
+	Long maxFileSize = 0
+	Long sumMaxFileSize = 0
+	Long sumInitDataFileSize = 0
+	boolean notMaxFlg = false
+	def dataFileNames = []
+	dataFileList.each {
+	   def dataFileElement = it.split(':')
+	   dataFileNames.add(dataFileElement[0])
+	   if(it.contains('autoextend')) {
+		   if(it.contains('max')) {		   	   
+			   if(dataFileElement[4].contains('K')) {
+				   maxFileSize = dataFileElement[4].replace('K', '').toInteger()
+	   		   } else if(dataFileElement[4].contains('M')){
+			       maxFileSize = dataFileElement[4].replace('M', '').toInteger()*1024
+	   		   } else  if(dataFileElement[4].contains('G')){
+			       maxFileSize = dataFileElement[4].replace('G', '').toInteger()*1024*1024
+   			   }else{
+   			   	   maxFileSize = dataFileElement[4].toInteger()/1024
+   			   }
+   			   sumMaxFileSize += maxFileSize
+		   } else {
+	   	           notMaxFlg = true;
+		   }
+	   } else {
+	   	   notMaxFlg = true;
+		   if(dataFileElement[1].contains('K')) {
+			   initDataFileSize = dataFileElement[1].replace('K', '').toInteger()
+		   } else if(dataFileElement[1].contains('M')){
+			   initDataFileSize = dataFileElement[1].replace('M', '').toInteger()*1024
+	   	   } else if(dataFileElement[1].contains('G')){
+			   initDataFileSize = dataFileElement[1].replace('G', '').toInteger()*1024*1024
+   		   } else{
+   		   	   initDataFileSize = dataFileElement[1].toInteger()/1024
+   		   }
+   		   sumInitDataFileSize += initDataFileSize
+	   }
+	}
+	//-- Calculate real data file ibdata1
+	
+	def innodbDataHomeDir = sql.rows("""
+		show variables like 'innodb_data_home_dir';
+		"""
+	)
+		
+	def ibdata1HomePath 
+	if(innodbDataHomeDir != null && innodbDataHomeDir != []){
+		ibdata1HomePath  = innodbDataHomeDir.getAt(0)['value']
+	} 
+	
+	File dataHomeDir = new File(ibdata1HomePath)
+	if(ibdata1HomePath == null || ibdata1HomePath.equals("") || !dataHomeDir.isAbsolute()){
+		ibdata1HomePath = mapResult['datadir']  + ibdata1HomePath
+		dataHomeDir = new File(ibdata1HomePath)		
+	}
+	
+	assert dataHomeDir.exists() == true, "Data home dir not found: " + ibdata1HomePath
+	Long totalDataFileSize = 0
+	dataFileNames.each{fileName->
+		def fullDataFilePath = ibdata1HomePath + "/" + fileName
+		File f = new File(fullDataFilePath)
+		if(f.exists())
+			totalDataFileSize += f.length()/1024
+	}
+ 	//-----------------------------------------------------------------------------------------------
+	def tmpRetData
+	data.each{
+			tmpRetData = it
+			return
+	}
+	//get used tablespace of innodb tablespace
+	Long usedTBS = tmpRetData['CurrentUsedSizeKB']	
+	Long CurrentTotalSizeKB = totalDataFileSize
+	tmpRetData['CurrentTotalSizeKB'] = CurrentTotalSizeKB
+	
+	/** The free size among the total file size which ware allocated */
+	Long CurrentFreeSizeKB = CurrentTotalSizeKB - usedTBS
+	tmpRetData['CurrentFreeSizeKB'] = CurrentFreeSizeKB
+	
+	/** CurrentUsedPct */
+	Double CurrentUsedPct = null
+	if(CurrentTotalSizeKB >0 )
+		CurrentUsedPct = usedTBS*100/CurrentTotalSizeKB
+	tmpRetData['CurrentUsedPct'] = CurrentUsedPct
+	
+	/** MaxTotalSizeKB */
+	Long MaxTotalSizeKB = null;
+    def diskMaxTotalSize = usedTBS.longValue() + diskFreeSize.longValue()
+
+	if(notMaxFlg != true){ //- MAX key applied for all data files
+		MaxTotalSizeKB = Math.min(sumMaxFileSize.longValue(), diskMaxTotalSize.longValue())
+	}else{
+		MaxTotalSizeKB = diskMaxTotalSize
+	}
+
+	tmpRetData['MaxTotalSizeKB'] = MaxTotalSizeKB
+	
+	/** MaxFreeSizeKB */ 
+	Long MaxFreeSizeKB = MaxTotalSizeKB - usedTBS
+	tmpRetData['MaxFreeSizeKB'] = MaxFreeSizeKB
+	
+	/** MaxUsedPct */
+    Double MaxUsedPct = null
+    if(MaxTotalSizeKB > 0)
+    	MaxUsedPct = usedTBS *100 /MaxTotalSizeKB   
+    	
+    tmpRetData['MaxUsedPct'] = MaxUsedPct
+    	
+	//-----------------------------------------------------------------------------------------------
+	//get table_free_size for each table
+	def mapResultData1 = [:]
+	mapResultData1['TablespaceName'] = tmpRetData['TablespaceName']	
+	mapResultData1['CurrentUsedSizeKB'] = tmpRetData['CurrentUsedSizeKB'] 
+	mapResultData1['CurrentTotalSizeKB'] = tmpRetData['CurrentTotalSizeKB']  
+	mapResultData1['CurrentFreeSizeKB'] = tmpRetData['CurrentFreeSizeKB'] 
+	mapResultData1['CurrentUsedPct'] = tmpRetData['CurrentUsedPct'] 
+	mapResultData1['MaxTotalSizeKB'] = tmpRetData['MaxTotalSizeKB']
+	mapResultData1['MaxFreeSizeKB'] = tmpRetData['MaxFreeSizeKB'] 
+	mapResultData1['MaxUsedPct'] = tmpRetData['MaxUsedPct']
+	resultData.add(mapResultData1)	
+	return resultData
+}
+KEYEXPR = [:]
+KEYEXPR._unit = ["CurrentUsedSizeKB" : "KB", "CurrentTotalSizeKB":"KB", "CurrentFreeSizeKB":"KB", "CurrentUsedPct":"%"
+, "MaxTotalSizeKB":"KB","MaxFreeSizeKB":"KB","MaxUsedPct":"%"]
+KEYEXPR._chart = [
+    [
+        "type": "pie",
+        "name": "Current usage size vs current free size",
+        "chart_columns": ["CurrentUsedSizeKB", "CurrentFreeSizeKB"]
+    ],
+    [
+        "type": "pie",
+        "name": "Current usage size vs total free size",
+        "chart_columns": ["CurrentUsedSizeKB", "MaxFreeSizeKB"]
+    ],
+    [
+        "type": "line",
+        "name": "Max usage percentage and current used percentage",
+        "chart_columns": ["MaxUsedPct", "CurrentUsedPct"]
+    ]    
+]
+DBTYPE = "@MYSQL"
+SENDTYPE = "Store"
+MONITORINGTYPE = "@DB"
+RESOURCEID = "As/MyInnoTbsFree"
+DEST = parameters.dest
