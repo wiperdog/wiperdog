@@ -1,0 +1,103 @@
+/**
+ * Monitoring query cache hit.<br/>
+ * <p>
+ * The query cache stores the text of a SELECT statement together with the corresponding result that was sent to the client.<br/>
+ * The query cache does not work in an environment where you have multiple mysqld servers updating the same MyISAM tables.<br/>
+ * To disable the query cache at server startup, set the query_cache_size system variable to 0.<br/>
+ * When we want use query cache, needs setup a minimum size of query_cache_size of about 40KB to allocate its structures.<br/>
+ * </p>
+ * @targetVersion 5.1
+ * @return get information on the use of query cache.
+ * @returnParam QcacheFreeBlocksLong The number of free memory blocks in the query cache
+ * @returnParam QcacheFreeMemoryLong The amount of free memory for the query cache
+ * @returnParam QcacheHitsLong Total number of query cache hits
+ * @returnParam QcacheInsertsLong Total number of queries added to the query cache
+ * @returnParam QcacheLowmemPrunesLong Total number of queries that were deleted from the query cache because of low memory
+ * @returnParam QcacheNotCachedLong Total number of noncached queries (not cacheable, or not cached due to the query_cache_type setting)
+ * @returnParam QcacheQueriesInCacheLong Total number of queries registered in the query cache
+ * @returnParam QcacheTotalBlocksLong The total number of blocks in the query cache
+ * @returnParam QcacheHitsDiffVal The number of query cache hits from last monitoring
+ * @returnParam QcacheInsertsDiffVal The number of queries added to the query cache from last monitoring
+ * @returnParam QcacheLowmemPrunesDiffVal The number of queries that were deleted from the query cache because of low memory from last monitoring
+ * @returnParam QcacheNotCachedDiffVal The number of noncached queries from last monitoring
+ * @returnParam QcacheQueriesInCacheDiffVal The number of queries registered in the query cache from last monitoring
+ * @returnParam QueryCacheHitPct Query cache hit percent
+ * @returnParam AccumulateQueryCacheHitPct Accumulate query cache hit percent
+ */
+JOB = [name:"MySQL_Performance.QueryCache"]
+FETCHACTION={
+		def prev_Qcache_hits_diff = PERSISTENTDATA['QcacheHitsLong'] != null ? PERSISTENTDATA['QcacheHitsLong'] : 0
+		def prev_Qcache_inserts_diff = PERSISTENTDATA['QcacheInsertsLong'] != null ? PERSISTENTDATA['QcacheInsertsLong'] : 0
+		def prev_Qcache_lowmem_prunes_diff = PERSISTENTDATA['QcacheLowmemPrunesLong'] != null ? PERSISTENTDATA['QcacheLowmemPrunesLong'] : 0
+		def prev_Qcache_not_cached_diff = PERSISTENTDATA['QcacheNotCachedLong'] != null ? PERSISTENTDATA['QcacheNotCachedLong'] : 0
+		def prev_Qcache_queries_in_cache_diff = PERSISTENTDATA['QcacheQueriesInCacheLong'] != null ? PERSISTENTDATA['QcacheQueriesInCacheLong'] : 0
+		def resultData = [:]
+		def data = sql.rows('''
+					SELECT
+					 A.QcacheFreeBlocksLong,
+					 B.QcacheFreeMemoryLong,
+					 C.QcacheHitsLong,
+					 D.QcacheInsertsLong,
+					 E.QcacheLowmemPrunesLong,
+					 F.QcacheNotCachedLong,
+					 G.QcacheQueriesInCacheLong,
+					 H.QcacheTotalBlocksLong
+					FROM
+					 (SELECT G.variable_value AS QcacheFreeBlocksLong FROM information_schema.global_status G WHERE G.variable_name = 'Qcache_free_blocks') A,
+					 (SELECT G.variable_value AS QcacheFreeMemoryLong FROM information_schema.global_status G WHERE G.variable_name = 'Qcache_free_memory') B,
+					 (SELECT G.variable_value AS QcacheHitsLong FROM information_schema.global_status G WHERE G.variable_name = 'Qcache_hits') C,
+					 (SELECT G.variable_value AS QcacheInsertsLong FROM information_schema.global_status G WHERE G.variable_name = 'Qcache_inserts') D,
+					 (SELECT G.variable_value AS QcacheLowmemPrunesLong FROM information_schema.global_status G WHERE G.variable_name = 'Qcache_lowmem_prunes') E,
+					 (SELECT G.variable_value AS QcacheNotCachedLong FROM information_schema.global_status G WHERE G.variable_name = 'Qcache_not_cached') F,
+					 (SELECT G.variable_value AS QcacheQueriesInCacheLong FROM information_schema.global_status G WHERE G.variable_name = 'Qcache_queries_in_cache') G,
+					 (SELECT G.variable_value AS QcacheTotalBlocksLong FROM information_schema.global_status G WHERE G.variable_name = 'Qcache_total_blocks') H;
+				''')
+		
+		resultData['QcacheFreeBlocksLong'] = Long.parseLong(data[0]['QcacheFreeBlocksLong'])
+		resultData['QcacheFreeMemoryLong'] = Long.parseLong(data[0]['QcacheFreeMemoryLong'])
+		resultData['QcacheHitsLong'] = Long.parseLong(data[0]['QcacheHitsLong'])
+		resultData['QcacheInsertsLong'] = Long.parseLong(data[0]['QcacheInsertsLong'])
+		resultData['QcacheLowmemPrunesLong'] = Long.parseLong(data[0]['QcacheLowmemPrunesLong'])
+		resultData['QcacheNotCachedLong'] = Long.parseLong(data[0]['QcacheNotCachedLong'])
+		resultData['QcacheQueriesInCacheLong'] = Long.parseLong(data[0]['QcacheQueriesInCacheLong'])
+		resultData['QcacheTotalBlocksLong'] = Long.parseLong(data[0]['QcacheTotalBlocksLong'])
+		
+		//Set PERSISTENTDATA
+		PERSISTENTDATA['QcacheHitsLong'] = resultData['QcacheHitsLong']
+		PERSISTENTDATA['QcacheInsertsLong'] = resultData['QcacheInsertsLong']
+		PERSISTENTDATA['QcacheLowmemPrunesLong'] = resultData['QcacheLowmemPrunesLong']
+		PERSISTENTDATA['QcacheNotCachedLong'] = resultData['QcacheNotCachedLong']
+		PERSISTENTDATA['QcacheQueriesInCacheLong'] = resultData['QcacheQueriesInCacheLong']
+			
+		resultData['QcacheHitsDiffVal'] = resultData['QcacheHitsLong'] - prev_Qcache_hits_diff
+		resultData['QcacheInsertsDiffVal'] = resultData['QcacheInsertsLong'] - prev_Qcache_inserts_diff
+		resultData['QcacheLowmemPrunesDiffVal']= resultData['QcacheLowmemPrunesLong'] - prev_Qcache_lowmem_prunes_diff
+		resultData['QcacheNotCachedDiffVal']= resultData['QcacheNotCachedLong'] - prev_Qcache_not_cached_diff
+		resultData['QcacheQueriesInCacheDiffVal'] = resultData['QcacheQueriesInCacheLong'] - prev_Qcache_queries_in_cache_diff
+		if ((resultData['QcacheHitsDiffVal'] + resultData['QcacheNotCachedDiffVal']+resultData['QcacheInsertsDiffVal']) == 0){
+			resultData['QueryCacheHitPct'] = null
+		} else {
+			resultData['QueryCacheHitPct']= resultData['QcacheHitsDiffVal']*100/(resultData['QcacheHitsDiffVal'] + resultData['QcacheNotCachedDiffVal'] + resultData['QcacheInsertsDiffVal'])
+		}
+		//Cache hit rate from DBMS starts
+		if ((resultData['QcacheHitsLong'] + resultData['QcacheNotCachedLong'] + resultData['QcacheInsertsLong']) == 0){
+			resultData['AccumulateQueryCacheHitPct'] = null
+		} else {
+			resultData['AccumulateQueryCacheHitPct'] = resultData['QcacheHitsLong'] *100 / (resultData['QcacheHitsLong'] + resultData['QcacheNotCachedLong'] + resultData['QcacheInsertsLong'] )
+		}
+		def updateResultData = []
+		updateResultData.add(resultData)
+		return updateResultData
+}
+KEYEXPR = [_sequence:["QueryCacheHitPct","QcacheHitsDiffVal","QcacheNotCachedDiffVal"]]	  
+KEYEXPR._unit = ["QcacheFreeBlocksLong" :"blocks" , "QcacheFreeMemoryLong" : "MB" , "QcacheHitsLong" :"count","QcacheInsertsLong" : "count",
+	"QcacheLowmemPrunesLong" :"count" , "QcacheNotCachedLong" : "count" , "QcacheTotalBlocksLong":"blocks", "QcacheQueriesInCacheLong":"count","QueryCacheHitPct":"%", 
+	"AccumulateQueryCacheHitPct":"%", "QcacheHitsDiffVal":"count/interval", "QcacheInsertsDiffVal":"count/interval","QcacheLowmemPrunesDiffVal":"count/interval","QcacheNotCachedDiffVal":"count/interval",
+	"QcacheQueriesInCacheDiffVal":"count/interval", "QcacheHitsDiffVal":"count/interval"]
+SENDTYPE = "Store"
+DBTYPE = "MYSQL"
+DBCONNSTR = parameters.dbconnstr.MYSQL
+DBUSER = "root"
+DEST = parameters.dest
+MONITORINGTYPE = "@DB"
+RESOURCEID = "Pf/MyQueryCHR"

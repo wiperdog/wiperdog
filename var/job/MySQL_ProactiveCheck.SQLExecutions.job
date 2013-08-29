@@ -1,0 +1,45 @@
+/**
+ * Display number of statements excuted by server, the diff with last monitoring time,<br/> 
+ * requence of executed statements by server
+ * @targetVersion 5.0
+ * @return Number of statements excuted by server, the diff with last monitoring time,<br/> 
+ * &emsp;frequence of executed statements by server
+ * @returnParam ExecutionsCnt The number of statements executed by the server. <br/>
+ * &emsp;This variable includes statements executed within stored programs, <br/>
+ * &emsp;unlike the Questions variable. It does not count COM_PING or COM_STATISTICS commands. <br/>
+ * &emsp;This variable was added in MySQL 5.1.31 
+ * @returnParam ExecutionsDiffVal Diff value of ExecutionsCnt with last monitoring time
+ * @returnParam ExecutionsRateVal ExecutionsDiffVal/interval
+ */
+
+JOB = [name:"MySQL_ProactiveCheck.SQLExecutions"]
+FETCHACTION={
+		def prev_Executions_cum = PERSISTENTDATA['ExecutionsCnt'] != null ? PERSISTENTDATA['ExecutionsCnt'] : 0
+
+		def resultData = [:]
+		def data = sql.rows('''
+				SELECT VARIABLE_VALUE AS ExecutionsCnt FROM GLOBAL_STATUS G WHERE VARIABLE_NAME = 'Queries';
+			''')	
+		Long executionsCount = 	Long.parseLong(data[0]['ExecutionsCnt'])
+		resultData['ExecutionsCnt'] = executionsCount
+		
+		//Set PERSISTENTDATA
+		PERSISTENTDATA['ExecutionsCnt'] = resultData['ExecutionsCnt']
+		assert interval != null, "This is the first execution time, interval is null, quit the job"
+				
+		resultData['ExecutionsDiffVal'] = resultData['ExecutionsCnt'] - prev_Executions_cum
+		resultData['ExecutionsRateVal'] = resultData['ExecutionsDiffVal'] / interval
+		
+		def updateResultData = []
+		updateResultData.add(resultData)
+		return updateResultData	
+}
+KEYEXPR = [_sequence:["ExecutionsRateVal","ExecutionsDiffVal","ExecutionsCnt"]]
+KEYEXPR._unit = ["ExecutionsCnt": "count", "ExecutionsDiffVal": "count/interval", "ExecutionsRateVal": "count/sec"]
+SENDTYPE = "Store"
+DBTYPE = "MYSQL"
+DBCONNSTR = parameters.dbconnstr.MYSQL
+DBUSER = "root"
+DEST = parameters.dest
+MONITORINGTYPE = "@DB"
+RESOURCEID = "Sr/MySqlExec"

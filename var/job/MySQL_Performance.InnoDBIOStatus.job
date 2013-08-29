@@ -1,0 +1,61 @@
+/**
+ * MySQL Performance InnoDB Data I/O Status
+ * <p>
+ * Getting information from information_schema.global_status about data I/O related to InnoDB tables.
+ * </p>
+ * @targetVersion 5.0
+ * @return Information of Data I/O such as READ/WRITE count and amount of bytes.
+ * @returnParam InnoDBDataReadsCnt The amount of data read since the server was started.
+ * @returnParam InnoDBDataReadSizeLong The total number of data reads as byte.
+ * @returnParam InnoDBDataWritesCnt The total number of data writes.
+ * @returnParam InnoDBDataWrittenSizeLong The amount of data written so far as byte.
+ * @returnParam InnoDBDataWritesDiffVal Different of InnoDBDataWritesCnt with the last monitoring
+ * @returnParam InnoDBDataWrittenDiffVal Different of InnoDBDataWrittenSizeLong with the last monitoring
+ * @returnParam InnoDBDataReadDiffVal Different of InnoDBDataReadSizeLong with the last monitoring
+ * @returnParam InnoDBDataReadsDiffVal Different of InnoDBDataReadsCnt with the last monitoring
+ */
+JOB = [name:"MySQL_Performance.InnoDBIOStatus"]
+FETCHACTION={
+	def query =
+		"""
+		SELECT 
+			A.InnoDBDataWritesCnt,
+			B.InnoDBDataWrittenSizeLong,
+			C.InnoDBDataReadSizeLong,
+			D.InnoDBDataReadsCnt
+		FROM
+		  (SELECT CONVERT(variable_value, UNSIGNED INTEGER) AS InnoDBDataWritesCnt FROM information_schema.global_status G
+		      WHERE G.variable_name = "innodb_data_writes") A,
+		  (SELECT CONVERT(variable_value, UNSIGNED INTEGER) AS InnoDBDataWrittenSizeLong FROM information_schema.global_status G
+		      WHERE G.variable_name = "innodb_data_written") B,
+		  (SELECT CONVERT(variable_value, UNSIGNED INTEGER) AS InnoDBDataReadSizeLong FROM information_schema.global_status G
+		      WHERE G.variable_name = "innodb_data_read") C,
+		  (SELECT CONVERT(variable_value, UNSIGNED INTEGER) AS InnoDBDataReadsCnt FROM information_schema.global_status G
+		      WHERE G.variable_name = "innodb_data_reads") D
+		  ;
+		"""
+	def data = sql.rows(query)
+	return data
+}
+ACCUMULATE = {
+	assert interval != null : "First time ,we can not get meaniningful values"
+	assert (prevOUTPUT != null && prevOUTPUT[0] != null ) : "Can not get previous monitoring data !"
+	OUTPUT.each{ rec ->
+		rec['InnoDBDataWritesDiffVal']  = rec['InnoDBDataWritesCnt']       - prevOUTPUT[0]['InnoDBDataWritesCnt']
+		rec['InnoDBDataWrittenSizeDiffVal'] = rec['InnoDBDataWrittenSizeLong'] - prevOUTPUT[0]['InnoDBDataWrittenSizeLong']
+		rec['InnoDBDataReadSizeDiffVal']    = rec['InnoDBDataReadSizeLong']    - prevOUTPUT[0]['InnoDBDataReadSizeLong']
+		rec['InnoDBDataReadsDiffVal']   = rec['InnoDBDataReadsCnt']        - prevOUTPUT[0]['InnoDBDataReadsCnt']
+	}
+}
+KEYEXPR = [:]
+KEYEXPR._unit = ["InnoDBDataWritesCnt":"count","InnoDBDataWrittenSizeLong":"byte"
+	,"InnoDBDataReadsCnt":"count","InnoDBDataReadSizeLong":"byte"
+	,"InnoDBDataWritesDiffVal":"count/interval","InnoDBDataWrittenSizeDiffVal":"byte/interval"
+	,"InnoDBDataReadSizeDiffVal":"byte/interval","InnoDBDataReadsDiffVal":"count/interval"]
+SENDTYPE = "Store"
+DBTYPE = "MYSQL"
+DBCONNSTR = parameters.dbconnstr.MYSQL
+DBUSER = "root"
+DEST = parameters.dest
+MONITORINGTYPE = "@DB"
+RESOURCEID = "Pf/MyInnoDBDataIo"
