@@ -541,6 +541,7 @@ class DefaultJobCaller {
 		def strSourceJob
 		def strInstance
 		def strResourceId
+		def strDBType
 		def keyExpr
 		
 		//Get fetchAtTime & fetchedAt_bin
@@ -556,11 +557,15 @@ class DefaultJobCaller {
 		envelopedResultData['type'] = getType(binding,resultData)
 		//Get sid
 		envelopedResultData['sid'] = getSid()
+		//Get dbType
+		strDBType = (binding.hasVariable(ResourceConstants.DEF_DBTYPE) ? binding.getVariable(ResourceConstants.DEF_DBTYPE) : null)
 		//Get istIid
+		istIid = envelopedResultData['hostId']
+		if(strDBType != null){
+			istIid += "-" + strDBType
+		}
 		if(envelopedResultData['sid'] != null){
-			istIid = envelopedResultData['hostId'] + "-" + envelopedResultData['sid']
-		}else{
-			istIid = envelopedResultData['hostId']
+			istIid += "-" + envelopedResultData['sid']
 		}
 		//Get resourceId
 		strResourceId = (binding.hasVariable(ResourceConstants.RESOURCEID) ? binding.getVariable(ResourceConstants.RESOURCEID) : "")
