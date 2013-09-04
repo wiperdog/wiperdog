@@ -6,10 +6,12 @@
 //
 import org.osgi.framework.BundleListener
 import org.osgi.framework.BundleEvent
+import org.osgi.framework.Bundle
 import org.codehaus.groovy.tools.RootLoader
 
 // The list of bundles to be waited for presense.
 // Groovy scripts have to wait for dependency presense in OSGi environment.
+// The bundle in this waitList must not be fragment bundle, because fragment bundle can't be ACTIVE.
 def waitList = [ "org.wiperdog.directorywatcher": false, "org.wiperdog.jobmanager":false ]
 
 /**
@@ -112,10 +114,12 @@ println "symbolicName: " + symbolicName
 	//
 	def installedBundles = ctx.getBundles()
 	installedBundles.each { bundle -> 
-		def symbolicName = bundle.getSymbolicName()
-		waitList.each { name ->
-			if (name.key.equals(symbolicName)) {
-				name.value = true
+		if (bundle.getState() == Bundle.ACTIVE) {
+			def symbolicName = bundle.getSymbolicName()
+			waitList.each { name ->
+				if (name.key.equals(symbolicName)) {
+					name.value = true
+				}
 			}
 		}
 	}
