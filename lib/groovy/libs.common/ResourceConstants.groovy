@@ -69,4 +69,9 @@ class ResourceConstants{
 	public static final String MAX_NUMBER_SWAP_FILE = "monitorjobfw.max.number.swapfile"
 	public static final String MAX_SWAP_DIRECTORY_SIZE = "monitorjobfw.directory.swap.maxsize.mb"
 	public static final String SLEEP_TIME_MS = "monitorjobfw.sleep.time.millisecond"
+
+	/** MongoDBSender */
+	public static final String MONGODB_HOST = "monitorjobfw.mongodb.host"
+	public static final String MONGODB_PORT = "monitorjobfw.mongodb.port"
+	public static final String MONGODB_DBNAME = "monitorjobfw.mongodb.dbName"
 }

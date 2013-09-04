@@ -13,7 +13,8 @@ class DestTestServlet extends HttpServlet{
 	static final String MONGODB_HOST = "153.122.22.111"
 	static final int MONGODB_PORT = 27017
 	static final String MONGODB_DBNAME = "wiperdog"
-	
+	def properties = MonitorJobConfigLoader.getProperties()
+
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
 		resp.setContentType("text/html")
@@ -25,20 +26,46 @@ class DestTestServlet extends HttpServlet{
 	protected void doPut(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
 				resp.setContentType("text/html")
-		//Insert to Mongo
-		def mongo = new GMongo(MONGODB_HOST, MONGODB_PORT)
-		//def mongo = new GMongo()
-		def db = mongo.getDB(MONGODB_DBNAME)
-		//Get data of Job
-		def contentText = req.getInputStream().getText()
-		//Parse to Json
-		def obj = JSON.parse(contentText)
-		def jobName = obj.sourceJob
-		def istIid = obj.istIid
-		def col = db.getCollection(jobName + "." + istIid)
-		//def col = db.getCollection(jobName)
-		col.insert(obj)
-		mongo.close()
+		try{
+			def decidedHost
+			def decidedPort
+			def decidedDBName
+			
+			// Get mongodb host from file config or set = default
+			if(properties.get(ResourceConstants.MONGODB_HOST) != null){
+				decidedHost = properties.get(ResourceConstants.MONGODB_HOST)
+			}else{
+				decidedHost = MONGODB_HOST
+			}
+			// Get mongodb port from file config or set = default
+			if(properties.get(ResourceConstants.MONGODB_PORT) != null){
+				decidedPort = Integer.valueOf(properties.get(ResourceConstants.MONGODB_PORT))
+			}else{
+				decidedPort = MONGODB_PORT
+			}
+			// Get mongodb db's name from file config or set = default
+			if(properties.get(ResourceConstants.MONGODB_DBNAME) != null){
+				decidedDBName = properties.get(ResourceConstants.MONGODB_DBNAME)
+			}else{
+				decidedDBName = MONGODB_DBNAME
+			}
+			//Insert to Mongo
+			def mongo = new GMongo(decidedHost, decidedPort)
+			//def mongo = new GMongo()
+			def db = mongo.getDB(decidedDBName)
+			//Get data of Job
+			def contentText = req.getInputStream().getText()
+			//Parse to Json
+			def obj = JSON.parse(contentText)
+			def jobName = obj.sourceJob
+			def istIid = obj.istIid
+			def col = db.getCollection(jobName + "." + istIid)
+			//def col = db.getCollection(jobName)
+			col.insert(obj)
+			mongo.close()
+		}catch(Exception ex){
+			println ex
+		}
 	}
 }
 

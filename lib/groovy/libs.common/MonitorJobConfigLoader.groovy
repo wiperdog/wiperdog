@@ -61,6 +61,9 @@ class MonitorJobConfigLoader{
 		newProperties.put(ResourceConstants.MAX_NUMBER_SWAP_FILE, 1024)
 		newProperties.put(ResourceConstants.MAX_SWAP_DIRECTORY_SIZE, 10)
 		newProperties.put(ResourceConstants.SLEEP_TIME_MS, 5000)
+		newProperties.put(ResourceConstants.MONGODB_HOST, '127.0.0.1')
+		newProperties.put(ResourceConstants.MONGODB_PORT, 27017)
+		newProperties.put(ResourceConstants.MONGODB_DBNAME, 'wiperdog')
 		return newProperties
 	}
 }

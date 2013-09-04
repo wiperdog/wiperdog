@@ -44,23 +44,44 @@ class LogFileInformation extends HttpServlet{
 		resp.setContentType("json")
 		resp.addHeader("Access-Control-Allow-Origin", "*")
 		PrintWriter out = resp.getWriter()
+		def message = [:]
 		try {
 			// Get name of log file
 			def contentText = req.getInputStream().getText()
 			def slurper = new JsonSlurper()
 	      	def object = slurper.parseText(contentText)
-			def logFileName = object.log
-			def logPath = properties.get(ResourceConstants.LOG_DIRECTORY) + "/" + logFileName
-			def logFile = new File(logPath)
-			def lstContent = []
-			logFile.eachLine {line ->
-				lstContent.add(line)
+	      	
+	      	// Get data to response
+	      	def lstContent = []
+			def logFileName = null
+			if(object.log != null) {
+				logFileName = object.log
+				def logPath = properties.get(ResourceConstants.LOG_DIRECTORY) + "/" + logFileName
+				def logFile = new File(logPath)
+				logFile.eachLine {line ->
+					lstContent.add(line)
+				}
+				def contentLog = new JsonBuilder(lstContent)
+				out.print(contentLog.toString());
 			}
-			def contentLog = new JsonBuilder(lstContent)
-			out.print(contentLog.toString());
+			
+			// Delete log file
+			def deleteFileName = null
+			if(object.delete != null) {
+				deleteFileName = object.delete
+				def logPath = properties.get(ResourceConstants.LOG_DIRECTORY) + "/" + deleteFileName
+				def deleteFile = new File(logPath)
+				if(deleteFile.delete()){
+	    			message["status"] = deleteFileName + " was deleted"
+	    		}else{
+	    			message["status"] = "Delete operation was failed."
+	    		}
+	    		def builder = new JsonBuilder(message)
+				out.print(builder.toPrettyString())
+			}
 		} catch (Exception ex) {
 			println "ERROR DOPOST: " + ex
-			def message = [status:"failed"]
+			message["status"] = "failed"
 			def builder = new JsonBuilder(message)
 			out.print(builder.toPrettyString())
 		}
