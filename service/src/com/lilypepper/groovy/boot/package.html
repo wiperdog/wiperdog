@@ -1,0 +1,38 @@
+<html>
+	<body>
+		<p>
+			<code>com.lilypepper.groovy.boot</code> contains the bootstrap classes for Gosh.
+		</p>
+		<p>
+			When Java starts, it creates a "root" classloader which a small number of core classes are
+			loaded into.  On top of this, Java creates an "extensions" classloader, where Java's 
+			extensions are loaded.  And on top of this, Java creates a "system" classloader, where 
+			anything on the class path is loaded.
+		</p>
+		<p>
+			Java allows you to override the system classloader with your own.  To do this, you set
+			the <code>java.system.class.loader</code> property, and Java uses your class instead.
+			Only, everything on the class path gets loaded in the parent classloader.  
+		</p>
+		<p>
+			In order to fully control dynamic class loading, we have to hijack the system
+			classloader with as few loaded jars and classes as possible.  We've replaced the
+			default system classloader with <code>GoshClassLoader</code>, which is simply a
+			<code>URLClassLoader</code> that supports dynamically adding new class path information.
+		</p>
+		<p>
+			The <code>Bootstrap</code> class contains the project <code>main()</code> method.
+			It takes care of dynamically loading all the jar files in the <code>.\gosh\lib</code>
+			folder into our hijacked system classloader.  One of these files is <code>gosh.jar</code>, 
+			which contains the code for starting up Groovy, man.
+		</p>
+		<p>
+			The crux of all of this is that <code>gosh.jar</code>, all the groovy jar files, and any
+			jar files and class paths you add via <code>root.config.groovy</code> through the normal methods
+			are all added to the same classloader, dynamically, at runtime. 
+		</p>
+		<p>
+			It goes a long way toward getting rid of the funky classloader-forName <code>ClassNotFoundException</code> blues.
+		</p>
+	</body>
+</html>
