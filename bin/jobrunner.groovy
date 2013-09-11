@@ -35,18 +35,20 @@ public class JobRunner implements ManagedService{
         m_fwk.init();
 		m_fwk.start();
         BundleContext context = m_fwk.getBundleContext();
-
-        context.installBundle((new File(felix_home + "/" + "lib/java/bundle/org.apache.felix.configadmin-1.2.8.jar")).toURI().toString())
-        context.installBundle((new File(felix_home + "/" + "lib/java/bundle/org.osgi.compendium-1.4.0.jar")).toURI().toString())
-	    //context.installBundle((new File(felix_home + "/" + "lib/java/bundle/org.apache.felix.fileinstall-3.0.2.jar")).toURI().toString())
-        context.installBundle((new File(felix_home + "/" + "lib/java/bundle.d/com.insight_tec.pi.configloader-3.1.0.jar")).toURI().toString())
 		
+		try {
+          	context.installBundle((new File(felix_home + "/" + "lib/java/bundle/org.apache.felix.configadmin-1.2.8.jar")).toURI().toString())
+          	context.installBundle((new File(felix_home + "/" + "lib/java/bundle/org.osgi.compendium-1.4.0.jar")).toURI().toString())
+          	context.installBundle((new File(felix_home + "/" + "lib/java/bundle.d/org.wiperdog.configloader-0.1.0.jar")).toURI().toString())
+		}catch(Exception ex){
+			println "Exception:" + ex
+		}
 		def lstinstalledBundles = context.getBundles()
 		lstinstalledBundles.each{bund->
 			try{
 			bund.start()
 			}catch(Exception ex){
-				println "ex:" + ex
+				println "Exception:" + ex
 			}
 		}
         Class jobRunnerMainClass = shell.getClassLoader().loadClass('JobRunnerMain');

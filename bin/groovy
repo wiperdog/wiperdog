@@ -31,7 +31,7 @@ done
 DIRNAME=`dirname "$PRG"`
 PREFIX=`cd $DIRNAME/..;pwd`
 
-# . ${PREFIX}/etc/java.env
+. ${PREFIX}/etc/java.env
 
 . "$DIRNAME/startGroovy"
 

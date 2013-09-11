@@ -49,9 +49,6 @@ public class JobRunnerMain{
 			Class jobLoaderClass = shell.getClassLoader().loadClass('JobLoader');
 			Object jobLoader_obj = jobLoaderClass.newInstance(context, shell)
 				jobLoader_obj.jobdsl = jobDsl_obj
-				jobLoader_obj.isManager = "false"
-				jobLoader_obj.isAgent = "true"
-			
 			// Process job file
 			// def jobFile = new File(binding.getVariable('felix_home') + "/" + jobFileName)
 

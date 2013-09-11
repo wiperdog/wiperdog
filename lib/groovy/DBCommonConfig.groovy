@@ -67,7 +67,6 @@ class DBCommonConfigServlet extends HttpServlet{
 				}
 				params['jobName'] = jobName
 				def builderParams = new JsonBuilder(params)
-				println builderParams.toPrettyString()
 				out.println(builderParams.toPrettyString());
 			}
 		}catch(Exception ex){
@@ -170,7 +169,6 @@ class DBCommonConfigServlet extends HttpServlet{
 				break;
 			}
 			mapResult['comment'] = commentStr
-			println mapResult
 			return mapResult
 	}
 }

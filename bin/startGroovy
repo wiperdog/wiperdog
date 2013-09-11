@@ -131,6 +131,7 @@ STARTER_CLASSPATH="$GROOVY_HOME/lib/java/bundle.d/com.insight_tec.pi.scriptsuppo
 BUNDLE_CLASSPATH="$GROOVY_HOME/lib/java/bundle/*"
 BUNDLE_A_CLASSPATH="$GROOVY_HOME/lib/java/bundle.a/*"
 BUNDLE_D_CLASSPATH="$GROOVY_HOME/lib/java/bundle.d/*"
+BUNDLE_WRAP_CLASSPATH="$GROOVY_HOME/lib/java/bundle.wrap/*"
 BUNDLE_EXT_CLASSPATH="$GROOVY_HOME/lib/java/ext/*"
 # Create the final classpath. Setting a classpath using the -cp or -classpath option means not to use the
 # global classpath. Groovy behaves then the same as the java interpreter
@@ -265,7 +266,7 @@ startGroovy ( ) {
             -Djava.util.logging.config.file="$PREFIX/etc/java.util.logging.properties" \
             -Dlog4j.ignoreTCL=true \
 	    -Dbin_home="$dirname" \
-	    -classpath "$STARTER_CLASSPATH:$BUNDLE_CLASSPATH:$BUNDLE_A_CLASSPATH:$BUNDLE_D_CLASSPATH:$BUNDLE_EXT_CLASSPATH" \
+	    -classpath "$STARTER_CLASSPATH:$BUNDLE_CLASSPATH:$BUNDLE_A_CLASSPATH:$BUNDLE_D_CLASSPATH:$BUNDLE_WRAP_CLASSPATH:$BUNDLE_EXT_CLASSPATH" \
             -Dscript.name="$SCRIPT_PATH" \
             -Dprogram.name="$PROGNAME" \
             -Dgroovy.starter.conf="$GROOVY_CONF" \
