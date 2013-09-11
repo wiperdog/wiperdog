@@ -19,6 +19,9 @@
       <includes>
         <include>*</include>
       </includes>
+      <excludes>
+        <exclude>wiperdog_service.exe</exclude>
+      </excludes>
       <lineEnding>windows</lineEnding>
       <fileMode>0755</fileMode>
     </fileSet>
