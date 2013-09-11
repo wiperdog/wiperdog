@@ -7,6 +7,7 @@
   </formats>
   <componentDescriptors>
     <componentDescriptor>src/main/assemble/component.xml</componentDescriptor>
+    <componentDescriptor>src/main/assemble/component-win-svc.xml</componentDescriptor>
     <componentDescriptor>src/main/assemble/component-text-win.xml</componentDescriptor>
   </componentDescriptors>
 </assembly>
