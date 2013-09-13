@@ -1,5 +1,4 @@
 @echo off
-
 if "%~1" == "" goto show_instructions
 SET WIPERDOG_HOME=%~1
 echo Param %WIPERDOG_HOME% "%~1"
@@ -21,9 +20,13 @@ echo JAVA_HOME is %JAVA_HOME%
 echo.
 echo.
 
+REM stoping service
+net stop "%SERVICE_NAME%"
 "%JAVASERVICE_STUB%" -uninstall "%SERVICE_NAME%"
 echo.
-"%JAVASERVICE_STUB%" -install "%SERVICE_NAME%" "%JAVA_HOME%"\jre\bin\server\jvm.dll ^
+REM for JDK only "%JAVASERVICE_STUB%" -install "%SERVICE_NAME%" "%JAVA_HOME%"\jre\bin\server\jvm.dll ^
+REM below for using JRE
+"%JAVASERVICE_STUB%" -install "%SERVICE_NAME%" "%JAVA_HOME%"\bin\client\jvm.dll ^
 -Djava.class.path="%WIPERDOG_HOME%\service\dasboot.jar" ^
 -Dcom.lilypepper.groovy.localfolder="%WIPERDOG_HOME%\service" ^
 -Dcom.lilypepper.groovy.runner="com.lilypepper.groovy.ServiceRunner" ^
@@ -58,4 +61,5 @@ if "" == "" goto end
 :show_instructions
 echo Error: command must start with parameter WIPERDOG_HOME
 echo E.g.: create_wiperdog_service.bat E:\wiperdog
+echo NOTICE: you must use JRE instead of using JDK
 :end
