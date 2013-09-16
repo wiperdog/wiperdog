@@ -37,9 +37,9 @@ public class JobRunner implements ManagedService{
         BundleContext context = m_fwk.getBundleContext();
 		
 		try {
-          	context.installBundle((new File(felix_home + "/" + "lib/java/bundle/org.apache.felix.configadmin-1.2.8.jar")).toURI().toString())
-          	context.installBundle((new File(felix_home + "/" + "lib/java/bundle/org.osgi.compendium-1.4.0.jar")).toURI().toString())
-          	context.installBundle((new File(felix_home + "/" + "lib/java/bundle.d/org.wiperdog.configloader-0.1.0.jar")).toURI().toString())
+          	context.installBundle((new File(felix_home + "/" + "lib/java/bundle.a/org.apache.felix.configadmin-1.2.8.jar")).toURI().toString())
+          	context.installBundle((new File(felix_home + "/" + "lib/java/bundle.a/org.osgi.compendium-1.4.0.jar")).toURI().toString())
+          	context.installBundle((new File(felix_home + "/" + "lib/java/bundle/org.wiperdog.configloader-0.1.0.jar")).toURI().toString())
 		}catch(Exception ex){
 			println "Exception:" + ex
 		}
