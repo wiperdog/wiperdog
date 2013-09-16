@@ -299,12 +299,38 @@ public class JobDeclared extends HttpServlet {
 	
 	boolean writeDataToInstanceFile(data){
 		def jobData = data.JOB
+		def instanceStr = ""
+		def instanceElementStr = ""
+		def instanceDataStr = ""
 		if(jobData.jobName != null && jobData.jobName != ""){
 			def instanceData = data.INSTANCES
 			if(instanceData != null && instanceData != [:]){
-				def instStr = convertData(instanceData)
-				instStr = regularExpressionValidate(instStr)
-				writeToFile(HOMEPATH, JOB_DIR + "${jobData.jobName}.instances", instStr)
+				instanceData.each{key, value->
+					if (instanceStr != "") {
+						instanceStr += ", \n"
+					}
+					instanceElementStr = ""
+					instanceDataStr = ""
+					//Instance name
+					instanceElementStr += "\"" + key + "\":["
+					//Instance data
+					if (value.schedule != null){
+						instanceDataStr += "\"schedule\": \"" + value.schedule + "\""
+					}
+					if (value.params != null){
+						if (instanceDataStr != "") {
+							instanceDataStr += ", "
+						}
+						instanceDataStr += "\"params\":"
+						instanceDataStr += value.params
+					}
+					instanceElementStr += instanceDataStr + "]"
+					instanceStr += "\t" + instanceElementStr
+				}
+				instanceStr = "[\n" + instanceStr + "\n]"
+				instanceStr= regularExpressionValidate(instanceStr)
+				
+				writeToFile(HOMEPATH, JOB_DIR + "${jobData.jobName}.instances", instanceStr)
 			}else{
 				File instFile = new File(HOMEPATH, JOB_DIR + "${jobData.jobName}.instances")
 				if(instFile.exists()){
@@ -323,10 +349,15 @@ public class JobDeclared extends HttpServlet {
 		if(jobData.jobName != null && jobData.jobName != ""){
 			def paramData = data.PARAMS
 			if(paramData != null && paramData != [:]){
-				def paramStr = convertData(paramData)
-					
+				def paramStr = ""
+				paramData.each {key, value ->
+					if (paramStr != "") {
+						paramStr += ", "
+					}
+					paramStr += "\"" + key + "\":" + value
+				}
+				paramStr = "[" + paramStr + "]"
 				paramStr = regularExpressionValidate(paramStr)
-				
 				writeToFile(HOMEPATH, JOB_DIR + "${jobData.jobName}.params", paramStr)
 			}else{
 				File paramFile = new File(HOMEPATH, JOB_DIR + "${jobData.jobName}.params")
@@ -485,6 +516,9 @@ public class JobDeclared extends HttpServlet {
 		if(paramFile.exists()){
 			def shell = new GroovyShell()
 			def param_eval = shell.evaluate(paramFile)
+			param_eval.each{ key, value ->
+				param_eval[key] = value.toString()
+			}
 			return param_eval
 		}
 		return null;
