@@ -27,7 +27,9 @@ public class TestJob extends HttpServlet {
 				def jobPath = JOB_DIR + jobFileName
 				def jobFile = new File(HOMEPATH, jobPath)
 				def stringOfJob = ""
-				jobFile.eachLine{ stringOfJob+= it + "\n" }
+				jobFile.eachLine{
+					stringOfJob+= it + "\n"
+				}
 				def mapData = [:]
 				mapData['jobContent'] = stringOfJob
 				def builder = new JsonBuilder(mapData)
@@ -37,7 +39,8 @@ public class TestJob extends HttpServlet {
 					def  job_dir = new File(properties.get(ResourceConstants.JOB_DIRECTORY))
 					def list_job = []
 					if(job_dir.isDirectory()){
-						job_dir.listFiles().each {file ->
+						job_dir.listFiles().each {
+							file ->
 							def fileName = file.getName()
 							if(fileName.endsWith('.job')){
 								list_job.add(fileName)
@@ -60,13 +63,16 @@ public class TestJob extends HttpServlet {
 					]
 
 					def output = [:]
-					root.each{r->
+					root.each{
+						r->
 						output[r]=[:]
-						child.each{c->
+						child.each{
+							c->
 							output[r][c] = []
 						}
 					}
 
+					def tmpOther = []
 					list_job.each {
 						def tmpArray = it.split("\\.")
 						if (tmpArray.size() == 4) {
@@ -76,9 +82,14 @@ public class TestJob extends HttpServlet {
 								} else {
 									output[tmpArray[0]]["Others"].add(it)
 								}
+							} else {
+								tmpOther.add(it)
 							}
+						} else {
+							tmpOther.add(it)
 						}
 					}
+					output["Other"] = tmpOther
 					def builderListJob = new JsonBuilder(output)
 					out.println(builderListJob.toPrettyString());
 				}
@@ -122,7 +133,7 @@ public class TestJob extends HttpServlet {
 			}
 			//Save to file
 			writeToFile(jobFile, jobContent)
-			
+
 			if(action == 'run') {
 				def command = ""
 				if (System.properties['os.name'].toLowerCase().contains('windows')) {
