@@ -228,7 +228,6 @@ set CMD_LINE_ARGS=%$
 set STARTER_CLASSPATH=%GROOVY_HOME%\lib\java\bundle.d\com.insight_tec.pi.scriptsupport.groovyrunner-3.1.0.jar
 set BUNDLE_CLASSPATH=%GROOVY_HOME%\lib\java\bundle\*
 set BUNDLE_A_CLASSPATH=%GROOVY_HOME%\lib\java\bundle.a\*
-set BUNDLE_D_CLASSPATH=%GROOVY_HOME%\lib\java\bundle.d\*
 set BUNDLE_WRAP_CLASSPATH=%GROOVY_HOME%\lib\java\bundle.wrap\*
 set BUNDLE_EXT_CLASSPATH=%GROOVY_HOME%\lib\java\ext\*
 if exist "%USERPROFILE%/.groovy/init.bat" call "%USERPROFILE%/.groovy/init.bat"
@@ -269,7 +268,7 @@ for %%i in ("%PREFIX%") do set PREFIX=%%~fsi
 	-Djava.util.logging.config.file="%PREFIX%\etc\java.util.logging.properties" ^
 	-Dlog4j.ignoreTCL=true ^
 	-Djava.ext.dirs="%PREFIX%\lib\java\ext;%JAVA_HOME%\lib\ext" ^
-    -Dbin_home=%DIRNAME% %GROOVY_OPTS% %JAVA_OPTS% -classpath "%STARTER_CLASSPATH%;%BUNDLE_CLASSPATH%;%BUNDLE_A_CLASSPATH%;%BUNDLE_D_CLASSPATH%;%BUNDLE_WRAP_CLASSPATH%;%BUNDLE_EXT_CLASSPATH%" %STARTER_MAIN_CLASS% --main %CLASS% --conf "%STARTER_CONF%" --classpath "%CP%" %CMD_LINE_ARGS%
+    -Dbin_home=%DIRNAME% %GROOVY_OPTS% %JAVA_OPTS% -classpath "%STARTER_CLASSPATH%;%BUNDLE_CLASSPATH%;%BUNDLE_A_CLASSPATH%;%BUNDLE_WRAP_CLASSPATH%;%BUNDLE_EXT_CLASSPATH%" %STARTER_MAIN_CLASS% --main %CLASS% --conf "%STARTER_CONF%" --classpath "%CP%" %CMD_LINE_ARGS%
 @rem 2013-03-06 Luvina update end
 :end
 @rem End local scope for the variables with windows NT shell

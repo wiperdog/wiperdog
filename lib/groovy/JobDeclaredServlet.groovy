@@ -9,7 +9,7 @@ import javax.servlet.http.HttpServletResponse
 import groovy.json.*
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-	
+
 public class JobDeclared extends HttpServlet {
 	def properties = MonitorJobConfigLoader.getProperties()
 	static final String JOB_DIR = "var/job/"
@@ -18,7 +18,7 @@ public class JobDeclared extends HttpServlet {
 	static final List listKey = ["JOB", "GROUPKEY", "QUERY", "QUERY_VARIABLE", "DBEXEC", "DBEXEC_VARIABLE", "COMMAND", "FORMAT", "FETCHACTION", "ACCUMULATE", "FINALLY", "KEYEXPR", "KEYEXPR._root", "KEYEXPR._sequence", "KEYEXPR._unit", "KEYEXPR._chart", "KEYEXPR._description", "SENDTYPE", "RESOURCEID", "MONITORINGTYPE", "DBTYPE", "DEST", "HOSTID", "SID"]
 	static final String CHARSET = 'utf-8'
 	def errorMsg = ""
-	
+
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		resp.setContentType("json")
 		resp.addHeader("Access-Control-Allow-Origin", "*")
@@ -27,10 +27,47 @@ public class JobDeclared extends HttpServlet {
 		def builder
 		def message
 		errorMsg = ""
+		def  job_dir = new File(properties.get(ResourceConstants.JOB_DIRECTORY))
+		def listDBType = ['MySQL','SQL_Server','Postgres']
 		try{
+			def strMorType = req.getParameter("morType")
+			if(strMorType != null && strMorType != ""){
+				if(strMorType == "Others"){
+					if(job_dir.isDirectory()){
+						def checkNotInDBType = { fileName , list ->
+							def check = false
+							list.find{
+								if(fileName.startsWith(it)){
+									check = true
+									return true
+								}
+							}
+							return check
+						}
+						job_dir.listFiles().each{
+							def fileName = it.getName()
+							if((fileName.endsWith('.job') && checkNotInDBType(fileName,listDBType) == false)) {
+									list_job.add(fileName.substring(0,fileName.indexOf('.job')))
+							}
+						}
+						def result = [:]
+						result['listJob'] = list_job
+						builder = new JsonBuilder(result)
+						out.println(builder.toPrettyString());
+						return
+					} else {
+						errorMsg = "Error when get Job file: Job directory not found!"
+					}
+				} else {
+						def result = [:]
+						result['listJob'] = []
+						builder = new JsonBuilder(result)
+						out.println(builder.toPrettyString());
+					return
+				}
+			}
 			def strDBType = req.getParameter("dbtype")
             if (strDBType != null && strDBType != ""){
-				def  job_dir = new File(properties.get(ResourceConstants.JOB_DIRECTORY))
 				if(job_dir.isDirectory()){
 					job_dir.listFiles().each{
 						def fileName = it.getName()
@@ -38,7 +75,7 @@ public class JobDeclared extends HttpServlet {
 							list_job.add(fileName.substring(0,fileName.indexOf('.job')))
 						}
 					}
-					
+
 					builder = new JsonBuilder(list_job)
 					out.println(builder.toPrettyString());
 				} else {
@@ -47,7 +84,7 @@ public class JobDeclared extends HttpServlet {
 			} else {
 				errorMsg = "Error when get Job file: No choice DBType!"
 			}
-			
+
 			if (errorMsg != "") {
 				message = [status:"failed", message:errorMsg]
 				builder = new JsonBuilder(message)
@@ -61,7 +98,7 @@ public class JobDeclared extends HttpServlet {
 			out.print(builder.toString())
 		}
 	}
-	
+
 	@Override
 	void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		resp.setContentType("text/html")
@@ -76,13 +113,13 @@ public class JobDeclared extends HttpServlet {
 			def contentText = req.getInputStream().getText()
 			def slurper = new JsonSlurper()
 	      	def object = slurper.parseText(contentText)
-	      	
+
 	      	// command = Read -> Read job's file
 	      	if(object.COMMAND == "Read"){
 				def jobFileName = object.job
 				def jobPath = JOB_DIR + jobFileName
 				def jobFile = new File(HOMEPATH, jobPath + ".job")
-				
+
 				// resultRet returning result [Job:~~, instances:~~, params:~~]
 				def resultRet = [:]
 				// Get job's script
@@ -127,8 +164,8 @@ public class JobDeclared extends HttpServlet {
 			out.print(builder.toString())
 		}
 	}
-	
-	boolean writeDataToJobFile(data){	
+
+	boolean writeDataToJobFile(data){
 		def jobStr = ""
 		def jobData = data.JOB
 		if(jobData.jobName != null){
@@ -144,12 +181,12 @@ public class JobDeclared extends HttpServlet {
 			}else{
 				fileName = JOB_DIR + "${jobData.jobName}.job"
 			}
-			
+
 			// Process Comment
 			if(jobData.commentForJob != null){
 				jobStr += jobData.commentForJob + "\n"
 			}
-			
+
 			// process JOB variable
 			def mapJOB = [:]
 			mapJOB['name'] = "\"" + jobData.jobName + "\""
@@ -157,18 +194,18 @@ public class JobDeclared extends HttpServlet {
 				mapJOB['jobclass'] = "\"" + jobData.jobClassName + "\""
 			}
 			jobStr += "JOB = " + mapJOB.toString() + "\n"
-			
+
 			// process GROUPKEY variable
 			if(jobData.groupKey != null){
 				jobStr += "GROUPKEY = " + jobData.groupKey + "\n"
 			}
-			
+
 			// process QUERY variable
 			if(jobData.query != null){
 				def queryStr = ""
-				if(jobData.query.substring(0,1) == "\"" 
-					|| jobData.query.substring(0,1) == "\'" 
-					|| jobData.query.substring(0,3) == "\'''" 
+				if(jobData.query.substring(0,1) == "\""
+					|| jobData.query.substring(0,1) == "\'"
+					|| jobData.query.substring(0,3) == "\'''"
 					|| jobData.query.substring(0,3) == "\"\"\"" ){
 						queryStr = jobData.query + "\n"
 				}else{
@@ -176,18 +213,18 @@ public class JobDeclared extends HttpServlet {
 				}
 				jobStr += "QUERY = " + queryStr
 			}
-			
+
 			// process queryVariable variable
 			if(jobData.queryVariable != null){
 				jobStr += "QUERY_VARIABLE = " + jobData.queryVariable + "\n"
 			}
-			
+
 			// process dbExec variable
 			if(jobData.dbExec != null){
 				def dbExecStr = ""
-				if(jobData.dbExec.substring(0,1) == "\"" 
-					|| jobData.dbExec.substring(0,1) == "\'" 
-					|| jobData.dbExec.substring(0,3) == "\'''" 
+				if(jobData.dbExec.substring(0,1) == "\""
+					|| jobData.dbExec.substring(0,1) == "\'"
+					|| jobData.dbExec.substring(0,3) == "\'''"
 					|| jobData.dbExec.substring(0,3) == "\"\"\"" ){
 						dbExecStr = jobData.dbExec + "\n"
 					}else{
@@ -195,18 +232,18 @@ public class JobDeclared extends HttpServlet {
 					}
 				jobStr += "DBEXEC = " + dbExecStr
 			}
-			
+
 			// process dbExecVariable variable
 			if(jobData.dbExecVariable != null){
 				jobStr += "DBEXEC_VARIABLE = " + jobData.dbExecVariable + "\n"
 			}
-			
+
 			// process command variable
 			if(jobData.command != null){
 				def dbcommandStr = ""
-				if(jobData.command.substring(0,1) == "\"" 
-					|| jobData.command.substring(0,1) == "\'" 
-					|| jobData.command.substring(0,3) == "\'''" 
+				if(jobData.command.substring(0,1) == "\""
+					|| jobData.command.substring(0,1) == "\'"
+					|| jobData.command.substring(0,3) == "\'''"
 					|| jobData.command.substring(0,3) == "\"\"\"" ){
 						dbcommandStr = jobData.command + "\n"
 					}else{
@@ -214,32 +251,32 @@ public class JobDeclared extends HttpServlet {
 					}
 				jobStr += "COMMAND = " + dbcommandStr
 			}
-			
+
 			// process format variable
 			if(jobData.format != null){
 				jobStr += "FORMAT = " + jobData.format + "\n"
 			}
-			
+
 			// process fetchAction variable
 			if(jobData.fetchAction != null){
 				jobStr += "FETCHACTION = " + jobData.fetchAction + "\n"
 			}
-			
+
 			// process accumulate variable
 			if(jobData.accumulate != null){
 				jobStr += "ACCUMULATE = " + jobData.accumulate + "\n"
 			}
-			
+
 			// process finally variable
 			if(jobData.finally != null){
 				jobStr += "FINALLY = " + jobData.finally + "\n"
 			}
-			
+
 			// process KEYEXPR variable
 			if(jobData.KEYEXPR != null){
 				def KEYEXPRData = getKeyExprData(jobData.KEYEXPR)
-				
-				if((KEYEXPRData.keyExpr != "[:]") 
+
+				if((KEYEXPRData.keyExpr != "[:]")
 					|| (KEYEXPRData.keyExpr == "[:]" && (KEYEXPRData.keyExprUnit != "" || KEYEXPRData.keyExprChart != ""))){
 					jobStr += "KEYEXPR = " + KEYEXPRData.keyExpr + "\n"
 				}
@@ -250,22 +287,22 @@ public class JobDeclared extends HttpServlet {
 					jobStr += "KEYEXPR._chart = " + KEYEXPRData.keyExprChart + "\n"
 				}
 			}
-			
+
 			// process SENDTYPE variable
 			if(jobData.sendType != null && jobData.sendType != ""){
 				jobStr += "SENDTYPE = \"" + jobData.sendType + "\"\n"
 			}
-			
+
 			// process resourceId variable
 			if(jobData.resourceId != null){
 				jobStr += "RESOURCEID = \"" + jobData.resourceId + "\"\n"
 			}
-			
+
 			// process MONITORINGTYPE variable
 			if(jobData.monitoringType != null){
 				jobStr += "MONITORINGTYPE = \"" + jobData.monitoringType + "\"\n"
 			}
-			
+
 			// process DBTYPE variable
 			if(jobData.dbType != null){
 				def finalDBType = ""
@@ -280,14 +317,14 @@ public class JobDeclared extends HttpServlet {
 				}
 				jobStr += "DBTYPE = \"" + finalDBType + "\"\n"
 			}
-			
+
 			// process dest variable
 			if(jobData.dest != null && jobData.dest != ""){
 				jobStr += "DEST = " + jobData.dest + "\n"
 			}else{
 				jobStr += "DEST = parameters.dest\n"
 			}
-			
+
 			// Set Job's String into file
 			writeToFile(HOMEPATH, fileName, jobStr)
 		}else{
@@ -296,7 +333,7 @@ public class JobDeclared extends HttpServlet {
 		}
 		return true
 	}
-	
+
 	boolean writeDataToInstanceFile(data){
 		def jobData = data.JOB
 		def instanceStr = ""
@@ -329,7 +366,7 @@ public class JobDeclared extends HttpServlet {
 				}
 				instanceStr = "[\n" + instanceStr + "\n]"
 				instanceStr= regularExpressionValidate(instanceStr)
-				
+
 				writeToFile(HOMEPATH, JOB_DIR + "${jobData.jobName}.instances", instanceStr)
 			}else{
 				File instFile = new File(HOMEPATH, JOB_DIR + "${jobData.jobName}.instances")
@@ -343,7 +380,7 @@ public class JobDeclared extends HttpServlet {
 		}
 		return true
 	}
-	
+
 	boolean writeDataToParamFile(data){
 		def jobData = data.JOB
 		if(jobData.jobName != null && jobData.jobName != ""){
@@ -371,7 +408,7 @@ public class JobDeclared extends HttpServlet {
 		}
 		return true
 	}
-	
+
 	// convert data from number string to number
 	// by a regular expression
 	String regularExpressionValidate(String object){
@@ -382,7 +419,7 @@ public class JobDeclared extends HttpServlet {
 		while(matcher.find()){
 			object = object.replace("\"" + matcher.group(2) + "\"", matcher.group(2))
 		}
-		
+
 		//Except schedule
 		macherPattern = "(\"schedule\": )([0-9]{1,}[\\.]{0,1}[0-9]{0,})([,|\n|\\]| |\t|]{1})"
 		pattern = Pattern.compile(macherPattern, Pattern.DOTALL);
@@ -392,7 +429,7 @@ public class JobDeclared extends HttpServlet {
 		}
 		return object
 	}
-	
+
 	String convertData(data){
 		def gson = new GsonBuilder().setPrettyPrinting().create()
 		def jsonData = gson.toJson(data)
@@ -402,7 +439,7 @@ public class JobDeclared extends HttpServlet {
 		finalData = finalData.replaceAll(Pattern.quote('\\"'), "");
 		return finalData
 	}
-	
+
 	String convertDataNotPretty(data){
 		def gson = new GsonBuilder().create()
 		def jsonData = gson.toJson(data)
@@ -465,7 +502,7 @@ public class JobDeclared extends HttpServlet {
 		}
 		return [keyExpr:keyExprStr, keyExprChart:keyExprChartStr, keyExprUnit:keyExprUnitStr]
 	}
-	
+
 	def convertChartFormat(dataChart){
 		def isSubtyped = false
 		dataChart.find{key, value->
@@ -473,7 +510,7 @@ public class JobDeclared extends HttpServlet {
 				isSubtyped = true
 			}
 			return true
-		}	
+		}
 		if(isSubtyped){
 			// Subtyped
 			def retChart = [:]
@@ -481,13 +518,13 @@ public class JobDeclared extends HttpServlet {
 				if(retChart[value.group] == null) {
 					retChart[value.group] = []
 				}
-				
+
 				def chartItem = [:]
 				chartItem.type = value.type
 				chartItem.name = value.name
 				chartItem.chart_columns = value.chart_columns
 				chartItem.hint_columns = value.hint_columns
-				
+
 				retChart[value.group].add(chartItem)
 			}
 			return retChart
@@ -505,10 +542,10 @@ public class JobDeclared extends HttpServlet {
 			return retChart
 		}
 	}
-		
-		
+
+
 	/**
-	 * Get param file's script	
+	 * Get param file's script
 	 * @param paramFile
 	 * @return object params / null when params file not existed
 	 */
@@ -523,9 +560,9 @@ public class JobDeclared extends HttpServlet {
 		}
 		return null;
 	}
-	
+
 	/**
-	 * Get instance file's script	
+	 * Get instance file's script
 	 * @param instanceFile
 	 * @return object instances / null when instance file not existed
 	 */
@@ -537,9 +574,9 @@ public class JobDeclared extends HttpServlet {
 		}
 		return null;
 	}
-	
+
 	/**
-	 * Get job file's script	
+	 * Get job file's script
 	 * @param jobFile
 	 * @return job script
 	 */
@@ -601,7 +638,7 @@ public class JobDeclared extends HttpServlet {
 			decorateResult(mapResult)
 			return mapResult
 	}
-	
+
 	/**
 	 * Decorate result. Currently just replace \t = spaces
 	 * @param paramFile
@@ -616,7 +653,7 @@ public class JobDeclared extends HttpServlet {
 			}
 		}
 	}
-	
+
 	/**
 	 * Write data to file with CHARSET encode
 	 * @param paramFile
@@ -625,7 +662,7 @@ public class JobDeclared extends HttpServlet {
 	def writeToFile(filePath, fileName, data) {
 		def dataFile = new File(filePath, fileName);
 		dataFile.write(data, CHARSET)
-	}	
+	}
 }
 def JobDeclared
 try {

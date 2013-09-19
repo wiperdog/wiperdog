@@ -57,7 +57,7 @@ public class DBConfigurationServlet extends HttpServlet {
 				FileWriter fw = new FileWriter(fileParams)
 				BufferedWriter bw = new BufferedWriter(fw);
 				def builder = new JsonBuilder(params)
-				def str_params =  builder.toPrettyString().replaceAll("\\{","\\[").replaceAll("\\}","\\]").replaceAll("\\\\", "\\\\\\\\")
+				def str_params =  builder.toPrettyString().replaceAll("\\{","\\[").replaceAll("\\}","\\]")
 				bw.write(str_params);
 				bw.close();
 				message = [status:"success"]

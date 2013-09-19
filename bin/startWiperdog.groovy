@@ -62,8 +62,12 @@ public class JobRunner{
 		m_fwk.start();
 		//User for install jar which has need to be wrap
 		AutoProcessor.processCustom(configProps, m_fwk.getBundleContext());
-		// Wait for framework to stop to exit the VM.
-        m_fwk.waitForStop(0);
+		try {
+			// Wait for framework to stop to exit the VM.
+        	m_fwk.waitForStop(0);
+        }finally {
+    		System.exit(0);
+		}
 	}
 	
 	private static FrameworkFactory getFrameworkFactory() throws Exception
@@ -302,8 +306,9 @@ public class JobRunner{
 	     * @param context The system bundle context.
 	    **/
 	    public static void processCustom(Map configMap, BundleContext context) {
-	        configMap = (configMap == null) ? new HashMap() : configMap;
-	        processWrapJar(configMap, context);
+	       configMap = (configMap == null) ? new HashMap() : configMap;
+	       processWrapJar(configMap, context);
+	       processJobManager(configMap, context);
 	    }
 	    
 	    /**
@@ -461,7 +466,7 @@ public class JobRunner{
 
 	            // Parse and install the bundles associated with the key.
 	            StringTokenizer st = new StringTokenizer((String) configMap.get(key), "\" ", true);
-	            for (String location = nextLocation(st); location != null; location = nextLocation(st)) {
+	            for (String location = nextLocation(st); location != null && location != ""; location = nextLocation(st)) {
 	                try {
 	                    Bundle b = context.installBundle(location, null);
 	                    sl.setBundleStartLevel(b, startLevel);
@@ -479,12 +484,14 @@ public class JobRunner{
 	            String key = ((String) i.next()).toLowerCase();
 	            if (key.startsWith(AUTO_START_PROP)) {
 	                StringTokenizer st = new StringTokenizer((String) configMap.get(key), "\" ", true);
-	                for (String location = nextLocation(st); location != null; location = nextLocation(st)) {
+	                for (String location = nextLocation(st); location != null && location != ""; location = nextLocation(st)) {
 	                    // Installing twice just returns the same bundle.
 	                    try {
 	                        Bundle b = context.installBundle(location, null);
 	                        if (b != null) {
-	                            b.start();
+	                        	if (b.getSymbolicName() != "org.wiperdog.jobmanager") {
+	                            	b.start();
+	                            }
 	                        }
 	                    } catch (Exception ex)  {
 	                        println("Auto-properties start: " + location + " ("
@@ -493,6 +500,27 @@ public class JobRunner{
 	                }
 	            }
 	        }
+	    }
+		
+		//Start job manager latest
+		private static void processJobManager(Map configMap, BundleContext context) {
+	    	 Bundle[] listBundle = context.getBundles() 
+	    	 Bundle jobManager
+	    	 Long bundleId
+	    	 
+	    	 listBundle.each {
+	    	 	 if (it.getSymbolicName() == "org.wiperdog.jobmanager") {
+	    	 	 	 jobManager = it
+	    	 	 }
+	    	 }
+	    	 try {
+	    	 	 if (jobManager.getState() != 32) {
+	    	 		Thread.currentThread().setContextClassLoader(this.getClass().getClassLoader())
+	    	 		jobManager.start(org.osgi.framework.Bundle.START_ACTIVATION_POLICY);
+	    	 	 }
+	    	 } catch (Exception ex) {
+	    	 	 println org.apache.commons.lang.exception.ExceptionUtils.getFullStackTrace(ex)
+	    	 }
 	    }
 		
 		/**

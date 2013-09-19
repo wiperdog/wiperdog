@@ -75,7 +75,6 @@ try {
 			}
 			def b = ev.getBundle()
 			def symbolicName = b.getSymbolicName()
-println "symbolicName: " + symbolicName
 			def bAll = true
 			waitList.each { name ->
 //				println name
