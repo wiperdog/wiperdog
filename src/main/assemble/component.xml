@@ -3,12 +3,6 @@
     <dependencySet>
       <outputDirectory>/lib/java/bundle</outputDirectory>
       <includes>
-        <include>org.codehaus.groovy:groovy-all</include>
-        <include>org.apache.felix:org.osgi.compendium</include>
-        <include>org.apache.felix:org.apache.felix.configadmin</include>
-        <include>org.apache.felix:org.apache.felix.fileinstall</include>
-        <include>org.ops4j.pax.logging:pax-logging-api</include>
-        <include>org.ops4j.pax.logging:pax-logging-service</include>
         <include>org.quartz-scheduler:quartz</include>
         <include>org.wiperdog:org.wiperdog.configloader</include>
         <include>org.wiperdog:org.wiperdog.rshell.api</include>
@@ -20,6 +14,12 @@
     <dependencySet>
       <outputDirectory>/lib/java/bundle.a</outputDirectory>
       <includes>
+        <include>org.codehaus.groovy:groovy-all</include>
+        <include>org.apache.felix:org.osgi.compendium</include>
+        <include>org.apache.felix:org.apache.felix.configadmin</include>
+        <include>org.apache.felix:org.apache.felix.fileinstall</include>
+        <include>org.ops4j.pax.logging:pax-logging-api</include>
+        <include>org.ops4j.pax.logging:pax-logging-service</include>
         <include>biz.aQute.bnd:bndlib</include>
         <include>commons-codec:commons-codec</include>
         <include>commons-collections:commons-collections</include>
