@@ -297,7 +297,6 @@ public class JobRunner{
 	    public static void processAuto(Map configMap, BundleContext context) {
 	        configMap = (configMap == null) ? new HashMap() : configMap;
 	        processAutoDeploy(configMap, context);
-	        processAutoProperties(configMap, context);
 	    }
 	    
 	    /**
@@ -306,9 +305,9 @@ public class JobRunner{
 	     * @param context The system bundle context.
 	    **/
 	    public static void processCustom(Map configMap, BundleContext context) {
-	       configMap = (configMap == null) ? new HashMap() : configMap;
-	       processWrapJar(configMap, context);
-	       processJobManager(configMap, context);
+	        configMap = (configMap == null) ? new HashMap() : configMap;
+	        processWrapJar(configMap, context);	        
+	        processAutoProperties(configMap, context);
 	    }
 	    
 	    /**
@@ -489,9 +488,7 @@ public class JobRunner{
 	                    try {
 	                        Bundle b = context.installBundle(location, null);
 	                        if (b != null) {
-	                        	if (b.getSymbolicName() != "org.wiperdog.jobmanager") {
-	                            	b.start();
-	                            }
+	                            b.start();
 	                        }
 	                    } catch (Exception ex)  {
 	                        println("Auto-properties start: " + location + " ("
@@ -500,27 +497,6 @@ public class JobRunner{
 	                }
 	            }
 	        }
-	    }
-		
-		//Start job manager latest
-		private static void processJobManager(Map configMap, BundleContext context) {
-	    	 Bundle[] listBundle = context.getBundles() 
-	    	 Bundle jobManager
-	    	 Long bundleId
-	    	 
-	    	 listBundle.each {
-	    	 	 if (it.getSymbolicName() == "org.wiperdog.jobmanager") {
-	    	 	 	 jobManager = it
-	    	 	 }
-	    	 }
-	    	 try {
-	    	 	 if (jobManager.getState() != 32) {
-	    	 		Thread.currentThread().setContextClassLoader(this.getClass().getClassLoader())
-	    	 		jobManager.start(org.osgi.framework.Bundle.START_ACTIVATION_POLICY);
-	    	 	 }
-	    	 } catch (Exception ex) {
-	    	 	 println org.apache.commons.lang.exception.ExceptionUtils.getFullStackTrace(ex)
-	    	 }
 	    }
 		
 		/**

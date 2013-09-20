@@ -7,6 +7,9 @@
 @rem Set local scope for the variables with windows NT shell
 if "%OS%"=="Windows_NT" setlocal
 
+@rem Reset GROOVY_HOME
+set GROOVY_HOME=
+
 :begin
 @rem Determine what directory it is in.
 set DIRNAME=%~dp0
