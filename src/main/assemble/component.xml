@@ -9,6 +9,12 @@
         <include>org.apache.felix:org.apache.felix.fileinstall</include>
         <include>org.ops4j.pax.logging:pax-logging-api</include>
         <include>org.ops4j.pax.logging:pax-logging-service</include>
+        <include>org.quartz-scheduler:quartz</include>
+        <include>org.wiperdog:org.wiperdog.configloader</include>
+        <include>org.wiperdog:org.wiperdog.rshell.api</include>
+        <include>org.wiperdog:org.wiperdog.jobmanager</include>
+        <include>org.wiperdog:org.wiperdog.directorywatcher</include>
+        <include>org.wiperdog:org.wiperdog.scriptsupport.groovyrunner</include>
       </includes>
     </dependencySet>
     <dependencySet>
@@ -74,12 +80,6 @@
     <dependencySet>
       <outputDirectory>/lib/java/bundle.d</outputDirectory>
       <includes>
-        <include>org.quartz-scheduler:quartz</include>
-        <include>org.wiperdog:org.wiperdog.configloader</include>
-        <include>org.wiperdog:org.wiperdog.rshell.api</include>
-        <include>org.wiperdog:org.wiperdog.jobmanager</include>
-        <include>org.wiperdog:org.wiperdog.directorywatcher</include>
-        <include>org.wiperdog:org.wiperdog.scriptsupport.groovyrunner</include>
       </includes>
     </dependencySet>
     <dependencySet>
