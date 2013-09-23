@@ -78,11 +78,6 @@
       </includes>
     </dependencySet>
     <dependencySet>
-      <outputDirectory>/lib/java/bundle.d</outputDirectory>
-      <includes>
-      </includes>
-    </dependencySet>
-    <dependencySet>
       <outputDirectory>/lib/java/ext</outputDirectory>
       <includes>
         <include>org.apache.felix:org.apache.felix.framework</include>
