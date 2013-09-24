@@ -38,37 +38,6 @@ public class JobRunner{
      */
     public static final String CONFIG_PROPERTIES_PROP = "felix.config.properties";
 	
-	public static void main(String[] args) throws Exception {		
-		// Load system properties.
-		JobRunner.loadSystemProperties()
-		
-		// Read configuration properties.
-        Properties configProps = JobRunner.loadConfigProperties();
-        // If no configuration properties were found, then create
-        // an empty properties object.
-        if (configProps == null) {
-            println("No " + CONFIG_PROPERTIES_FILE_VALUE + " found.");
-            configProps = new Properties();
-        }
-        
-        // Copy framework properties from the system properties.
-        JobRunner.copySystemProperties(configProps);
-        
-		// Create an instance of the framework.
-		FrameworkFactory factory = getFrameworkFactory();
-		m_fwk = factory.newFramework(configProps);
-        // Initialize the framework, but don't start it yet.
-        m_fwk.init();
-        // Use the system bundle context to process the auto-deploy
-        // and auto-install/auto-start properties.
-        AutoProcessor.processAuto(configProps, m_fwk.getBundleContext());
-		m_fwk.start();
-		//User for install jar which has need to be wrap
-		AutoProcessor.processCustom(configProps, m_fwk.getBundleContext());
-		// Wait for framework to stop to exit the VM.
-        m_fwk.waitForStop(0);
-	}
-	
 	private static FrameworkFactory getFrameworkFactory() throws Exception
     {
         URL url = gcl.getResource(
@@ -296,7 +265,6 @@ public class JobRunner{
 	    public static void processAuto(Map configMap, BundleContext context) {
 	        configMap = (configMap == null) ? new HashMap() : configMap;
 	        processAutoDeploy(configMap, context);
-	        processAutoProperties(configMap, context);
 	    }
 	    
 	    /**
@@ -306,7 +274,8 @@ public class JobRunner{
 	    **/
 	    public static void processCustom(Map configMap, BundleContext context) {
 	        configMap = (configMap == null) ? new HashMap() : configMap;
-	        processWrapJar(configMap, context);
+	        processWrapJar(configMap, context);	        
+	        processAutoProperties(configMap, context);
 	    }
 	    
 	    /**
@@ -464,7 +433,7 @@ public class JobRunner{
 
 	            // Parse and install the bundles associated with the key.
 	            StringTokenizer st = new StringTokenizer((String) configMap.get(key), "\" ", true);
-	            for (String location = nextLocation(st); location != null; location = nextLocation(st)) {
+	            for (String location = nextLocation(st); location != null && location != ""; location = nextLocation(st)) {
 	                try {
 	                    Bundle b = context.installBundle(location, null);
 	                    sl.setBundleStartLevel(b, startLevel);
@@ -482,7 +451,7 @@ public class JobRunner{
 	            String key = ((String) i.next()).toLowerCase();
 	            if (key.startsWith(AUTO_START_PROP)) {
 	                StringTokenizer st = new StringTokenizer((String) configMap.get(key), "\" ", true);
-	                for (String location = nextLocation(st); location != null; location = nextLocation(st)) {
+	                for (String location = nextLocation(st); location != null && location != ""; location = nextLocation(st)) {
 	                    // Installing twice just returns the same bundle.
 	                    try {
 	                        Bundle b = context.installBundle(location, null);
@@ -713,5 +682,10 @@ public class JobRunner{
 		//User for install jar which has need to be wrap
 		AutoProcessor.processCustom(configProps, m_fwk.getBundleContext());
 		// Wait for framework to stop to exit the VM.
-        m_fwk.waitForStop(0);
+		try {
+			// Wait for framework to stop to exit the VM.
+        	m_fwk.waitForStop(0);
+        }finally {
+    		System.exit(0);
+		}
 //}
