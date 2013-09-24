@@ -52,9 +52,9 @@ set JAVA_EXE=%JAVA_HOME%\bin\java.exe
 
 :check_default_JAVA_EXE
 if not "%JAVA_HOME%" == "" goto valid_JAVA_HOME
-@rem If not has java in system or has but not set JAVA_HOME, using jre of wiperdog
-SET JAVA_HOME=%PREFIX%\opt\jre
-if exist "%JAVA_HOME%" GOTO have_JAVA_HOME
+java -version 2>NUL
+if not ERRORLEVEL 1 goto default_JAVA_EXE
+
 echo.
 echo ERROR: Environment variable JAVA_HOME has not been set.
 echo Attempting to find JAVA_HOME from PATH also failed.
@@ -76,6 +76,9 @@ echo Please set the JAVA_HOME variable in your environment
 echo to match the location of your Java installation.
 goto end
 
+:default_JAVA_EXE
+set JAVA_EXE=java.exe
+goto check_GROOVY_HOME
 
 :valid_JAVA_HOME_DIR
 set JAVA_EXE=%JAVA_HOME%\bin\java.exe
@@ -87,16 +90,6 @@ goto common_error
 
 :valid_JAVA_HOME
 if exist "%JAVA_HOME%\lib\tools.jar" set TOOLS_JAR=%JAVA_HOME%\lib\tools.jar
-
-:check_JAVA_VERSION
-"%JAVA_EXE%" -version:1.6.0_30 -version > nul 2>&1
-if %ERRORLEVEL% == 0 goto check_JAVA_JRE
-set JAVA_HOME=%PREFIX%\opt\jre
-set JAVA_EXE=%JAVA_HOME%\bin\java.exe
-if exist "%JAVA_EXE%" goto check_GROOVY_HOME
-echo.
-echo ERROR: Java version is not correct. It has to be JRE1.6.0_30
-goto common_error
 
 :check_JAVA_JRE
 if exist "%JAVA_HOME%"\bin\client GOTO check_GROOVY_HOME

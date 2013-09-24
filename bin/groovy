@@ -34,6 +34,22 @@ DIRNAME=`dirname "$PRG"`
 PREFIX=`cd $DIRNAME/..;pwd`
 
 #. ${PREFIX}/etc/java.env
+JAVA_OPTS=
+CLASSPATH=
+
+case `uname -s` in
+AIX|Linux|SunOS)
+	;;
+HP-UX)
+	JAVA_OPTS=-d64
+	;;
+*)
+	echo "warning: no quirks for `uname -s`"
+#	exit 1
+	;;
+esac
+
+export CLASSPATH
 
 . "$DIRNAME/startGroovy"
 
