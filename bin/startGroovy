@@ -81,7 +81,10 @@ if [ -z "$JAVA_HOME" ] ; then
         javaHome=`expr "$javaHome" : '\(.*\)/bin'`
         JAVA_HOME="$javaHome"
         export JAVA_HOME
-
+        # If Java is JDK change to use JRE
+        if [ ! -d "$JAVA_HOME/bin/client" ]; then        
+        	export JAVA_HOME = "$JAVA_HOME/jre"
+		fi
     fi
 fi
 
