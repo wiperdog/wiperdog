@@ -91,6 +91,11 @@ goto common_error
 :valid_JAVA_HOME
 if exist "%JAVA_HOME%\lib\tools.jar" set TOOLS_JAR=%JAVA_HOME%\lib\tools.jar
 
+:check_JAVA_JRE
+if exist "%JAVA_HOME%"\bin\client GOTO check_GROOVY_HOME
+set JAVA_HOME=%JAVA_HOME%\jre
+set JAVA_EXE=%JAVA_HOME%\bin\java.exe
+
 :check_GROOVY_HOME
 @rem Define GROOVY_HOME if not set
 if "%GROOVY_HOME%" == "" set GROOVY_HOME=%DIRNAME%..
