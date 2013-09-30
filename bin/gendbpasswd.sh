@@ -7,9 +7,12 @@ if [ "$dir" == "." ]
 then
   export dirname=`pwd $0`
 else
-  export dirname=$path"/"$dir	
+  export dirname=$path"/"$dir
 fi
 # 2013-03-06 Luvina insert end
+if [ "$#" -eq 2 ]; then 
+"$dir/groovy" "$dir/gendbpasswd.groovy" "$1" "$2"
+else
 if [ "$#" -eq 4 ]; then 
 "$dir/groovy" "$dir/gendbpasswd.groovy" "$1" "$2" "$3" "$4"
 else
@@ -21,8 +24,10 @@ if [ "$#" -eq 8 ]; then
 else
 	echo Incorrect parameters !!!
 	echo Correct format of commmand: gendbpasswd -t DBType -u username [-h hostId] [-s sid]
+	echo								OR gendbpasswd -f "File csv contains user/password information"
 	echo     DBType may accept following value:  @ORA , @MYSQL ,@PGSQL ,@MSSQL
 	echo      Example : gendbpasswd -t @ORA -u username -h hostId -s piex
+fi
 fi
 fi
 fi

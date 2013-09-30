@@ -6,9 +6,9 @@ import org.apache.commons.codec.binary.*;
 import javax.xml.bind.DatatypeConverter;
 import java.nio.charset.Charset;
 
-	
+
 public class CommonUltis{
-	/** Do not move it to ResourceConstants **/	
+	/** Do not move it to ResourceConstants **/
 	static final String SYM_KEY_HEX = "000102030405060708090A0B0C0D0E0F"
 	public static String decrypt(final String ivAndEncryptedMessageBase64) {
         final byte[] symKeyData = DatatypeConverter.parseHexBinary(CommonUltis.SYM_KEY_HEX);
@@ -44,7 +44,7 @@ public class CommonUltis{
             throw new IllegalStateException("Unexpected exception during decryption", e);
         }
     }
-	
+
 	public static String encrypt(final String plainMessage) {
         final byte[] symKeyData = DatatypeConverter.parseHexBinary(CommonUltis.SYM_KEY_HEX);
         final byte[] encodedMessage = plainMessage.getBytes(Charset.forName("UTF-8"));
@@ -55,7 +55,7 @@ public class CommonUltis{
             // create the key
             SecretKeySpec symKey = new SecretKeySpec(symKeyData, "AES");
 
-            // generate random IV using block size 
+            // generate random IV using block size
             byte[] ivData = new byte[blockSize];
             SecureRandom rnd = SecureRandom.getInstance("SHA1PRNG");
             rnd.nextBytes(ivData);
@@ -79,7 +79,7 @@ public class CommonUltis{
             throw new IllegalStateException("Unexpected exception during encryption", e);
         }
     }
-    
+
     /**
 	* getPasswdFileName Get password file name
 	* @param dbType
@@ -89,11 +89,11 @@ public class CommonUltis{
 	*/
     public static String getPasswdFileName(dbType, hostId, sId) {
     	def pwdFileName = ".dbpasswd"
-		if(hostId != null) {
+		if(hostId != null && hostId != "") {
 			pwdFileName += "_" + hostId
 		}
 		pwdFileName += "_" + dbType
-		if(sId != null) {
+		if(sId != null && sId != "") {
 			pwdFileName += "_" + sId
 		}
 		return pwdFileName
