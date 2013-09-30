@@ -83,7 +83,7 @@ if [ -z "$JAVA_HOME" ] ; then
         export JAVA_HOME
         # If Java is JDK change to use JRE
         if [ ! -d "$JAVA_HOME/bin/client" ]; then        
-        	export JAVA_HOME = "$JAVA_HOME/jre"
+        	export JAVA_HOME="$JAVA_HOME/jre"
 		fi
     fi
 fi
