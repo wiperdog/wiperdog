@@ -9,7 +9,7 @@ import org.osgi.framework.Constants;
 import org.osgi.framework.launch.Framework;
 import org.osgi.framework.launch.FrameworkFactory;
 
-public class JobRunner{
+public class WiperDogBoot{
 	private static Framework m_fwk = null;
 	private static GroovyClassLoader gcl = new GroovyClassLoader();
 	/**
@@ -37,10 +37,10 @@ public class JobRunner{
 	
 	public static void main(String[] args) throws Exception {
 		// Load system properties.
-		JobRunner.loadSystemProperties()
+		WiperDogBoot.loadSystemProperties()
 		
 		// Read configuration properties.
-        Properties configProps = JobRunner.loadConfigProperties();
+        Properties configProps = WiperDogBoot.loadConfigProperties();
         // If no configuration properties were found, then create
         // an empty properties object.
         if (configProps == null) {
@@ -49,26 +49,86 @@ public class JobRunner{
         }
         
         // Copy framework properties from the system properties.
-        JobRunner.copySystemProperties(configProps);
+        WiperDogBoot.copySystemProperties(configProps);
         
 		// Create an instance of the framework.
 		FrameworkFactory factory = getFrameworkFactory();
 		m_fwk = factory.newFramework(configProps);
-        // Initialize the framework, but don't start it yet.
+        // Initialize the framework and start
         m_fwk.init();
-        // Use the system bundle context to process the auto-deploy
-        // and auto-install/auto-start properties.
-        AutoProcessor.processAuto(configProps, m_fwk.getBundleContext());
 		m_fwk.start();
-		//User for install jar which has need to be wrap
-		AutoProcessor.processCustom(configProps, m_fwk.getBundleContext());
+		
+		//Install and start bundle			
+		def felix_home = System.getProperty("felix.home").replace("\\", "/");
+		def context = m_fwk.getBundleContext()
+		//Get list bundle and order by run level
+		def bundleList = processCSVFile("ListBundle.csv")
+		def mapBundle = [:]
+		
+		bundleList.each { bundleCfg ->
+			def bundle = null
+			def url = ""
+			if (bundleCfg['TYPE'] == "file")  {
+				url =  (new File(felix_home, bundleCfg['PATH'])).toURI().toString()
+			} else if (bundleCfg['TYPE'] == "wrapfile") {
+				url = "wrap:" + (new File(felix_home, bundleCfg['PATH'])).toURI().toString()
+			} else {
+				println ("Unknow resource: " + bundleCfg)
+			}
+			if (url != "") {
+				if (mapBundle[bundleCfg["RUNLEVEL"]] == null) {
+					mapBundle[bundleCfg["RUNLEVEL"]] = []
+				}
+				mapBundle[bundleCfg["RUNLEVEL"]].add(url)
+			}
+		}
+		
+		//Install and start bundle
+		def listBundle = []
+		mapBundle.each {runLevel, listURL->
+			listBundle = installall(context, listURL)
+			startall(listBundle)
+		}
+		
+		// Wait for framework to stop to exit the VM.
 		try {
-			// Wait for framework to stop to exit the VM.
         	m_fwk.waitForStop(0);
         }finally {
     		System.exit(0);
 		}
 	}
+	
+	/**
+	 * Install bundle
+	 */
+	private static List installall(context, listURL) {
+		def lstBundle = []
+		listURL.each { url ->
+			def bundle = null
+			try {
+				bundle = context.installBundle(url)
+				lstBundle.add(bundle)
+			} catch(Exception e) {
+				println org.apache.commons.lang.exception.ExceptionUtils.getFullStackTrace(e)
+			}
+		}
+		return lstBundle
+	}
+
+	/**
+	 * Start bundle
+	 */
+	private static void startall(listBunlde) {
+		listBunlde.each { b ->
+			try {
+				b.start()
+			} catch(Exception e) {
+				println e
+			}
+		}
+	}
+		
+	
 	
 	private static FrameworkFactory getFrameworkFactory() throws Exception
     {
@@ -235,449 +295,61 @@ public class JobRunner{
         }
     }
     
-    /**
-	 * @see org.apache.felix.main.AutoProcessor
-	 */
-	public class AutoProcessor
-	{
-	    /**
-	     * The property name used for the bundle directory.
-	    **/
-	    public static final String AUTO_DEPLOY_DIR_PROPERY = "felix.auto.deploy.dir";
-	    /**
-	     * The default name used for the bundle directory.
-	    **/
-	    public static final String AUTO_DEPLOY_DIR_VALUE = "bundle";
-	    /**
-	     * The property name used to specify auto-deploy actions.
-	    **/
-	    public static final String AUTO_DEPLOY_ACTION_PROPERY = "felix.auto.deploy.action";
-	    /**
-	     * The name used for the auto-deploy install action.
-	    **/
-	    public static final String AUTO_DEPLOY_INSTALL_VALUE = "install";
-	    /**
-	     * The name used for the auto-deploy start action.
-	    **/
-	    public static final String AUTO_DEPLOY_START_VALUE = "start";
-	    /**
-	     * The name used for the auto-deploy update action.
-	    **/
-	    public static final String AUTO_DEPLOY_UPDATE_VALUE = "update";
-	    /**
-	     * The name used for the auto-deploy uninstall action.
-	    **/
-	    public static final String AUTO_DEPLOY_UNINSTALL_VALUE = "uninstall";
-	    /**
-	     * The property name prefix for the launcher's auto-install property.
-	    **/
-	    public static final String AUTO_INSTALL_PROP = "felix.auto.install";
-	    /**
-	     * The property name prefix for the launcher's auto-start property.
-	    **/
-	    public static final String AUTO_START_PROP = "felix.auto.start";
-	    /**
-	     * The property name used to specify directory of jar which need to be wrap
-	    **/
-	    public static final String WRAP_JAR_DIR = "felix.wrapjarinstall.dir";
-	    /**
-	     * The property name used to specify action for each jar file which need to be wrap
-	    **/
-	    public static final String WRAP_JAR_ACTION = "felix.wrapjarinstall.action";
-	    /**
-	     * The property name used to specify list jar file which need to be wrap first
-	    **/
-	    public static final String WRAP_JAR_INSTALL_FIRST = "felix.wrapjarinstall.firststart"
-	    /**
-	     * Used to instigate auto-deploy directory process and auto-install/auto-start
-	     * configuration property processing during.
-	     * @param configMap Map of configuration properties.
-	     * @param context The system bundle context.
-	    **/
-	    public static void processAuto(Map configMap, BundleContext context) {
-	        configMap = (configMap == null) ? new HashMap() : configMap;
-	        processAutoDeploy(configMap, context);
-	    }
-	    
-	    /**
-	     * Used to instigate wrap jar file and install
-	     * @param configMap Map of configuration properties.
-	     * @param context The system bundle context.
-	    **/
-	    public static void processCustom(Map configMap, BundleContext context) {
-	        configMap = (configMap == null) ? new HashMap() : configMap;
-	        processWrapJar(configMap, context);	        
-	        processAutoProperties(configMap, context);
-	    }
-	    
-	    /**
-	     * <p>
-	     * Processes bundles in the auto-deploy directory, installing and then
-	     * starting each one.
-	     * </p>
-	     */
-	    private static void processAutoDeploy(Map configMap, BundleContext context) {
-	        // Determine if auto deploy actions to perform.
-	        String action = (String) configMap.get(AUTO_DEPLOY_ACTION_PROPERY);
-	        action = (action == null) ? "" : action;
-	        List actionList = new ArrayList();
-	        StringTokenizer st = new StringTokenizer(action, ",");
-	        while (st.hasMoreTokens()) {
-	            String s = st.nextToken().trim().toLowerCase();
-	            if (s.equals(AUTO_DEPLOY_INSTALL_VALUE)
-	                || s.equals(AUTO_DEPLOY_START_VALUE)
-	                || s.equals(AUTO_DEPLOY_UPDATE_VALUE)
-	                || s.equals(AUTO_DEPLOY_UNINSTALL_VALUE)) {
-	                actionList.add(s);
-	            }
-	        }
-
-	        // Perform auto-deploy actions.
-	        if (actionList.size() > 0) {
-	            // Get list of already installed bundles as a map.
-	            Map installedBundleMap = new HashMap();
-	            Bundle[] bundles = context.getBundles();
-	            for (int i = 0; i < bundles.length; i++) {
-	                installedBundleMap.put(bundles[i].getLocation(), bundles[i]);
-	            }
-
-	            // Get the auto deploy directory.
-	            String autoDir = (String) configMap.get(AUTO_DEPLOY_DIR_PROPERY);
-	            autoDir = (autoDir == null) ? AUTO_DEPLOY_DIR_VALUE : autoDir;
-	            // Look in the specified bundle directory to create a list
-	            // of all JAR files to install.
-	            File[] files = new File(autoDir).listFiles();
-	            List jarList = new ArrayList();
-	            if (files != null) {
-	                Arrays.sort(files);
-	                for (int i = 0; i < files.length; i++) {
-	                    if (files[i].getName().endsWith(".jar")) {
-	                        jarList.add(files[i]);
-	                    }
-	                }
-	            }
-
-	            // Install bundle JAR files and remember the bundle objects.
-	            final List startBundleList = new ArrayList();
-	            for (int i = 0; i < jarList.size(); i++) {
-	                // Look up the bundle by location, removing it from
-	                // the map of installed bundles so the remaining bundles
-	                // indicate which bundles may need to be uninstalled.
-	                Bundle b = (Bundle) installedBundleMap.remove(((File) jarList.get(i)).toURI().toString());
-	                try {
-	                    // If the bundle is not already installed, then install it
-	                    // if the 'install' action is present.
-	                    if ((b == null) && actionList.contains(AUTO_DEPLOY_INSTALL_VALUE)) {
-	                        b = context.installBundle( ((File) jarList.get(i)).toURI().toString());
-	                    }
-	                    // If the bundle is already installed, then update it
-	                    // if the 'update' action is present.
-	                    else if (actionList.contains(AUTO_DEPLOY_UPDATE_VALUE)) {
-	                        b.update();
-	                    }
-
-	                    // If we have found and/or successfully installed a bundle,
-	                    // then add it to the list of bundles to potentially start.
-	                    if (b != null) {
-	                        startBundleList.add(b);
-	                    }
-	                } catch (BundleException ex) {
-	                    println("Auto-deploy install: "
-	                        + ex + ((ex.getCause() != null) ? " - " + ex.getCause() : ""));
-	                }
-	            }
-
-	            // Uninstall all bundles not in the auto-deploy directory if
-	            // the 'uninstall' action is present.
-	            if (actionList.contains(AUTO_DEPLOY_UNINSTALL_VALUE)) {
-	                for (Iterator it = installedBundleMap.entrySet().iterator(); it.hasNext(); ) {
-	                    Map.Entry entry = (Map.Entry) it.next();
-	                    Bundle b = (Bundle) entry.getValue();
-	                    if (b.getBundleId() != 0) {
-	                        try {
-	                            b.uninstall();
-	                        } catch (BundleException ex) {
-	                         	println("Auto-deploy uninstall: "
-	                            	+ ex + ((ex.getCause() != null) ? " - " + ex.getCause() : ""));
-	                        }
-	                    }
-	                }
-	            }
-
-	            // Start all installed and/or updated bundles if the 'start'
-	            // action is present.
-	            if (actionList.contains(AUTO_DEPLOY_START_VALUE)) {
-	                for (int i = 0; i < startBundleList.size(); i++) {
-	                    try {
-	                        if (!isFragment((Bundle) startBundleList.get(i))) {
-	                            ((Bundle) startBundleList.get(i)).start();
-	                        }
-	                    } catch (BundleException ex) {
-	                        println("Auto-deploy start: "
-	                            + ex + ((ex.getCause() != null) ? " - " + ex.getCause() : ""));
-	                    }
-	                }
-	            }
-	        }
-	    }
-
-	    /**
-	     * <p>
-	     * Processes the auto-install and auto-start properties from the
-	     * specified configuration properties.
-	     * </p>
-	     */
-	    private static void processAutoProperties(Map configMap, BundleContext context)
-	    {
-	        // Retrieve the Start Level service, since it will be needed
-	        // to set the start level of the installed bundles.
-	        StartLevel sl = (StartLevel) context.getService(
-	            context.getServiceReference(org.osgi.service.startlevel.StartLevel.class.getName()));
-
-	        // Retrieve all auto-install and auto-start properties and install
-	        // their associated bundles. The auto-install property specifies a
-	        // space-delimited list of bundle URLs to be automatically installed
-	        // into each new profile, while the auto-start property specifies
-	        // bundles to be installed and started. The start level to which the
-	        // bundles are assigned is specified by appending a ".n" to the
-	        // property name, where "n" is the desired start level for the list
-	        // of bundles. If no start level is specified, the default start
-	        // level is assumed.
-	        for (Iterator i = configMap.keySet().iterator(); i.hasNext(); ) {
-	            String key = ((String) i.next()).toLowerCase();
-
-	            // Ignore all keys that are not an auto property.
-	            if (!key.startsWith(AUTO_INSTALL_PROP) && !key.startsWith(AUTO_START_PROP)) {
-	                continue;
-	            }
-
-	            // If the auto property does not have a start level,
-	            // then assume it is the default bundle start level, otherwise
-	            // parse the specified start level.
-	            int startLevel = sl.getInitialBundleStartLevel();
-	            if (!key.equals(AUTO_INSTALL_PROP) && !key.equals(AUTO_START_PROP)) {
-	                try {
-	                    startLevel = Integer.parseInt(key.substring(key.lastIndexOf('.') + 1));
-	                } catch (NumberFormatException ex) {
-	                    println("Invalid property: " + key);
-	                }
-	            }
-
-	            // Parse and install the bundles associated with the key.
-	            StringTokenizer st = new StringTokenizer((String) configMap.get(key), "\" ", true);
-	            for (String location = nextLocation(st); location != null && location != ""; location = nextLocation(st)) {
-	                try {
-	                    Bundle b = context.installBundle(location, null);
-	                    sl.setBundleStartLevel(b, startLevel);
-	                } catch (Exception ex) {
-	                    println("Auto-properties install: " + location + " ("
-	                        + ex + ((ex.getCause() != null) ? " - " + ex.getCause() : "") + ")");
-						if (ex.getCause() != null)
-						    ex.printStackTrace();
-	                }
-	            }
-	        }
-
-	        // Now loop through the auto-start bundles and start them.
-	        for (Iterator i = configMap.keySet().iterator(); i.hasNext(); ) {
-	            String key = ((String) i.next()).toLowerCase();
-	            if (key.startsWith(AUTO_START_PROP)) {
-	                StringTokenizer st = new StringTokenizer((String) configMap.get(key), "\" ", true);
-	                for (String location = nextLocation(st); location != null && location != ""; location = nextLocation(st)) {
-	                    // Installing twice just returns the same bundle.
-	                    try {
-	                        Bundle b = context.installBundle(location, null);
-	                        if (b != null) {
-	                            b.start();
-	                        }
-	                    } catch (Exception ex)  {
-	                        println("Auto-properties start: " + location + " ("
-	                            + ex + ((ex.getCause() != null) ? " - " + ex.getCause() : "") + ")");
-	                    }
-	                }
-	            }
-	        }
-	    }
-		
-		/**
-	     * <p>
-	     * Processes wrap url jar file
-	     * starting each one as OSGI bundle.
-	     * </p>
-	     */
-	    private static void processWrapJar(Map configMap, BundleContext context) {
-	        // Determine if auto deploy actions to perform.
-	        String action = (String) configMap.get(WRAP_JAR_ACTION);
-	        action = (action == null) ? "" : action;
-	        List actionList = new ArrayList();
-	        StringTokenizer st = new StringTokenizer(action, ",");
-	        while (st.hasMoreTokens()) {
-	            String s = st.nextToken().trim().toLowerCase();
-	            if (s.equals(AUTO_DEPLOY_INSTALL_VALUE)
-	                || s.equals(AUTO_DEPLOY_START_VALUE)
-	                || s.equals(AUTO_DEPLOY_UPDATE_VALUE)
-	                || s.equals(AUTO_DEPLOY_UNINSTALL_VALUE)) {
-	                actionList.add(s);
-	            }
-	        }
-	        
-	        // Perform auto-deploy actions.
-	        if (actionList.size() > 0) {
-	        	// Install bundle JAR files and remember the bundle objects.
-	            final List startBundleList = new ArrayList();
-	            //Install and start the jar which is configed as first
-		        for (Iterator i = configMap.keySet().iterator(); i.hasNext(); ) {
-		            String key = ((String) i.next()).toLowerCase();
-		            if (key.startsWith(WRAP_JAR_INSTALL_FIRST)) {
-		                st = new StringTokenizer((String) configMap.get(key), "\" ", true);
-		                for (String location = nextLocation(st); location != null; location = nextLocation(st)) {
-		                    // Installing twice just returns the same bundle.
-		                    try {
-		                        def wrapStr = "wrap:" + location
-	                        	Bundle bfirst = context.installBundle(wrapStr);
-		                        startBundleList.add (bfirst)
-		                    } catch (Exception ex)  {
-		                        println("Auto-properties start: " + location + " ("
-		                            + ex + ((ex.getCause() != null) ? " - " + ex.getCause() : "") + ")");
-		                    }
-		                }
-		            }
-		        }
-	            
-	            
-	            // Get list of already installed bundles as a map.
-	            Map installedBundleMap = new HashMap();
-	            Bundle[] bundles = context.getBundles();
-	            for (int i = 0; i < bundles.length; i++) {
-	            	def locate = bundles[i].getLocation().replace("\\", "/");
-	            	if (!locate.contains("wrap:file:/")) {
-	            		locate = locate.replace("wrap:file:", "wrap:file:/")
-	            	}
-	                installedBundleMap.put(locate, bundles[i]);
-	            }
-
-	            // Get the wrap jar file directory.
-	            String wrapJarDir = (String) configMap.get(WRAP_JAR_DIR);
-	            // Look in the specified directory to create a list
-	            // of all JAR files to wrap and install.
-	            File[] files = new File(wrapJarDir).listFiles();
-	            List jarList = new ArrayList();
-	            if (files != null) {
-	                Arrays.sort(files);
-	                for (int i = 0; i < files.length; i++) {
-	                    if (files[i].getName().endsWith(".jar")) {
-	                        jarList.add(files[i]);
-	                    }
-	                }
-	            }
-				
-
-	            for (int i = 0; i < jarList.size(); i++) {
-	                // Look up the bundle by location, removing it from
-	                // the map of installed bundles so the remaining bundles
-	                // indicate which bundles may need to be uninstalled.
-	                def wrapStr = "wrap:" + ((File) jarList.get(i)).toURI().toString()
-	                Bundle b = (Bundle) installedBundleMap.remove(wrapStr);
-	                try {
-	                    // If the jar is not already installed, then install it
-	                    // if the 'install' action is present.
-	                    if ((b == null) && actionList.contains(AUTO_DEPLOY_INSTALL_VALUE)) {
-	                        b = context.installBundle(wrapStr);
-	                    }
-	                    // If the bundle is already installed, then update it
-	                    // if the 'update' action is present.
-	                    else if (actionList.contains(AUTO_DEPLOY_UPDATE_VALUE)) {
-	                        b.update();
-	                    }
-
-	                    // If we have found and/or successfully installed a bundle,
-	                    // then add it to the list of bundles to potentially start.
-	                    if (b != null) {
-	                        startBundleList.add(b);
-	                    }
-	                } catch (BundleException ex) {
-	                    println("Deploy wrap jar install: "
-	                        + ex + ((ex.getCause() != null) ? " - " + ex.getCause() : ""));
-	                }
-	            }
-
-	            // Uninstall all bundles not in the auto-deploy directory if
-	            // the 'uninstall' action is present.
-	            if (actionList.contains(AUTO_DEPLOY_UNINSTALL_VALUE)) {
-	                for (Iterator it = installedBundleMap.entrySet().iterator(); it.hasNext(); ) {
-	                    Map.Entry entry = (Map.Entry) it.next();
-	                    Bundle b = (Bundle) entry.getValue();
-	                    if (b.getBundleId() != 0) {
-	                        try {
-	                            b.uninstall();
-	                        } catch (BundleException ex) {
-	                         	println("Deploy wrap jar uninstall: "
-	                            	+ ex + ((ex.getCause() != null) ? " - " + ex.getCause() : ""));
-	                        }
-	                    }
-	                }
-	            }
-
-	            // Start all installed and/or updated bundles if the 'start'
-	            // action is present.
-	            if (actionList.contains(AUTO_DEPLOY_START_VALUE)) {
-	                for (int i = 0; i < startBundleList.size(); i++) {
-	                    try {
-	                        if (!isFragment((Bundle) startBundleList.get(i))) {
-	                            ((Bundle) startBundleList.get(i)).start();
-	                        }
-	                    } catch (BundleException ex) {
-	                        println("Deploy wrap jar start: "
-	                            + ex + ((ex.getCause() != null) ? " - " + ex.getCause() : ""));
-	                    }
-	                }
-	            }
-	        }
-	    }
-		
-	    private static String nextLocation(StringTokenizer st) {
-	        String retVal = null;
-	        if (st.countTokens() > 0) {
-	            String tokenList = "\" ";
-	            StringBuffer tokBuf = new StringBuffer(10);
-	            String tok = null;
-	            boolean inQuote = false;
-	            boolean tokStarted = false;
-	            boolean exit = false;
-	            while ((st.hasMoreTokens()) && (!exit)) {
-	                tok = st.nextToken(tokenList);
-	                if (tok.equals("\"")) {
-	                    inQuote = ! inQuote;
-	                    if (inQuote) {
-	                        tokenList = "\"";
-	                    } else {
-	                        tokenList = "\" ";
-	                    }
-
-	                } else if (tok.equals(" ")) {
-	                    if (tokStarted) {
-	                        retVal = tokBuf.toString();
-	                        tokStarted=false;
-	                        tokBuf = new StringBuffer(10);
-	                        exit = true;
-	                    }
-	                }
-	                else {
-	                    tokStarted = true;
-	                    tokBuf.append(tok.trim());
-	                }
-	            }
-	            // Handle case where end of token stream and
-	            // still got data
-	            if ((!exit) && (tokStarted)) {
-	                retVal = tokBuf.toString();
-	            }
-	        }
-	        return retVal;
-	    }
-	    private static boolean isFragment(Bundle bundle) {
-	        return bundle.getHeaders().get(Constants.FRAGMENT_HOST) != null;
-	    }
+    //Read list bundle and runlevel from csv file
+    public static List processCSVFile(filePath){
+		def listBundleFromCSV = []
+		def fileCSV = new File(filePath)
+		if(!fileCSV.exists()){
+			println "File not found : " + fileCSV.getName()
+		} else {
+			def checkHeader = false
+			def headers = []
+			def csvData = fileCSV.readLines()
+			csvData.find{ line ->
+				if(!checkHeader){
+					headers = line.split(",",-1)
+					checkHeader = true
+					if(headers[0] != "TYPE"){
+						checkHeader = false
+					}
+					if(headers[1] != "PATH"){
+						checkHeader = false
+					}
+					if(headers[2] != "RUNLEVEL"){
+						checkHeader = false
+					}
+					if(headers[3] != "OBJECT"){
+						checkHeader = false
+					}
+					if(!checkHeader){
+						println "Incorrect headers file format - Format headers mustbe: TYPE, PATH, LEVEL, OBJECT - Line: " + (csvData.indexOf(line) + 1)
+						return true
+					}
+				} else {
+					def value = line.split(",",-1)
+					value = value.collect{it = escapeChar(it)}
+					if (value.size == 4) {
+						if(value[0] == "" || value [1] == "" || value [2] == ""){
+							println "Value of TYPE , PATH OR RUNLEVEL can not be empty - Line: " +   (csvData.indexOf(line) + 1)
+							return
+						}
+						def tmpMap = [:]
+						for(int i=0 ; i < headers.length;i++){
+							tmpMap[headers[i]] = value[i]
+						}
+						listBundleFromCSV.add(tmpMap)
+						tmpMap = [:]
+					} else {
+							println "Missing params. Need 4 data for TYPE, PATH, RUNLEVEL and OBJECT - Line: " +   (csvData.indexOf(line) + 1)
+							return
+					}
+				}
+			}
+		}
+		return listBundleFromCSV
 	}
-    
+	
+	public static String escapeChar(str){
+		return str.replace("'","").replace('"',"").trim()
+	}
 }
