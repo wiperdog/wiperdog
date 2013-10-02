@@ -12,7 +12,7 @@ println """${new Date()}
 ******************************
 * WinNT Service is starting. *
 ******************************"""
-public class JobRunner{
+public class WiperDogService{
 	private static Framework m_fwk = null;
 	private static GroovyClassLoader gcl = new GroovyClassLoader();
 	/**
@@ -297,10 +297,10 @@ public class JobRunner{
 	
 		println "=================================== GOOOOOOOOOOOOOOOOOOO ==============================================="
 		// Load system properties.
-		JobRunner.loadSystemProperties()
+		WiperDogService.loadSystemProperties()
 		
 		// Read configuration properties.
-        Properties configProps = JobRunner.loadConfigProperties();
+        Properties configProps = WiperDogService.loadConfigProperties();
         // If no configuration properties were found, then create
         // an empty properties object.
         if (configProps == null) {
@@ -309,10 +309,10 @@ public class JobRunner{
         }
         
         // Copy framework properties from the system properties.
-        JobRunner.copySystemProperties(configProps);
+        WiperDogService.copySystemProperties(configProps);
         
 		// Create an instance of the framework.
-		FrameworkFactory factory = JobRunner.getFrameworkFactory();
+		FrameworkFactory factory = WiperDogService.getFrameworkFactory();
 		m_fwk = factory.newFramework(configProps);
         // Initialize the framework and start
         m_fwk.init();
@@ -322,7 +322,7 @@ public class JobRunner{
 		def felix_home = System.getProperty("felix.home").replace("\\", "/");
 		def context = m_fwk.getBundleContext()
 		//Get list bundle and order by run level
-		def bundleList = JobRunner.processCSVFile(felix_home + "/bin/ListBundle.csv")
+		def bundleList = WiperDogService.processCSVFile(felix_home + "/bin/ListBundle.csv")
 		def mapBundle = [:]
 		
 		bundleList.each { bundleCfg ->
@@ -346,8 +346,8 @@ public class JobRunner{
 		//Install and start bundle
 		def listBundle = []
 		mapBundle.each {runLevel, listURL->
-			listBundle = JobRunner.installall(context, listURL)
-			JobRunner.startall(listBundle)
+			listBundle = WiperDogService.installall(context, listURL)
+			WiperDogService.startall(listBundle)
 		}
 		
 		// Wait for framework to stop to exit the VM.
