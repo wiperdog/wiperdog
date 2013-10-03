@@ -74,4 +74,13 @@ class ResourceConstants{
 	public static final String MONGODB_HOST = "monitorjobfw.mongodb.host"
 	public static final String MONGODB_PORT = "monitorjobfw.mongodb.port"
 	public static final String MONGODB_DBNAME = "monitorjobfw.mongodb.dbName"
+	/**Mail Sender**/
+	public static final String FROM_EMAIL = "monitorjobfw.mail.fromMail"
+	public static final String FROM_PASSWD = "monitorjobfw.mail.fromPassWd"
+	public static final String FROM_HOST = "monitorjobfw.mail.fromMailHost"
+	public static final String FROM_PORT  = "monitorjobfw.mail.fromMailPort"
+	public static final String TO_EMAIL = "monitorjobfw.mail.toMail"
+	public static final String INTERVAL_GETDATA  = "monitorjobfw.mail.intervalGetData"
+	public static final String INTERVAL_SENDER = "monitorjobfw.mail.intervalRunSender"
+
 }

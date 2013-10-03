@@ -75,6 +75,7 @@
         <include>org.apache.httpcomponents:httpclient</include>
         <include>xml-resolver:xml-resolver</include>
         <include>org.apache.httpcomponents:httpcore</include>
+        <include>javax.mail:mail</include>
       </includes>
     </dependencySet>
     <dependencySet>
