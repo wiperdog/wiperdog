@@ -53,7 +53,8 @@ class DefaultJobCaller {
 	
 	// Mark job is executed successfully or not
 	def isJobFinishedSuccessfully 
-	
+	DataJuggernaut juggernaut = new DataJuggernaut()
+
 	//Pass job filename to constructor
 	def DefaultJobCaller(objJob,fileName, rootJobName, instanceName, DefaultSender sender) {
 		
@@ -518,6 +519,9 @@ class DefaultJobCaller {
 	def processSendData(destination, resultData){
 		def dataAttachRecordSeq = attachRecordSeq(resultData)
 		def envelopedResultData = envelopeData(dataAttachRecordSeq)
+		// Judge data by policyFile and save judgement(messages) into mongoDB
+		juggernaut.judgeData(envelopedResultData)
+
 		if (destination != null) {
 			for (concreteSender in destination) {
 				concreteSender.send(envelopedResultData)

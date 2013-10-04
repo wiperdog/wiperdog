@@ -19,14 +19,23 @@ echo.
 echo JAVA_HOME is %JAVA_HOME%
 echo.
 echo.
-
+if not exist "%WIPERDOG_HOME%"\log md "%WIPERDOG_HOME%"\log
 REM stoping service
 net stop "%SERVICE_NAME%"
 "%JAVASERVICE_STUB%" -uninstall "%SERVICE_NAME%"
+REM check JDK/JRE
+if exist "%JAVA_HOME%"\bin\client GOTO SET_JRE_DLL
+REM set JDK jvm.dll path 
+SET JVM_DLL=%JAVA_HOME%\jre\bin\client\jvm.dll
+GOTO START_MAIN_APP
+:SET_JRE_DLL
+REM set JRE jvm.dll path
+SET JVM_DLL=%JAVA_HOME%\bin\client\jvm.dll
+:START_MAIN_APP
 echo.
 REM for JDK only "%JAVASERVICE_STUB%" -install "%SERVICE_NAME%" "%JAVA_HOME%"\jre\bin\server\jvm.dll ^
 REM below for using JRE
-"%JAVASERVICE_STUB%" -install "%SERVICE_NAME%" "%JAVA_HOME%"\bin\client\jvm.dll ^
+"%JAVASERVICE_STUB%" -install "%SERVICE_NAME%" "%JVM_DLL%" ^
 -Djava.class.path="%WIPERDOG_HOME%\service\dasboot.jar" ^
 -Dcom.lilypepper.groovy.localfolder="%WIPERDOG_HOME%\service" ^
 -Dcom.lilypepper.groovy.runner="com.lilypepper.groovy.ServiceRunner" ^
