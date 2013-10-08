@@ -53,6 +53,14 @@
       </includes>
       <lineEnding>windows</lineEnding>
     </fileSet>
+    <fileSet>
+      <directory>src/main/resources</directory>
+      <outputDirectory>/</outputDirectory>
+      <lineEnding>windows</lineEnding>
+      <excludes>
+        <exclude>README.txt</exclude>
+      </excludes>
+    </fileSet>
   </fileSets>
   <files>
     <file>

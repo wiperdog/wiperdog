@@ -377,6 +377,11 @@
             <descriptor>src/main/assemble/distrib-win.xml</descriptor>
           </descriptors>
           <finalName>wiperdog-${version}</finalName>
+          <archive>
+            <manifest>
+              <mainClass>org.wiperdog.installer.SelfExtractorCmd</mainClass>
+            </manifest>
+          </archive>
         </configuration>
         <executions>
           <execution>
