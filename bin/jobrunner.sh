@@ -5,11 +5,15 @@ dir=`dirname "$self"`
 path=`pwd $0`
 if [ "$dir" == "." ]  
 then
-  export dirname=`pwd $0`
+  export dir=`pwd $0`
 else
-  export dirname=$path"/"$dir	
+  export dir=$path"/"$dir	
 fi
-# 2013-03-06 Luvina insert end
+export PREFIX=`cd "$dir/.." && pwd`
+
+# move to the Wiperdog home/bin
+cd "$PREFIX"/bin
+
 if [ "$#" -eq 2 ]; then 
 "$dir/groovy" "$dir/jobrunner.groovy" "$1" "$2"
 elif [ "$#" -eq 4 ]; then

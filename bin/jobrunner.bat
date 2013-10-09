@@ -1,9 +1,18 @@
-
 @echo off
+setlocal
 
 set DIRNAME=%~dp0
 
 set isparamok=true
+
+:: determine the home
+
+set WIPERDOGHOME=%~dp0..
+for %%i in ("%WIPERDOGHOME%") do set WIPERDOGHOME=%%~fsi
+
+:: move to bin
+
+cd "%WIPERDOGHOME%\bin"
 
 IF [%5] EQU [] (
 	IF [%4] EQU [] (
@@ -35,3 +44,4 @@ IF "%isparamok%"=="true" (
 	ECHO			jobrunner -f var/job/testjob.job -s "<crontab>"  :  Run scheduled job with crontab format
 	    PAUSE
 )
+setlocal

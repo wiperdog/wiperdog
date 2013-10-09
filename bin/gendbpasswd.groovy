@@ -32,12 +32,12 @@ public class AES {
 		def password = null
 		def encryptedString = null
 		// Get args
-		if((args.length == 2 ) && (args[0] =='-f')) {
+		if((args.length == 3 ) && (args[0] =='-f')) {
 			//get file csv from 2nd params
 			fileCSV = new File(args[1])
 			if(!fileCSV.isAbsolute()){
-				File currentDir = new File(System.getProperty("bin_home"))
-				fileCSV = new File(felix_home + "/" + currentDir.getName() + "/" + fileCSV)
+				def dir = args[2]
+				fileCSV = new File(dir + fileCSV)
 			}
 			//Get data from csv
 			def listOfCSVElement = processCSVFile(fileCSV,DBTypeList)
@@ -120,9 +120,11 @@ public class AES {
 	}
 
 	public static String getFelixHome(){
-		//	get felix home
-		File currentDir = new File(System.getProperty("bin_home"))
-		def felix_home = currentDir.getParent()
+		def felix_home = System.getProperty("felix.home")
+		if ((felix_home == null) || (felix_home == "")) {
+			File currentDir = new File(System.getProperty("bin_home"))
+			felix_home = currentDir.getParent()
+		}
 		return felix_home
 	}
 	public static def processCSVFile(fileCSV,DBTypeList){

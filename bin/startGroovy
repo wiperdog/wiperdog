@@ -259,6 +259,7 @@ startGroovy ( ) {
         runProfiler
     else
 	# -Dbin_home : Luvina add this property
+	export bin_home=`dirname "$0"`
 	PREFIX=`cd ..; pwd`
         exec
 	    "$JAVACMD" $JAVA_OPTS \
@@ -266,7 +267,7 @@ startGroovy ( ) {
 	    -Dfelix.system.properties="file:$PREFIX/etc/system.properties" \
             -Djava.util.logging.config.file="$PREFIX/etc/java.util.logging.properties" \
             -Dlog4j.ignoreTCL=true \
-	    -Dbin_home="$dirname" \
+	    -Dbin_home="$bin_home" \
 	    -classpath "$STARTER_CLASSPATH:$BUNDLE_CLASSPATH:$BUNDLE_A_CLASSPATH:$BUNDLE_WRAP_CLASSPATH:$BUNDLE_EXT_CLASSPATH" \
             -Dscript.name="$SCRIPT_PATH" \
             -Dprogram.name="$PROGNAME" \

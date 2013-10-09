@@ -1,7 +1,7 @@
 #!/bin/sh
 self="$0"
 dir=`dirname "$self"`
-# 2013-03-06 Luvina insert start
+
 path=`pwd $0`
 if [ "$dir" == "." ]  
 then
@@ -9,18 +9,23 @@ then
 else
   export dirname=$path"/"$dir
 fi
-# 2013-03-06 Luvina insert end
+export currentdir=`pwd`/
+
+# move to the Wiperdog home/bin
+PREFIX=`cd "$dir/.." && pwd`
+cd "$PREFIX/bin"
+
 if [ "$#" -eq 2 ]; then 
-"$dir/groovy" "$dir/gendbpasswd.groovy" "$1" "$2"
+"./groovy" "./gendbpasswd.groovy" "$1" "$2" "$currentdir"
 else
 if [ "$#" -eq 4 ]; then 
-"$dir/groovy" "$dir/gendbpasswd.groovy" "$1" "$2" "$3" "$4"
+"./groovy" "./gendbpasswd.groovy" "$1" "$2" "$3" "$4"
 else
 if [ "$#" -eq 6 ]; then 
-"$dir/groovy" "$dir/gendbpasswd.groovy" "$1" "$2" "$3" "$4" "$5" "$6"
+"./groovy" "./gendbpasswd.groovy" "$1" "$2" "$3" "$4" "$5" "$6"
 else
 if [ "$#" -eq 8 ]; then 
-"$dir/groovy" "$dir/gendbpasswd.groovy" "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8"
+"./groovy" "./gendbpasswd.groovy" "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8"
 else
 	echo Incorrect parameters !!!
 	echo Correct format of commmand: gendbpasswd -t DBType -u username [-h hostId] [-s sid]
