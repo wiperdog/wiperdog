@@ -29,7 +29,23 @@ class DataJuggernaut{
 				def dbName = properties.get(ResourceConstants.MONGODB_DBNAME) != null ? properties.get(ResourceConstants.MONGODB_DBNAME) : DEFAULT_DBNAME
 				def db = mongo.getDB(dbName)
 				def collection = db.getCollection(DEFAULT_COLLECTION)
-				collection.insert(ret)
+				
+				// With each message in policy's result, insert into mongo
+				ret.message.each{
+					def tempRec = [:]
+					tempRec['jobName'] = ret['jobName']
+					tempRec['istIid'] = ret['istIid']
+					tempRec['fetchedAt_bin'] = ret['fetchedAt_bin']
+					tempRec['level'] = it['level']
+					tempRec['message'] = it['message']
+					/*
+					// "it" is a Map with 1 entry
+					it.each{key, value->
+						tempRec['level'] = key
+						tempRec['message'] = value	
+					}*/
+					collection.insert(tempRec)
+				}
 				mongo.close()
 				logger.info("--------Finished judgement data and save message into mongoDB.${DEFAULT_COLLECTION}------------")
 			}else{

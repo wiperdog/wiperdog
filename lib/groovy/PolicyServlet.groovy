@@ -112,14 +112,15 @@ class ServletPolicy extends HttpServlet{
 
 			def listpolicy = []
 			def mapPolicy
-			macherPattern = "(if\\()((?:(?!if).)*)([)]{1}\\{.*\"\"\")(.*)(\"\"\")"
+			macherPattern = "(if\\()((?:(?!if).)*)([)]{1}\\{.*\\(\\[)(level: )(\\d*)(, message: \"\"\")(.*)(\"\"\"\\]\\))"
 			pattern = Pattern.compile(macherPattern, Pattern.DOTALL);
 			splittedStr.each{str->
 				matcher = pattern.matcher(str);
 				while(matcher.find()){
 					mapPolicy = [:]
 					mapPolicy["condition"] = matcher.group(2)
-					mapPolicy["message"] = matcher.group(4)
+					mapPolicy["level"] = matcher.group(5)
+					mapPolicy["message"] = matcher.group(7)
 					listpolicy.add(mapPolicy)
 				}
 			}
@@ -157,13 +158,14 @@ class ServletPolicy extends HttpServlet{
 					splittedStr.add(matcher.group(1))
 				}
 				splittedStr.each { str ->
-					macherPattern = "(if\\()((?:(?!if).)*)([)]{1}\\{.*\"\"\")(.*)(\"\"\")"
+					macherPattern = "(if\\()((?:(?!if).)*)([)]{1}\\{.*\\(\\[)(level: )(\\d*)(, message: \"\"\")(.*)(\"\"\"\\]\\))"
 					pattern = Pattern.compile(macherPattern, Pattern.DOTALL);
 					matcher = pattern.matcher(str);
 					while(matcher.find()){
 						def mapPolicy = [:]
 						mapPolicy["condition"] = matcher.group(2)
-						mapPolicy["message"] = matcher.group(4)
+						mapPolicy["level"] = matcher.group(5)
+						mapPolicy["message"] = matcher.group(7)
 						returnData[key].add(mapPolicy)
 					}
 				}
