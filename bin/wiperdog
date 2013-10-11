@@ -12,7 +12,11 @@
 # Source function library.
 . /etc/rc.d/init.d/functions
 
-WIPERDOGHOME=/home/luvina/wiperdog
+WIPERDOGHOME=
+if [ "$WIPERDOGHOME" = "" ];then
+	echo "Error: The 'WIPERDOGHOME' is not set, exitting..."
+	exit 2
+fi
 
 # Source networking configuration.
 . /etc/sysconfig/network
