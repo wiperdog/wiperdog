@@ -50,6 +50,14 @@
       </includes>
       <lineEnding>unix</lineEnding>
     </fileSet>
+    <fileSet>
+      <directory>src/main/resources</directory>
+      <outputDirectory>/</outputDirectory>
+      <lineEnding>unix</lineEnding>
+      <excludes>
+        <exclude>README.txt</exclude>
+      </excludes>
+    </fileSet>
   </fileSets>
   <files>
     <file>

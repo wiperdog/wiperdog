@@ -101,5 +101,12 @@
         <exclude>*/**</exclude>
       </excludes>
     </fileSet>
+    <fileSet>
+      <directory>target/classes</directory>
+      <outputDirectory>/</outputDirectory>
+      <includes>
+        <include>org/**</include>
+      </includes>
+    </fileSet>
   </fileSets>
 </component>
