@@ -1,0 +1,1 @@
+Please copy wiperdog contents to here (such as: bin, etc, lib, var,...)

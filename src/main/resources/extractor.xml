@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE wiperdog [
+	<!ELEMENT wiperdog (welcome,appName,appVersion,runAppStr, readmePath, licensePath, installAsOSService)>
+	<!ELEMENT welcome (paragraph)*>
+	<!ELEMENT paragraph (#PCDATA)>
+	<!ELEMENT appName (name)>
+	<!ELEMENT name (#PCDATA)>
+	<!ELEMENT appVersion (number)>
+	<!ELEMENT number (#PCDATA)>
+	<!ELEMENT runAppStr (str)>
+	<!ELEMENT str (#PCDATA)>
+	<!ELEMENT readmePath (path)>
+	<!ELEMENT path (#PCDATA)>
+	<!ELEMENT licensePath (path)>
+	<!ELEMENT installAsOSService (str)>
+]>
+<wiperdog>
+	<welcome>
+		<paragraph/>		
+		<paragraph>Wiperdog is multi purpose monitoring DBMS system writing in Groovy.</paragraph>
+		<paragraph>Wiperdog has some major components as followings:</paragraph>
+		<paragraph>1. MongoDB is used as a storage DBMS for storing monitoring result data.</paragraph>
+		<paragraph>Mongodb is good for large scale system with high concurrence access, it also provide a very good performance</paragraph>
+		<paragraph>2. XWiki is used as a front-end user GUI. It is easy customizable and configurable </paragraph>
+		<paragraph>3. Groovy monitoring framework, has built by Insight-tech, is well-structure, easy for maintenance, scalable and configurable</paragraph>
+		<paragraph>Thank you for using wiperdog, please follow screen construction to continue the installation</paragraph>		
+	</welcome>
+	<appName>
+		<name>Wiperdog multi purposes monitoring system</name>
+	</appName>
+	<appVersion>
+		<number>1.0.1</number>
+	</appVersion>	
+	<runAppStr><str>java -classpath lib/java/bundle.a/groovy-all-2.2.0-beta-2.jar groovy.ui.GroovyMain installer/installer.groovy</str></runAppStr>
+	<readmePath><path>readme.txt</path></readmePath>
+	<licensePath><path>license.txt</path></licensePath>	
+	<installAsOSService><str>yes</str></installAsOSService>
+</wiperdog>
