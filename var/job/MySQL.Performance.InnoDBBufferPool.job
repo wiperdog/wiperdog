@@ -65,15 +65,15 @@ FETCHACTION={
   				 (SELECT GS.variable_value as PagesDirtyCnt FROM information_schema.global_status GS WHERE GS.variable_name = 'innodb_buffer_pool_pages_dirty') H;
 			''')
 		
-		resultData['ReadRequestsCumCnt'] = Integer.parseInt(data[0]['ReadRequestsCumCnt'])
-		resultData['ReadsCumCnt'] = Integer.parseInt(data[0]['ReadsCumCnt'])
-		resultData['WriteRequestsCumCnt'] = Integer.parseInt(data[0]['WriteRequestsCumCnt'])
-		resultData['WaitFreeCumCnt'] = Integer.parseInt(data[0]['WaitFreeCumCnt'])
-		resultData['PagesTotalCnt'] = Integer.parseInt(data[0]['PagesTotalCnt'])
-		resultData['PagesFreeCnt'] = Integer.parseInt(data[0]['PagesFreeCnt'])
-		resultData['PagesDataCnt'] = Integer.parseInt(data[0]['PagesDataCnt'])
-		resultData['PagesMiscCnt'] = Integer.parseInt(data[0]['PagesMiscCnt'])
-		resultData['PagesDirtyCnt'] = Integer.parseInt(data[0]['PagesDirtyCnt'])
+		resultData['ReadRequestsCumCnt'] = Long.parseLong(data[0]['ReadRequestsCumCnt'])
+		resultData['ReadsCumCnt'] = Long.parseLong(data[0]['ReadsCumCnt'])
+		resultData['WriteRequestsCumCnt'] = Long.parseLong(data[0]['WriteRequestsCumCnt'])
+		resultData['WaitFreeCumCnt'] = Long.parseLong(data[0]['WaitFreeCumCnt'])
+		resultData['PagesTotalCnt'] = Long.parseLong(data[0]['PagesTotalCnt'])
+		resultData['PagesFreeCnt'] = Long.parseLong(data[0]['PagesFreeCnt'])
+		resultData['PagesDataCnt'] = Long.parseLong(data[0]['PagesDataCnt'])
+		resultData['PagesMiscCnt'] = Long.parseLong(data[0]['PagesMiscCnt'])
+		resultData['PagesDirtyCnt'] = Long.parseLong(data[0]['PagesDirtyCnt'])
 		
 		//Set PERSISTENTDATA
 		PERSISTENTDATA['ReadRequestsCumCnt'] = resultData['ReadRequestsCumCnt']

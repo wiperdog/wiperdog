@@ -131,13 +131,13 @@ FETCHACTION={
 	   if(it.contains('autoextend')) {
 		   if(it.contains('max')) {		   	   
 			   if(dataFileElement[4].contains('K')) {
-				   maxFileSize = dataFileElement[4].replace('K', '').toInteger()
+				   maxFileSize = dataFileElement[4].replace('K', '').toLong()
 	   		   } else if(dataFileElement[4].contains('M')){
-			       maxFileSize = dataFileElement[4].replace('M', '').toInteger()*1024
+			       maxFileSize = dataFileElement[4].replace('M', '').toLong()*1024
 	   		   } else  if(dataFileElement[4].contains('G')){
-			       maxFileSize = dataFileElement[4].replace('G', '').toInteger()*1024*1024
+			       maxFileSize = dataFileElement[4].replace('G', '').toLong()*1024*1024
    			   }else{
-   			   	   maxFileSize = dataFileElement[4].toInteger()/1024
+   			   	   maxFileSize = dataFileElement[4].toLong()/1024
    			   }
    			   sumMaxFileSize += maxFileSize
 		   } else {
@@ -146,13 +146,13 @@ FETCHACTION={
 	   } else {
 	   	   notMaxFlg = true;
 		   if(dataFileElement[1].contains('K')) {
-			   initDataFileSize = dataFileElement[1].replace('K', '').toInteger()
+			   initDataFileSize = dataFileElement[1].replace('K', '').toLong()
 		   } else if(dataFileElement[1].contains('M')){
-			   initDataFileSize = dataFileElement[1].replace('M', '').toInteger()*1024
+			   initDataFileSize = dataFileElement[1].replace('M', '').toLong()*1024
 	   	   } else if(dataFileElement[1].contains('G')){
-			   initDataFileSize = dataFileElement[1].replace('G', '').toInteger()*1024*1024
+			   initDataFileSize = dataFileElement[1].replace('G', '').toLong()*1024*1024
    		   } else{
-   		   	   initDataFileSize = dataFileElement[1].toInteger()/1024
+   		   	   initDataFileSize = dataFileElement[1].toLong()/1024
    		   }
    		   sumInitDataFileSize += initDataFileSize
 	   }

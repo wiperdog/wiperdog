@@ -50,10 +50,10 @@ FETCHACTION={
 				       where G.variable_name = "Innodb_os_log_written" )  D;
 				''')
 		
-		resultData['WaitsCumCnt'] = Integer.parseInt(data[0]['WaitsCumCnt'])
-		resultData['WriteRequestsCumCnt'] = Integer.parseInt(data[0]['WriteRequestsCumCnt'])
-		resultData['WritesCumCnt'] = Integer.parseInt(data[0]['WritesCumCnt'])
-		resultData['OsLogWrittenCumCnt'] = Integer.parseInt(data[0]['OsLogWrittenCumCnt'])
+		resultData['WaitsCumCnt'] = Long.parseLong(data[0]['WaitsCumCnt'])
+		resultData['WriteRequestsCumCnt'] = Long.parseLong(data[0]['WriteRequestsCumCnt'])
+		resultData['WritesCumCnt'] = Long.parseLong(data[0]['WritesCumCnt'])
+		resultData['OsLogWrittenCumCnt'] = Long.parseLong(data[0]['OsLogWrittenCumCnt'])
 		
 		//Set PERSISTENTDATA
 		PERSISTENTDATA['WaitsCumCnt'] = resultData['WaitsCumCnt']

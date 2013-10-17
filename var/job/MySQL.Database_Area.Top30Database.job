@@ -104,18 +104,18 @@ FETCHACTION={
 	def dataFileList = innodbFilePath == null ?[]:innodbFilePath.split(';')
 	// Define max table space size
 
-	Long maxTbsSize = 0
-	Long dataFileSize = 0
+	def maxTbsSize = 0
+	def dataFileSize = 0
 	dataFileList.each {
 	   def dataFileElement = it.split(':')
 	   if(it.contains('autoextend')) {
 		   if(it.contains('max')) {
 			   if(dataFileElement[4].contains('K') && dataFileElement[1].contains('K')) {
-				   dataFileSize = dataFileElement[4].replace('K', '').toInteger()*1024
+				   dataFileSize = dataFileElement[4].replace('K', '').toLong()*1024
 	   			   } else if(dataFileElement[4].contains('M') && dataFileElement[1].contains('M')){
-			       dataFileSize = dataFileElement[4].replace('M', '').toInteger()*1024*1024
+			       dataFileSize = dataFileElement[4].replace('M', '').toLong()*1024*1024
 			   } else {
-			       dataFileSize = dataFileElement[4].replace('G', '').toInteger()*1024*1024*1024
+			       dataFileSize = dataFileElement[4].replace('G', '').toLong()*1024*1024*1024
 			   }
 			   maxTbsSize += dataFileSize
 		   } else {

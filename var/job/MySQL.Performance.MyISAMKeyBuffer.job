@@ -59,11 +59,11 @@ FETCHACTION={
 						    (SELECT G.variable_value as key_blocks_unused FROM information_schema.global_status G WHERE G.variable_name = 'key_blocks_unused') H;
 			''')
 		//
-		resultData['ReadsCumCnt'] = Integer.parseInt(data[0]['ReadsCumCnt'])
-		resultData['ReadRequestsCumCnt'] = Integer.parseInt(data[0]['ReadRequestsCumCnt'])
-		resultData['WritesCumCnt'] = Integer.parseInt(data[0]['WritesCumCnt'])
-		resultData['WriteRequestsCumCnt'] = Integer.parseInt(data[0]['WriteRequestsCumCnt'])		
-		resultData['TotalSize'] = Integer.parseInt(data[0]['TotalSize'])	
+		resultData['ReadsCumCnt'] = Long.parseLong(data[0]['ReadsCumCnt'])
+		resultData['ReadRequestsCumCnt'] = Long.parseLong(data[0]['ReadRequestsCumCnt'])
+		resultData['WritesCumCnt'] = Long.parseLong(data[0]['WritesCumCnt'])
+		resultData['WriteRequestsCumCnt'] = Long.parseLong(data[0]['WriteRequestsCumCnt'])		
+		resultData['TotalSize'] = Long.parseLong(data[0]['TotalSize'])	
 		resultData['UsedSize'] = data[0]['UsedSize']
 		resultData['UnusedSize'] = data[0]['UnusedSize']
 		resultData['FragmentationPct'] = data[0]['FragmentationPct']*100

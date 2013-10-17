@@ -26,12 +26,12 @@ FETCHACTION = {
 		CREATE TABLE #TempTable
  			  (     DBName nvarchar(50),
                     DBFileName nvarchar(50) NOT NULL,
-                    FileSizePageInt int,
+                    FileSizePageInt bigint,
         			LocationAddr nvarchar(500) NOT NULL,
-                    CurrentUsedSizePageInt int,
-                    CurrentFreeSizePageInt int, 
+                    CurrentUsedSizePageInt bigint,
+                    CurrentFreeSizePageInt bigint, 
                     CurrentUsedPct numeric(5,2),
-                    MaxTotalSizePageInt int
+                    MaxTotalSizePageInt bigint
  			   )
 		DECLARE @db varchar(50)
 		DECLARE @SqlQuery varchar(max)
@@ -53,14 +53,14 @@ FETCHACTION = {
             										   LocationAddr,
                                                        CurrentUsedSizePageInt, 
                                                        CurrentFreeSizePageInt, 
-                                                       CurrentUsedPct = convert(numeric(10,2),(CurrentUsedSizePageInt/(FileSizePageInt)))*100,
+                                                       CurrentUsedPct = convert(numeric(20,2),(CurrentUsedSizePageInt/(FileSizePageInt)))*100,
                                                        MaxTotalSizePageInt
                                                from
                                                           (select
                                                                         \'\'\' + @db +\'\'\' as DBName,
-                                                                        convert(numeric(10,2),sum(a.size)) as FileSizePageInt,
-                                                                        convert(numeric(10,2),sum(fileproperty( a.name,\'\'\' + \'SpaceUsed\' + \'\'\'))) as CurrentUsedSizePageInt,
-                                                                        convert(numeric(10,2),sum((a.size-fileproperty( a.name,\'\'\' + \'SpaceUsed\' + \'\'\')))) as CurrentFreeSizePageInt,
+                                                                        convert(numeric(20,2),sum(a.size)) as FileSizePageInt,
+                                                                        convert(numeric(20,2),sum(fileproperty( a.name,\'\'\' + \'SpaceUsed\' + \'\'\'))) as CurrentUsedSizePageInt,
+                                                                        convert(numeric(20,2),sum((a.size-fileproperty( a.name,\'\'\' + \'SpaceUsed\' + \'\'\')))) as CurrentFreeSizePageInt,
                                                                         a.name as DBFileName,
             															a.filename as LocationAddr,
                                                                         a.maxsize as MaxTotalSizePageInt

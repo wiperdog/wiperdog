@@ -13,10 +13,10 @@ JOB = [name:"Postgres.Proactive_Check.Resource_Limit"]
 FETCHACTION = {
 	def get_limit_session = sql.rows(" SELECT setting AS Limit_Session FROM pg_settings WHERE  name = 'max_connections' ")
 	def get_current_session = sql.rows(" SELECT count(*) AS Current_Session FROM pg_stat_activity ")
-	def limit_session = get_limit_session['limit_session'][0] as int
+	def limit_session = get_limit_session['limit_session'][0] as long
 	def map_data=[:] 
 	map_data['LimitSessionCnt'] = limit_session
-	def current_session = get_current_session['current_session'][0] as int
+	def current_session = get_current_session['current_session'][0] as long
 	map_data['CurrentSessionCnt'] = current_session
 	if(limit_session == 0 || limit_session == null) {
 		map_data['PercentSessionPct'] = null
