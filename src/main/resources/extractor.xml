@@ -31,7 +31,7 @@
 	<appVersion>
 		<number>1.0.1</number>
 	</appVersion>	
-	<runAppStr><str>java -classpath lib/java/bundle.a/groovy-all-2.2.0-beta-2.jar groovy.ui.GroovyMain installer/installer.groovy</str></runAppStr>
+	<runAppStr><str>java -classpath lib/java/bundle.a/groovy-all-2.2.0-rc-1.jar groovy.ui.GroovyMain installer/installer.groovy</str></runAppStr>
 	<readmePath><path>readme.txt</path></readmePath>
 	<licensePath><path>license.txt</path></licensePath>	
 	<installAsOSService><str>yes</str></installAsOSService>

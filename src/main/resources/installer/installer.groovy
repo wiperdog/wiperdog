@@ -42,7 +42,8 @@ public class WPDInstallerGroovy{
             try {   
                 InputStreamReader converter = new InputStreamReader(System.in);
                 BufferedReader inp = new BufferedReader(converter);
-                
+                //-- TODO check if other parameters have been put on app arguments, if exists, do not get input from console
+                //-- prompt for user input parameters
                 InstallerGroovyUtil.prepareParameters(params, wiperdogHome)
                 println "\n"
                 println "Please CONFIRM The following configuration are correct:"
@@ -176,20 +177,27 @@ public class WPDInstallerGroovy{
                 proc = "/bin/sh install_service.sh".execute()
                 println proc.err.text
                 println proc.in.text
+                println "The installation has been completed successfully! \n Please use command 'service wiperdog start/stop' to control the service \n  thank you for choosing Wiperdog!"
             }else{//-- Window
-                String javaHome = System.getProperty("java.home")
-                //File jvmDllFile = new File(javaHome + "/bin/client/jvm.dll") //-- check if user use JRE                
-                def commandString = wiperdogHome +"/service/javaservice/create_wiperdog_service.bat \"" + wiperdogHome + "\""
-                def proc = commandString.execute()
+                def listCmd = []
+                
+                listCmd.add(wiperdogHome +"/service/javaservice/create_wiperdog_service.bat")
+                listCmd.add(wiperdogHome)                
+                File workDir = new File(wiperdogHome +"/service/javaservice");
+                ProcessBuilder builder = new ProcessBuilder(listCmd);
+                builder.directory(workDir);
+                builder.redirectErrorStream(true);					
+                Process proc = builder.start();
                 //proc.waitFor() //-- cause error if wiperdog_service.exe has been used by another process
+                
                 def errorStr = proc.err.text
                 def outputStr = proc.in.text
                 println outputStr
                 println errorStr
-                
+                println "The installation has been completed successfully! \n Please use command 'net start/stop wiperdog' to control the service \n  thank you for choosing Wiperdog!"
             }
          }//-- END install as system service
-         println "The installation has been completed successfully!, thank you for choosing Wiperdog!"
+         
     }//-- end main
 }
 class InstallerGroovyUtil{

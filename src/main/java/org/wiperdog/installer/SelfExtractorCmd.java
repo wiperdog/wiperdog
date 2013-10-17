@@ -105,8 +105,8 @@ public class SelfExtractorCmd {
 							listCmd.add(cmdArray[i]);
 					}
 					ProcessBuilder builder = new ProcessBuilder(listCmd);
-					builder.redirectErrorStream(true);
-					builder.directory(workDir);
+                    builder.directory(workDir);
+					builder.redirectErrorStream(true);					
 					Process p = builder.start();
 					InputStream procOut  = p.getInputStream();
 		            OutputStream procIn = p.getOutputStream();
