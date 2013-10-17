@@ -143,7 +143,8 @@ public class WPDInstallerGroovy{
                 /* Install service script */
                 FileOutputStream fos = new FileOutputStream(new File("install_service.sh"))
                 StringBuffer sBuff = new StringBuffer(512)
-                sBuff.append("#!/bin/sh\n#\n#\n#\n")                
+                sBuff.append("#!/bin/sh\n#\n#\n#\n")
+                sBuff.append("/sbin/service wiperdog stop\n")
                 sBuff.append("/bin/cp "+wiperdogHome+"/bin/wiperdog /etc/rc.d/init.d/\n")
                 sBuff.append("/bin/chmod 755 /etc/rc.d/init.d/wiperdog\n")
                 sBuff.append("/sbin/chkconfig --del wiperdog\n")
@@ -178,10 +179,8 @@ public class WPDInstallerGroovy{
             }else{//-- Window
                 String javaHome = System.getProperty("java.home")
                 //File jvmDllFile = new File(javaHome + "/bin/client/jvm.dll") //-- check if user use JRE                
-                
-                def commandString = wiperdogHome +"/service/javaservice/create_wiperdog_service.bat " + wiperdogHome                
+                def commandString = wiperdogHome +"/service/javaservice/create_wiperdog_service.bat \"" + wiperdogHome + "\""
                 def proc = commandString.execute()
-                
                 //proc.waitFor() //-- cause error if wiperdog_service.exe has been used by another process
                 def errorStr = proc.err.text
                 def outputStr = proc.in.text

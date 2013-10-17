@@ -26,19 +26,41 @@ import org.wiperdog.installer.internal.XMLErrorHandler;
  */
 public class SelfExtractorCmd {	 
 	public static String OUTPUT_FOLDER = "";
-	public static void main(String args[]) throws Exception {
-		if(args == null || args.length ==0 || args[0] == null || args[0].equals("")){
-			System.out.println("Wrong parameter. Usage: java -jar <Installer Jar> <INSTALL_PATH>");
+	public static void main(String args[]){
+		String userDir = System.getProperty("user.dir");	
+		try {
+			if (args == null || args.length == 0 || args[0] == null
+					|| args[0].equals("")) {
+				System.out
+						.println("Wrong parameter. Usage: java -jar <Installer Jar> <INSTALL_PATH>");
+				System.exit(0);
+			}
+			OUTPUT_FOLDER = (String) args[0];
+			File outputDir = new File(OUTPUT_FOLDER);
+			if(!outputDir.isAbsolute()) {
+				OUTPUT_FOLDER = new File (userDir, OUTPUT_FOLDER).getAbsolutePath();
+			}
+			System.out.println("Wiperdog will be install to directory: "
+					+ OUTPUT_FOLDER);
+			String jarPath = SelfExtractorCmd.class.getProtectionDomain()
+					.getCodeSource().getLocation().getFile();
+			//-- Stopping service 						
+			if(System.getProperty("os.name").toLowerCase().indexOf("win") != -1){
+				System.out.println("");				
+				System.out.println("Stop wiperdog service: Start");
+				stopService();
+				System.out.println("Stop wiperdog service: End");
+			}
+			
+			unZip(jarPath, OUTPUT_FOLDER);			
+			String newJarPath = (System.getProperty("os.name").toLowerCase()
+					.indexOf("win") != -1) ? jarPath.substring(1, jarPath
+					.length()) : jarPath;
+			runGroovyInstaller(newJarPath);
 			System.exit(0);
-		}			
-		OUTPUT_FOLDER = (String)args[0];
-		System.out.println("Wiperdog will be install to directory: " + OUTPUT_FOLDER);
-		String jarPath = SelfExtractorCmd.class.getProtectionDomain().getCodeSource().getLocation().getFile();	
-		System.out.println("JAR PATH === " + jarPath);
-		unZip(jarPath, OUTPUT_FOLDER);
-		String newJarPath = (System.getProperty("os.name").toLowerCase().indexOf("win")!=-1)?jarPath.substring(1, jarPath.length()):jarPath;		
-		runGroovyInstaller(newJarPath);
-		System.exit(0);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	/**
 	 * Run the installer script written in Groovy
@@ -152,6 +174,59 @@ public class SelfExtractorCmd {
        ex.printStackTrace(); 
     }
    }
+    public static void stopService() throws Exception{
+    	
+    	File workDir = new File(System.getProperty("user.dir"));
+    	List<String> listCmd = new LinkedList<String>();
+    	listCmd.add("net");
+    	listCmd.add("stop");
+    	listCmd.add("wiperdog");
+    	ProcessBuilder builder = new ProcessBuilder(listCmd);
+		builder.redirectErrorStream(true);
+		builder.directory(workDir);
+		Process p = builder.start();	
+		InputStream procOut  = p.getInputStream();
+        OutputStream procIn = p.getOutputStream();
+
+        new Thread(new Redirector(procOut, System.out)).start();
+        new Thread(new Redirector(System.in, procIn)).start();
+		p.waitFor();
+		
+		//-- kill process
+		listCmd = new LinkedList<String>();
+		listCmd.add("taskkill");
+    	listCmd.add("/F");
+    	listCmd.add("/IM");
+    	listCmd.add("wiperdog_service.exe");
+    	
+    	builder = new ProcessBuilder(listCmd);
+		builder.redirectErrorStream(true);
+		builder.directory(workDir);
+		p = builder.start();	
+		procOut  = p.getInputStream();
+        procIn = p.getOutputStream();
+
+        new Thread(new Redirector(procOut, System.out)).start();
+        new Thread(new Redirector(System.in, procIn)).start();
+		p.waitFor();
+
+		//-- Wait
+		listCmd = new LinkedList<String>();
+		listCmd.add("cmd.exe");    	    	
+		listCmd.add("/c");
+		listCmd.add("sleep");
+		listCmd.add("3");
+		builder = new ProcessBuilder(listCmd);
+		builder.redirectErrorStream(true);
+		builder.directory(workDir);
+		p = builder.start();	
+		procOut  = p.getInputStream();
+        procIn = p.getOutputStream();
+
+        new Thread(new Redirector(procOut, System.out)).start();
+        new Thread(new Redirector(System.in, procIn)).start();
+		p.waitFor();
+    }
 }
 
 /**
