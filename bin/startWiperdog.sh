@@ -20,4 +20,7 @@ PREFIX=`cd "$dir/.." && pwd`
 
 cd "$PREFIX/bin"
 
+# temporary memory size setting, change this if this is too small(or too big).
+export JAVA_OPTS=-Xmx256m
+
 "./groovy" "./startWiperdog.groovy"
