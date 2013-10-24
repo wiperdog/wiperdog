@@ -6,8 +6,13 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -27,19 +32,158 @@ import org.wiperdog.installer.internal.XMLErrorHandler;
 public class SelfExtractorCmd {	 
 	public static String OUTPUT_FOLDER = "";
 	public static void main(String args[]){
-		String userDir = System.getProperty("user.dir");	
+	
+		//Argurments : -d (wiperdog home) ,-j(jetty port),-m(mongodb host),-p(mongodb port),-n(database name),-u(user database),-pw(password database),-mp(mail policy),-s(install as OS service)
+		List<String> listParams = new ArrayList<String>();
+		listParams.add("-d");
+		listParams.add("-j");
+		listParams.add("-m");
+		listParams.add("-p");
+		listParams.add("-n");
+		listParams.add("-u");
+		listParams.add("-pw");
+		listParams.add("-mp");
+		listParams.add("-s");
+		List<String> listArgs = Arrays.asList(args);
 		try {
-			if (args == null || args.length == 0 || args[0] == null
-					|| args[0].equals("")) {
-				System.out
-						.println("Wrong parameter. Usage: java -jar <Installer Jar> <INSTALL_PATH>");
+			// check command syntax
+			if ((args.length < 2) || (!args[0].trim().equals("-d")) ) {
+				System.out.println("Wrong parameter. Usage:\n \t\t java -jar [Installer Jar] -d [INSTALL_PATH>] \n \t\t or \n \t\t java -jar [Installer Jar] -d [INSTALL_PATH] -j [jettyport] -m [mongodb host] -p [mongodb port] -n [mongodb database name] -u [mongodb user name] -pw [mongodb password] -mp [mail policy] -s [yes/no install as OS service]");
 				System.exit(0);
 			}
-			OUTPUT_FOLDER = (String) args[0];
-			File outputDir = new File(OUTPUT_FOLDER);
-			if(!outputDir.isAbsolute()) {
-				OUTPUT_FOLDER = new File (userDir, OUTPUT_FOLDER).getAbsolutePath();
+			//Get default params not in arguments
+			List<String> defaultParams = new ArrayList<String>();
+			for(int i = 1 ; i < listParams.size() ; i++){
+				if(!listArgs.contains(listParams.get(i))){
+					defaultParams.add(listParams.get(i));
+				}
 			}
+			String strArgs = "";
+			//Valid arguments
+			if(args.length > 2) {
+				for(int i = 1; i< args.length; i++ ){
+				   //Get jetty port from argurment
+					if(args[i].equals("-j")) {
+						if( ( args.length > i+1) &&  (args[i+1].trim() != "") && (!listParams.contains(args[i+1].trim()))){
+							if( isNumeric(args[i+1])){
+								strArgs += "-j " + args[i+1] + " ";
+								i++;
+							} else {
+								System.out.println( "Jetty port must be number: " + args[i]);
+								return;
+							}
+						} else {
+							System.out.println("Incorrect value of params: " + args[i]);
+							return;
+						}
+					}
+					//Get Mongodb Host from argurment
+					if(args[i].equals("-m")) {
+						if(( args.length > i+1) && (args[i+1].trim() != "") && (!listParams.contains(args[i+1].trim()))){
+							strArgs += "-m " + args[i+1] + " ";
+							i++;
+						} else {
+							System.out.println( "Incorrect value of params: " + args[i]);
+							return;
+						}
+					}
+					//Get Mongodb Port from argurment
+					if(args[i].equals("-p")) {
+						if( ( args.length > i+1) && (args[i+1].trim() != "") && (!listParams.contains(args[i+1].trim()))){
+							if(isNumeric(args[i+1])){
+								strArgs += "-p " + args[i+1] + " ";
+								i++;
+							} else {
+								System.out.println("Mongodb port must be number: " + args[i]);
+								return;
+							}
+						} else {
+							System.out.println("Incorrect value of params: " + args[i]);
+							return;
+						}
+					}
+					//Get Mongodb database name from argurment
+					if(args[i].equals("-n")) {
+						if( ( args.length > i+1) && (args[i+1].trim() != "") && (!listParams.contains(args[i+1].trim()))){
+							strArgs += "-n " + args[i+1] + " ";
+							i++;
+						} else {
+							System.out.println("Incorrect value of params: " + args[i]);
+							return;
+						}
+					}
+					//Get user connect to database
+					if(args[i].equals("-u")) {
+						if( ( args.length > i+1) && (args[i+1].trim() != "") && (!listParams.contains(args[i+1].trim()))){
+							strArgs += "-u " + args[i+1] + " ";
+							i++;
+						} else {
+							System.out.println("Incorrect value of params: " + args[i]);
+							return;
+						}
+					}
+					//Get password connect to database
+					String pattern = "[a-zA-Z0-9]+";
+					if(args[i].equals("-pw")) {
+						if( ( args.length > i+1) && (args[i+1].trim() != "") && (!listParams.contains(args[i+1].trim())) && args[i+1].matches(pattern)){
+							strArgs += "-pw " + args[i+1] + " ";
+							i++;
+						} else {
+							System.out.println("Incorrect value of params: " + args[i]);
+							return;
+						}
+					}
+					//Get mail send to policy
+					if(args[i].equals("-mp")) {
+						if( ( args.length > i+1) && (args[i+1].trim() != "") && (!listParams.contains(args[i+1].trim()))){
+							strArgs += "-mp " + args[i+1] + " ";
+							i++;
+						} else {
+							System.out.println("Incorrect value of params: " + args[i]);
+							return;
+						}
+					}
+					//Get install wiperdog as service
+					if(args[i].equals("-s")) {
+						if( ( args.length > i+1) && (args[i+1].trim() != "") && (!listParams.contains(args[i+1].trim()))){
+							strArgs += "-s " + args[i+1] + " ";
+							i++;
+						} else {
+							System.out.println("Incorrect value of params: " + args[i]);
+							return;
+						}
+					}
+				}
+				// Set default params
+				for(int i = 0 ; i < defaultParams.size() ; i++ ){
+					if(defaultParams.get(i) == "-j"){
+						strArgs += "-j 13110 ";
+					}
+					if(defaultParams.get(i) == "-m"){
+						strArgs += "-m 127.0.0.1 ";
+					}
+					if(defaultParams.get(i) == "-p"){
+						strArgs += "-p 27017 ";
+					}
+					if(defaultParams.get(i) == "-n"){
+						strArgs += "-n wiperdog ";
+					}
+					if(defaultParams.get(i) == "-mp"){
+						strArgs += "-mp testmail@gmail.com ";
+					}
+					if(defaultParams.get(i) == "-s"){
+						strArgs += "-s no ";
+					}
+				}
+			} 
+
+			OUTPUT_FOLDER = (String) args[1];			
+			File outputDir = new File(OUTPUT_FOLDER);
+			//check if wiperdog home params is not an absolute path
+		    if(!outputDir.isAbsolute()) {
+       			String userDir = System.getProperty("user.dir");
+				OUTPUT_FOLDER = new File (userDir, OUTPUT_FOLDER).getAbsolutePath();
+			}			
 			System.out.println("Wiperdog will be install to directory: "
 					+ OUTPUT_FOLDER);
 			String jarPath = SelfExtractorCmd.class.getProtectionDomain()
@@ -56,7 +200,7 @@ public class SelfExtractorCmd {
 			String newJarPath = (System.getProperty("os.name").toLowerCase()
 					.indexOf("win") != -1) ? jarPath.substring(1, jarPath
 					.length()) : jarPath;
-			runGroovyInstaller(newJarPath);
+			runGroovyInstaller(newJarPath,strArgs);
 			System.exit(0);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -67,7 +211,7 @@ public class SelfExtractorCmd {
 	 * @param jarPath path to this Jar file, used in classpath for the java process
 	 * @throws Exception any exception
 	 */
-	static void runGroovyInstaller(String jarPath)throws Exception{		
+	static void runGroovyInstaller(String jarPath,String strArgs)throws Exception{		
 		//- risk when user choose the output directory in another volume, which is different from current volume
 		File workDir = new File(OUTPUT_FOLDER);		
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -84,7 +228,7 @@ public class SelfExtractorCmd {
 		//Run java process, e.g: java -jar lib/java/bundle/groovy-all-2.0.2-beta-2.jar installer/installer.groovy
 		String runInstallerSyntax =  InstallerXML.getInstance().getRunInstallerSyntax();
 		
-		runInstallerSyntax += " "+OUTPUT_FOLDER;
+		runInstallerSyntax += " "+OUTPUT_FOLDER  + " " + strArgs;
 			if (runInstallerSyntax != null && !runInstallerSyntax.equals("")) {
 				String[] cmdArray = runInstallerSyntax.split(" ");
 				List<String> listCmd = new LinkedList<String>();
@@ -101,8 +245,9 @@ public class SelfExtractorCmd {
 									(OUTPUT_FOLDER +File.separator+ cmdArray[i] + claspathSeparator + jarPath)
 									:(cmdArray[i] + claspathSeparator + jarPath);
 							listCmd.add(newCmd);
-						}else 
+						} else {
 							listCmd.add(cmdArray[i]);
+						}
 					}
 					ProcessBuilder builder = new ProcessBuilder(listCmd);
                     builder.directory(workDir);
@@ -111,8 +256,8 @@ public class SelfExtractorCmd {
 					InputStream procOut  = p.getInputStream();
 		            OutputStream procIn = p.getOutputStream();
 
-		            new Thread(new Redirector(procOut, System.out)).start();
-		            new Thread(new Redirector(System.in, procIn)).start();		            
+		            new Thread(new Redirector("Output", procOut, System.out)).start();		            
+		            new Thread(new Redirector("Input",System.in, procIn)).start();
 		            p.waitFor();					
 				}
 				
@@ -174,6 +319,10 @@ public class SelfExtractorCmd {
        ex.printStackTrace(); 
     }
    }
+   	public static boolean isNumeric(String string){
+	  return string.matches("-?\\d+(\\.\\d+)?");  
+	}
+
     public static void stopService() throws Exception{
     	
     	File workDir = new File(System.getProperty("user.dir"));
@@ -237,20 +386,28 @@ public class SelfExtractorCmd {
 class Redirector implements Runnable {
     InputStream in;
     OutputStream out;
+    String name = "";
+    public Redirector(String name, InputStream in, OutputStream out) {
+    	this.name = name;
+        this.in = in;
+        this.out = out;
+    }
     public Redirector(InputStream in, OutputStream out) {
         this.in = in;
         this.out = out;
     }
     @Override
     public void run() {
-        byte [] buf = new byte[1];
-        try {
-            while (in.read(buf) >= 0) {
-                out.write(buf);
-                out.flush();
-            }
-        } catch (IOException e) {
-
-        }
+    	synchronized(in){
+	        byte [] buf = new byte[1];	
+	        try {	            
+	            while ( in.read(buf) >= 0) {	            
+	                out.write(buf);
+	        		out.flush();
+	            }
+            } catch (IOException e) {
+            	//e.printStackTrace();
+            }   
+		}//- end sync
     }
 }

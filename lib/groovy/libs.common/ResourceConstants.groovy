@@ -29,12 +29,12 @@ class ResourceConstants{
 	public static final String DEF_SQLS_DRIVER = "com.microsoft.sqlserver.jdbc.SQLServerDriver";
 	public static final String MESSAGE_FILE_DIRECTORY= "monitorjobfw.diretory.messagefile"
 	public static final String DBPASSWORD_FILE_DIRECTORY= "monitorjobfw.directory.dbpasswordfile"
-		
+	
 	/** MonitorJobConfigLoader */
 	public static final String SERVICE_PID = "monitorjobfw"
 	public static final String SYSTEM_PROPERTIES_FILE_DIRECTORY= "monitorjobfw.directory.systempropertiesfile"
 	public static final String GROOVY_FILE_DIRECTORY= "monitorjobfw.directory.groovyfile"
-		
+	
 	/** DefaultJobCaller */
 	public static final String DEF_COMMAND = "COMMAND"
 	public static final String DEF_FORMAT = "FORMAT"
@@ -69,11 +69,15 @@ class ResourceConstants{
 	public static final String MAX_NUMBER_SWAP_FILE = "monitorjobfw.max.number.swapfile"
 	public static final String MAX_SWAP_DIRECTORY_SIZE = "monitorjobfw.directory.swap.maxsize.mb"
 	public static final String SLEEP_TIME_MS = "monitorjobfw.sleep.time.millisecond"
-
+	
 	/** MongoDBSender */
 	public static final String MONGODB_HOST = "monitorjobfw.mongodb.host"
 	public static final String MONGODB_PORT = "monitorjobfw.mongodb.port"
 	public static final String MONGODB_DBNAME = "monitorjobfw.mongodb.dbName"
+	public static final String MONGODB_USER = "monitorjobfw.mongodb.user"
+	public static final String MONGODB_PASS = "monitorjobfw.mongodb.pass"
+	public static final String MONGODB_PASS_CONFIG = "monitorjobfw.mongodb.pass.config"
+	
 	/**Mail Sender**/
 	public static final String FROM_EMAIL = "monitorjobfw.mail.fromMail"
 	public static final String FROM_PASSWD = "monitorjobfw.mail.fromPassWd"

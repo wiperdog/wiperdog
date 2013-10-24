@@ -34,11 +34,13 @@ import com.gmongo.internal.Patcher
  */
 class DefaultSender {
 	def mapMessage = [:]
+	def static listMongodbConnectInfo = []
 	public listHttpSender = []
 	public listMongoDBSender = []
 	def properties = MonitorJobConfigLoader.getProperties()
 	
 	public DefaultSender(){
+		// List sender
 		File monitorjobSwapFolder = new File(properties.get(ResourceConstants.MONITORSWAP_DIRECTORY))
 		monitorjobSwapFolder.mkdir()
 		monitorjobSwapFolder.listFiles().each{folder->
@@ -55,6 +57,27 @@ class DefaultSender {
 				}
 				listHttpSender.add(httpSender)
 			}
+		}
+
+		// Mongo db password information
+		File mongodbPassFile = new File(properties.get(ResourceConstants.MONGODB_PASS_CONFIG))
+		mongodbPassFile.eachLine {line ->
+			def mapMongodbInfo = [:]
+			def lstPassInfo = line.split(",")
+			if(lstPassInfo.size() >= 3) {
+				mapMongodbInfo['host'] = lstPassInfo[0]
+				mapMongodbInfo['user'] = lstPassInfo[1]
+				mapMongodbInfo['pass'] = lstPassInfo[2]
+			} else if(lstPassInfo.size() == 2) {
+				mapMongodbInfo['host'] = lstPassInfo[0]
+				mapMongodbInfo['user'] = lstPassInfo[1]
+				mapMongodbInfo['pass'] = ''
+			} else if(lstPassInfo.size() == 1) {
+				mapMongodbInfo['host'] = lstPassInfo[0]
+				mapMongodbInfo['user'] = ''
+				mapMongodbInfo['pass'] = ''
+			}
+			listMongodbConnectInfo.add(mapMongodbInfo)
 		}
 	}
 	
@@ -115,7 +138,7 @@ class DefaultSender {
 						}
 					}
 					if(!mongoDBSenderExist){
-						def mongoSender = new MongoDBSender(destination)
+						def mongoSender = new MongoDBSender(destination, listMongodbConnectInfo)
 						senderListForEachJob.add(mongoSender)
 						listMongoDBSender.add(mongoSender)
 					}
@@ -345,13 +368,13 @@ public class HTTPSender implements Sender<Map>{
 			try {
 				http = new HTTPBuilder(destination)
 				http.auth.basic("administrator", "insight")
-				http.request(PUT,groovyx.net.http.ContentType.JSON){req->
-						req.getParams().setParameter("http.connection.timeout", new Integer(5000));
-						req.getParams().setParameter("http.socket.timeout", new Integer(5000));
-						body = serializerData
-					 	response.success = { resp ->
-					 		isSuccess = true
-					  	}
+				http.request(PUT,groovyx.net.http.ContentType.JSON) {req->
+					req.getParams().setParameter("http.connection.timeout", new Integer(5000));
+					req.getParams().setParameter("http.socket.timeout", new Integer(5000));
+					body = serializerData
+				 	response.success = { resp ->
+				 		isSuccess = true
+				  	}
 				}
 			} catch (Exception e) {
 				logger.info ("Fail to send data to $destination")
@@ -377,36 +400,29 @@ public class MongoDBSender implements Sender<Map>{
 	GMongo mongo;
 	long sleep_time = Long.valueOf(this.properties.get(ResourceConstants.SLEEP_TIME_MS))
 	
-	public MongoDBSender(String destination){
+	public MongoDBSender(String destination, listMongodbInfo) {
 		try{
-			this.destination = destination
-			mapDetailDestination['host'] = destination.substring(0, destination.indexOf(":") != -1 ? destination.indexOf(":") : destination.indexOf("/"))
-			if(destination.indexOf(":") != -1 && destination.indexOf("/") != -1){
-				mapDetailDestination['port'] = destination.substring(destination.indexOf(":") + 1, destination.indexOf("/"))
-			}	
-			mapDetailDestination['db'] = destination.substring(destination.indexOf("/") + 1)
-		}catch(IndexOutOfBoundsException oobex){
-			logger.debug("Destination string is in a wrong format!\nFormat must be host:port/db or host/db")
-		}
-	}
-
-	def createConnection(mapDetailDestination){
-		logger.debug("Try to connect to mongoDB with $mapDetailDestination")
-		try{
-			def port = mapDetailDestination['port']
-			def host = mapDetailDestination['host']
-			def dbName = mapDetailDestination['db']
-			if(host == "localhost" && port == null){
-				mongo = new GMongo()
-			}else if(host == "localhost" && port != null){
-				mongo = new GMongo(host + ":" + port)
-			}else if(host != null && port != null){
-				mongo = new GMongo(host, Integer.valueOf(port))
+			if(destination.contains(",") && destination.split(",").size() == 2) {
+				def lstDestination = destination.split(",")
+				this.destination = lstDestination[0]
+				mapDetailDestination['user'] = lstDestination[1]
+			} else {
+				this.destination = destination
+				mapDetailDestination['user'] = ""
 			}
-		}catch(Exception ex){
-			mongo = null
+			mapDetailDestination['host'] = this.destination.substring(0, this.destination.indexOf(":") != -1 ? this.destination.indexOf(":") : this.destination.indexOf("/"))
+			if(this.destination.indexOf(":") != -1 && this.destination.indexOf("/") != -1){
+				mapDetailDestination['port'] = this.destination.substring(this.destination.indexOf(":") + 1, this.destination.indexOf("/"))
+			}	
+			mapDetailDestination['db'] = this.destination.substring(this.destination.indexOf("/") + 1)
+			listMongodbInfo.each {eMongoConnect ->
+				if(mapDetailDestination['host'] == eMongoConnect['host'] && mapDetailDestination['user'] == eMongoConnect['user']) {
+					mapDetailDestination['pass'] = eMongoConnect['pass']
+				}
+			}
+		} catch(IndexOutOfBoundsException oobex) {
+			logger.debug("Destination string is in a wrong format!\nFormat must be <host:port/db>, <host/db> or <host/db,username>")
 		}
-		return mongo
 	}
 	
 	@Override
@@ -414,23 +430,29 @@ public class MongoDBSender implements Sender<Map>{
 	    def data_serialzeDate = serializeDateToSend(data)
 	   	DB db
 		DBObject dbObject = (DBObject) com.mongodb.util.JSON.parse(data_serialzeDate)
-		for(int i = 0; i < 20; i++){
-			try{
-				mongo = createConnection(mapDetailDestination)
-				if(mongo != null){
-					db = mongo.getDB(mapDetailDestination['db'])
+		for(int i = 0; i < 20; i++) {
+			try {
+				def mongoDBConnectionObj = new MongoDBConnection()
+				def mapMongoDb = mongoDBConnectionObj.createConnection(mapDetailDestination)
+				mongo = mapMongoDb['gmongo']				
+				db = mapMongoDb['db']
+				if((mongo != null) && (db != null)) {
 					def jobName = data.sourceJob
 					def istIid = data.istIid
 					def col = db.getCollection(jobName + "." + istIid)
 					col.insert(dbObject)
-					mongo.close()
+					// close connection
+					mongoDBConnectionObj.closeConnection(mongo)
 					println "-Done send data to mongo DB at ${mapDetailDestination['host']}-"
 					break;
+				} else {
+					println "MongoDBSender: Can't connect to MongoDB !"
+					Thread.currentThread().sleep(sleep_time)
 				}
-			}catch(MongoException mex){
+			} catch(MongoException mex) {
 				logger.debug("Could not connect to mongoDB! Sleep before retrying...")
 				Thread.currentThread().sleep(sleep_time)
-			}catch(Exception ex){
+			} catch(Exception ex) {
 				logger.debug(ex)
 			}
 		}
@@ -462,4 +484,3 @@ class DateSerializer extends JsonSerializer<Date> {
 		}
 	}
 }
-

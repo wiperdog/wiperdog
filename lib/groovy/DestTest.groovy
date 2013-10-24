@@ -10,10 +10,6 @@ import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 
 class DestTestServlet extends HttpServlet{
-	static final String MONGODB_HOST = "153.122.22.111"
-	static final int MONGODB_PORT = 27017
-	static final String MONGODB_DBNAME = "wiperdog"
-	def properties = MonitorJobConfigLoader.getProperties()
 
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
@@ -27,42 +23,23 @@ class DestTestServlet extends HttpServlet{
 			throws ServletException, IOException {
 				resp.setContentType("text/html")
 		try{
-			def decidedHost
-			def decidedPort
-			def decidedDBName
-			
-			// Get mongodb host from file config or set = default
-			if(properties.get(ResourceConstants.MONGODB_HOST) != null){
-				decidedHost = properties.get(ResourceConstants.MONGODB_HOST)
+			def mapMongoDb = MongoDBConnection.getWiperdogConnection()
+			def mongo = mapMongoDb['gmongo']
+			def db = mapMongoDb['db']
+			if(db != null){
+				//Get data of Job
+				def contentText = req.getInputStream().getText()
+				//Parse to Json
+				def obj = JSON.parse(contentText)
+				// Get collection in mongodb
+				def jobName = obj.sourceJob
+				def istIid = obj.istIid
+				def col = db.getCollection(jobName + "." + istIid)
+				// Insert data to collection
+				col.insert(obj)
 			}else{
-				decidedHost = MONGODB_HOST
+				println "tfm_test Servlet: Cannot connect to MongoDB!"
 			}
-			// Get mongodb port from file config or set = default
-			if(properties.get(ResourceConstants.MONGODB_PORT) != null){
-				decidedPort = Integer.valueOf(properties.get(ResourceConstants.MONGODB_PORT))
-			}else{
-				decidedPort = MONGODB_PORT
-			}
-			// Get mongodb db's name from file config or set = default
-			if(properties.get(ResourceConstants.MONGODB_DBNAME) != null){
-				decidedDBName = properties.get(ResourceConstants.MONGODB_DBNAME)
-			}else{
-				decidedDBName = MONGODB_DBNAME
-			}
-			//Insert to Mongo
-			def mongo = new GMongo(decidedHost, decidedPort)
-			//def mongo = new GMongo()
-			def db = mongo.getDB(decidedDBName)
-			//Get data of Job
-			def contentText = req.getInputStream().getText()
-			//Parse to Json
-			def obj = JSON.parse(contentText)
-			def jobName = obj.sourceJob
-			def istIid = obj.istIid
-			def col = db.getCollection(jobName + "." + istIid)
-			//def col = db.getCollection(jobName)
-			col.insert(obj)
-			mongo.close()
 		}catch(Exception ex){
 			println ex
 		}

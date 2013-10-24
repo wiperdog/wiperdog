@@ -64,6 +64,9 @@ class MonitorJobConfigLoader{
 		newProperties.put(ResourceConstants.MONGODB_HOST, '127.0.0.1')
 		newProperties.put(ResourceConstants.MONGODB_PORT, 27017)
 		newProperties.put(ResourceConstants.MONGODB_DBNAME, 'wiperdog')
+		newProperties.put(ResourceConstants.MONGODB_USER, '')
+		newProperties.put(ResourceConstants.MONGODB_PASS, '')
+		newProperties.put(ResourceConstants.MONGODB_PASS_CONFIG, rootDir + '/etc/mongodbpass.cfg')
 		return newProperties
 	}
 }

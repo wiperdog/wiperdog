@@ -9,9 +9,6 @@ class DataJuggernaut{
 	GroovyShell shell = new GroovyShell()
 	def properties = MonitorJobConfigLoader.getProperties()
 	def policyPath = properties.get(ResourceConstants.JOB_DIRECTORY) + "/policy"
-	def final DEFAULT_HOST = "localhost"
-	def final DEFAULT_PORT = 27017
-	def final DEFAULT_DBNAME = "wiperdog"
 	def final DEFAULT_COLLECTION = "policy_message"
 
 	def judgeData(data){
@@ -25,49 +22,32 @@ class DataJuggernaut{
 			ret = policyClos(data.data)
 			ret['fetchedAt_bin'] = data.fetchedAt_bin
 			if(ret.message != null && ret.message.size() > 0){
-				mongo = createConnection()
-				def dbName = properties.get(ResourceConstants.MONGODB_DBNAME) != null ? properties.get(ResourceConstants.MONGODB_DBNAME) : DEFAULT_DBNAME
-				def db = mongo.getDB(dbName)
-				def collection = db.getCollection(DEFAULT_COLLECTION)
-				
-				// With each message in policy's result, insert into mongo
-				ret.message.each{
-					def tempRec = [:]
-					tempRec['jobName'] = ret['jobName']
-					tempRec['istIid'] = ret['istIid']
-					tempRec['fetchedAt_bin'] = ret['fetchedAt_bin']
-					tempRec['level'] = it['level']
-					tempRec['message'] = it['message']
-					/*
-					// "it" is a Map with 1 entry
-					it.each{key, value->
-						tempRec['level'] = key
-						tempRec['message'] = value	
-					}*/
-					collection.insert(tempRec)
+				def mapMongoDb = MongoDBConnection.getWiperdogConnection()
+				mongo = mapMongoDb['gmongo']
+				def db = mapMongoDb['db']
+				if(db != null){
+					def collection = db.getCollection(DEFAULT_COLLECTION)
+					
+					// With each message in policy's result, insert into mongo
+					ret.message.each{
+						def tempRec = [:]
+						tempRec['jobName'] = ret['jobName']
+						tempRec['istIid'] = ret['istIid']
+						tempRec['fetchedAt_bin'] = ret['fetchedAt_bin']
+						tempRec['level'] = it['level']
+						tempRec['message'] = it['message']
+						collection.insert(tempRec)
+					}
+					logger.info("--------Finished judgement data and save message into mongoDB.${DEFAULT_COLLECTION}------------")
+				}else{
+					println "Run Policy: Cannot connect to MongoDB!"
 				}
-				mongo.close()
-				logger.info("--------Finished judgement data and save message into mongoDB.${DEFAULT_COLLECTION}------------")
 			}else{
 				logger.info("--------Nothing is wrong by now...--------")
 			}
 		}else {
 			logger.info("--------There is no suitable policy file to judge data...--------")
 		}
-	}
-	
-	def createConnection(){
-		def mongo
-		def host = properties.get(ResourceConstants.MONGODB_HOST) != null ? properties.get(ResourceConstants.MONGODB_HOST) : DEFAULT_HOST
-		def port = properties.get(ResourceConstants.MONGODB_PORT) != null ? properties.get(ResourceConstants.MONGODB_PORT) : DEFAULT_PORT
-		if(host == "localhost" && port == null){
-			mongo = new GMongo()
-		}else if(host == "localhost" && port != null){
-			mongo = new GMongo(host + ":" + port)
-		}else if(host != null && port != null){
-			mongo = new GMongo(host, Integer.valueOf(port))
-		}
-		return mongo
 	}
 	
 	def getpolicyFile(jobName, istIid){

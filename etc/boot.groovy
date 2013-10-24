@@ -31,7 +31,7 @@ def doBootStep() {
         def homedir = java.lang.System.getProperty("felix.home");
         java.lang.System.setProperty("groovy.home", homedir);
 
-        URL [] scriptpath123 = [new File(homedir + "/" + "lib/groovy/libs.manager").toURL(),new File(homedir + "/" + "lib/groovy/libs.target").toURL()]
+        URL [] scriptpath123 = [new File(homedir + "/" + "lib/groovy/libs.common").toURL(),new File(homedir + "/" + "lib/groovy/libs.target").toURL()]
         RootLoader rootloader = new RootLoader(scriptpath123, this.getClass().getClassLoader())
 
         // Loaderに渡す為のGroovyShell
