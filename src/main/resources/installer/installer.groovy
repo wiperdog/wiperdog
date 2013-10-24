@@ -53,7 +53,7 @@ public class WPDInstallerGroovy{
 					        def test = inp.readLine()           
 					        params['WIPERDOGHOME'] = wiperdogHome
 					        
-					        println "Please input Jetty Port(default set to 13110):"
+					        println "Please input Jetty Port(default set to 13111):"
 					        def tmpJettyPort = inp.readLine().trim();
 					        params['jetty.port'] = (tmpJettyPort != null && ! tmpJettyPort.equals(""))?tmpJettyPort:'13111';
 					            

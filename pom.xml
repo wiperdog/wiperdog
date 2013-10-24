@@ -394,6 +394,17 @@
           </execution>
         </executions>
       </plugin>
+      <!-- The following plugin setting is for fixing Groovy snapshot release -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>versions-maven-plugin</artifactId>
+        <version>2.1</version>
+        <configuration>
+        <versions>
+          <lock-snapshots>true</lock-snapshots>
+        </versions>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 </project>
