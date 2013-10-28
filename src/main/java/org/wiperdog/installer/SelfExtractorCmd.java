@@ -307,7 +307,10 @@ public class SelfExtractorCmd {
 	            	fos.write(buffer, 0, len);
 	           }
 	            fos.flush();
-	            fos.close();   
+	            fos.close();
+	            if (fileName.startsWith("bin")) {
+	            	newFile.setExecutable(true);
+	            }
     		}
             ze2 = zis2.getNextEntry();
     	}
