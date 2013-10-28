@@ -416,7 +416,7 @@ public class MongoDBSender implements Sender<Map>{
 			}	
 			mapDetailDestination['db'] = this.destination.substring(this.destination.indexOf("/") + 1)
 			listMongodbInfo.each {eMongoConnect ->
-				if(mapDetailDestination['host'] == eMongoConnect['host'] && mapDetailDestination['user'] == eMongoConnect['user']) {
+				if(this.destination == eMongoConnect['host'] && mapDetailDestination['user'] == eMongoConnect['user']) {
 					mapDetailDestination['pass'] = eMongoConnect['pass']
 				}
 			}

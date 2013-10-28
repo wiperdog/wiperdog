@@ -69,13 +69,13 @@ public class WPDInstallerGroovy{
 					        def tmpMonitorjobfwMongodbDbName = inp.readLine().trim();
 					        params['monitorjobfw.mongodb.dbName'] = (tmpMonitorjobfwMongodbDbName != null && ! tmpMonitorjobfwMongodbDbName.equals(""))?tmpMonitorjobfwMongodbDbName:'wiperdog';
 					        
-					        println "Please input database server user name, Mongodb user name (default set to empty):"    
+					        println "Please input database server user name, (Mongodb user name, default set to empty):"    
 					        def tmpMonitorjobfwMongodbUser = inp.readLine().trim();
 					        params['monitorjobfw.mongodb.user'] = (tmpMonitorjobfwMongodbUser != null && ! tmpMonitorjobfwMongodbUser.equals(""))?tmpMonitorjobfwMongodbUser:'';
 					        
-					        println "Please input database server password, Mongodb port (default set to empty):"    
+					        println "Please input database server password, (Mongodb password, default set to empty):"    
 					        def tmpMonitorjobfwMongodbPass = inp.readLine().trim();
-					        params['monitorjobfw.mongodb.password'] = (tmpMonitorjobfwMongodbPass != null && ! tmpMonitorjobfwMongodbPass.equals(""))?tmpMonitorjobfwMongodbPass:'';
+					        params['monitorjobfw.mongodb.pass'] = (tmpMonitorjobfwMongodbPass != null && ! tmpMonitorjobfwMongodbPass.equals(""))?tmpMonitorjobfwMongodbPass:'';
 					        
 					        println "Please input mail send data policy, Mail Policy (default set to testmail@gmail.com):"    
 					        def tmpMonitorjobfwMailPolicy = inp.readLine().trim();					        
@@ -93,7 +93,7 @@ public class WPDInstallerGroovy{
 							println "Database port:"+ params['monitorjobfw.mongodb.port']
 							println "Database name:"+ params['monitorjobfw.mongodb.dbName']
 							println "User name:"+ params['monitorjobfw.mongodb.user']
-							println "Password:"+ params['monitorjobfw.mongodb.password']
+							println "Password:"+ params['monitorjobfw.mongodb.pass']
 							println "Mail Policy:"+ params['monitorjobfw.mail.toMail']
 							println "Install as OS service:"+ installAsService
 							println "\n"
@@ -131,7 +131,7 @@ public class WPDInstallerGroovy{
 							}
 							//Get Mongodb password from argurment
 							if(installerParam[i].equals('-pw')) {
-								params['monitorjobfw.mongodb.password'] = installerParam[i+1]
+								params['monitorjobfw.mongodb.pass'] = installerParam[i+1]
 								i++
 							}
 							//Get mail policy from argurment
@@ -148,8 +148,8 @@ public class WPDInstallerGroovy{
 						if(params['monitorjobfw.mongodb.user'] == null){
 							params['monitorjobfw.mongodb.user'] = ''
 						}
-						if(params['monitorjobfw.mongodb.password'] == null){
-							params['monitorjobfw.mongodb.password'] = ''
+						if(params['monitorjobfw.mongodb.pass'] == null){
+							params['monitorjobfw.mongodb.pass'] = ''
 						}
 						println "----------------------------------------------------------------"												
 						println "------------------    Wiperdog setting     -------------------------"
@@ -159,7 +159,7 @@ public class WPDInstallerGroovy{
 						println "Database port:"+ params['monitorjobfw.mongodb.port']
 						println "Database name:"+ params['monitorjobfw.mongodb.dbName']
 						println "User name:"+ params['monitorjobfw.mongodb.user']
-						println "Password:"+ params['monitorjobfw.mongodb.password']
+						println "Password:"+ params['monitorjobfw.mongodb.pass']
 						println "Mail Policy:"+ params['monitorjobfw.mail.toMail']
 						println "Install as OS service:"+ installAsService
 					} 
@@ -190,7 +190,7 @@ public class WPDInstallerGroovy{
                 monitorjobfw.mongodb.port
                 monitorjobfw.mongodb.dbName
                 monitorjobfw.mongodb.user
-                monitorjobfw.mongodb.password
+                monitorjobfw.mongodb.pass
                 monitorjobfw.mail.toMail
           */
         //host name
@@ -241,12 +241,12 @@ public class WPDInstallerGroovy{
         //password
         configFile = new File("etc/monitorjobfw.cfg")
         fileText = configFile.text 
-        macherPattern = "(monitorjobfw.mongodb.password=)((?:(?!\\n).)*)"
+        macherPattern = "(monitorjobfw.mongodb.pass=)((?:(?!\\n).)*)"
         pattern = Pattern.compile(macherPattern, Pattern.DOTALL);
         matcher = pattern.matcher(fileText);
         while(matcher.find())
         {
-            newFileText = fileText.replace(matcher.group(1) + matcher.group(2), matcher.group(1) + params['monitorjobfw.mongodb.password'])
+            newFileText = fileText.replace(matcher.group(1) + matcher.group(2), matcher.group(1) + params['monitorjobfw.mongodb.pass'])
         }                
         configFile.write(newFileText)
         //mail policy

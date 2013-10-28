@@ -39,7 +39,7 @@ class MongoDBConnection {
 				}
 			}
 			MongoDBConnection.db = MongoDBConnection.gmongo.getDB(decidedDbName)
-			if(!MongoDBConnection.db.isAuthenticated()) {
+			if(decidedUser != null && decidedUser != '' && !MongoDBConnection.db.isAuthenticated()) {
 				// Authenticate user and password connect to database
 				char[] passArray = []
 				if(decidedPass != null && decidedPass != ''){
@@ -51,6 +51,7 @@ class MongoDBConnection {
 				mapMongoDb['gmongo'] = gmongo
 				mapMongoDb['db'] = db
 			} else {
+				println "Can't authenticate MongoDB(" + decidedHost + ") with user : " + decidedUser
 				db = null
 				gmongo = null
 				mapMongoDb = [:]
@@ -87,7 +88,7 @@ class MongoDBConnection {
 				mongo = new GMongo(host, Integer.valueOf(port))
 			}
 			def dbConn = mongo.getDB(dbName)
-			if(!dbConn.isAuthenticated()) {
+			if(user != null && user != '' && !dbConn.isAuthenticated()) {
 				// Authenticate user and password connect to database
 				char[] passArray = []
 				if(pass != null && pass != ''){
@@ -99,6 +100,7 @@ class MongoDBConnection {
 				mapMongoDb['gmongo'] = mongo
 				mapMongoDb['db'] = dbConn
 			} else {
+				println "Can't authenticate MongoDB(" + host + ") with user : " + user
 				mongo = null
 				dbConn = null
 				mapMongoDb = [:]
