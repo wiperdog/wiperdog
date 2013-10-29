@@ -19,7 +19,7 @@ class MongoDBConnection {
 	 * getConnection: create a connection with default params
 	 * @return mapMongoDb: map connect db info
 	*/
-	def static getWiperdogConnection() {
+	synchronized def static getWiperdogConnection() {
 		def mapMongoDb = [:]
 		def authFlg = true
 		try {
