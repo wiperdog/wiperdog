@@ -65,15 +65,15 @@ class DefaultSender {
 			def mapMongodbInfo = [:]
 			def lstPassInfo = line.split(",")
 			if(lstPassInfo.size() >= 3) {
-				mapMongodbInfo['host'] = lstPassInfo[0]
-				mapMongodbInfo['user'] = lstPassInfo[1]
-				mapMongodbInfo['pass'] = lstPassInfo[2]
+				mapMongodbInfo['host'] = lstPassInfo[0].trim()
+				mapMongodbInfo['user'] = lstPassInfo[1].trim()
+				mapMongodbInfo['pass'] = lstPassInfo[2].trim()
 			} else if(lstPassInfo.size() == 2) {
-				mapMongodbInfo['host'] = lstPassInfo[0]
-				mapMongodbInfo['user'] = lstPassInfo[1]
+				mapMongodbInfo['host'] = lstPassInfo[0].trim()
+				mapMongodbInfo['user'] = lstPassInfo[1].trim()
 				mapMongodbInfo['pass'] = ''
 			} else if(lstPassInfo.size() == 1) {
-				mapMongodbInfo['host'] = lstPassInfo[0]
+				mapMongodbInfo['host'] = lstPassInfo[0].trim()
 				mapMongodbInfo['user'] = ''
 				mapMongodbInfo['pass'] = ''
 			}

@@ -12,6 +12,7 @@ class MongoDBConnection {
 	def static final DEFAULT_DBNAME = "wiperdog"
 	def static final DEFAULT_USER = ''
  	def static final DEFAULT_PASS = ''
+ 	def static final COMMON_UTIL_FILE = "/libs.target/CommonUltis.groovy"
  	def static gmongo
  	def static db
  	def static properties = MonitorJobConfigLoader.getProperties()
@@ -39,6 +40,10 @@ class MongoDBConnection {
 				}
 			}
 			MongoDBConnection.db = MongoDBConnection.gmongo.getDB(decidedDbName)
+			if(decidedPass != null && decidedPass != ''){
+				decidedPass = decryptPassword(decidedPass)
+			}
+			//check user and db authen
 			if(decidedUser != null && decidedUser != '' && !MongoDBConnection.db.isAuthenticated()) {
 				// Authenticate user and password connect to database
 				char[] passArray = []
@@ -87,6 +92,10 @@ class MongoDBConnection {
 			} else if(host != null && port != null) {
 				mongo = new GMongo(host, Integer.valueOf(port))
 			}
+	        if(pass != null && pass != ""){
+	        	//decryped password
+				pass = decryptPassword(pass)
+			}
 			def dbConn = mongo.getDB(dbName)
 			if(user != null && user != '' && !dbConn.isAuthenticated()) {
 				// Authenticate user and password connect to database
@@ -112,6 +121,24 @@ class MongoDBConnection {
 			mapMongoDb = [:]
 		}
 		return mapMongoDb
+	}
+	/**
+	 * decrypt password connect to mongodb
+	 * @param pass password encrypted
+	 * @return password password decrypted
+	*/
+	def static decryptPassword(pass) {
+		//get wiperdog home
+		def wiperdogHome = properties.get(ResourceConstants.GROOVY_FILE_DIRECTORY)
+		//get CommonUtil file
+	    def commonUtilFile = new File( wiperdogHome + COMMON_UTIL_FILE)
+	    //Parse file
+		GroovyClassLoader gcl = new GroovyClassLoader()
+		Class commonClass = gcl.parseClass(commonUtilFile)
+		Object commonUtil_obj = commonClass.newInstance()
+		//decrypt password
+		def password = commonUtil_obj.decrypt(pass)
+		return password
 	}
 	/**
 	 * closeConnection: close a connection
