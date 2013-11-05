@@ -1,0 +1,14 @@
+POLICY = {resultData->
+ def listMess = []
+ def ret = ['jobName' : 'SQL_Server.Performance.Wait_Status', 'istIid' : 'null']
+ resultData.each{data->
+  if((data.WaitingTasksCnt > 10) && (data.WaitingTasksCnt <= 20)){
+   listMess.add([level: 1, message: """Warning: The number of waiting tasks of wait type "${data.WaitTypeName}" is ${data.WaitingTasksCnt}. This can indicate that the maximum worker setting is too low, or that batch executions are taking unusually long!!!"""])
+  }
+  if((data.WaitingTasksCnt > 20)){
+   listMess.add([level: 2, message: """Warning: The number of waiting tasks of wait type "${data.WaitTypeName}" is too high. Current value is ${data.WaitingTasksCnt}. The bottleneck on the drive can occurs!!!"""])
+  }
+ }
+ ret['message'] = listMess
+ return ret
+}

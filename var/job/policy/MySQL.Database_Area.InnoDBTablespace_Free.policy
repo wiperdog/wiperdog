@@ -1,0 +1,17 @@
+POLICY = {resultData->
+ def listMess = []
+ def ret = ['jobName' : 'MySQL.Database_Area.InnoDBTablespace_Free', 'istIid' : 'null']
+ resultData.each{data->
+  if((data.MaxUsedPct > 80) && (data.MaxUsedPct < 90)){
+   listMess.add([level: 1, message: """Warning: Current value of table space size used of table space "${data.TablespaceName}" is ${data.CurrentUsedSizeKB}KB. The maximum size is ${data.MaxTotalSizeKB}KB!!!"""])
+  }
+  if((data.MaxUsedPct >= 90) && (data.MaxUsedPct < 95)){
+   listMess.add([level: 2, message: """Warning: Current value of table space size used of table space "${data.TablespaceName}" is ${data.CurrentUsedSizeKB}KB. The maximum size is ${data.MaxTotalSizeKB}KB!!!"""])
+  }
+  if((data.MaxUsedPct >= 95)){
+   listMess.add([level: 3, message: """Dangerous: The size used of table space "${data.TablespaceName}" is too high. Current value is ${data.CurrentUsedSizeKB}KB. The size nearly maximum is ${data.MaxTotalSizeKB}KB!!!"""])
+  }
+ }
+ ret['message'] = listMess
+ return ret
+}

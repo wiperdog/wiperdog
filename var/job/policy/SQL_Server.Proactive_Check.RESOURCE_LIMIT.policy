@@ -1,0 +1,17 @@
+POLICY = {resultData->
+ def listMess = []
+ def ret = ['jobName' : 'SQL_Server.Proactive_Check.RESOURCE_LIMIT', 'istIid' : 'null']
+ resultData.each{data->
+		if((data.ResourceUsedPct > 80) && (data.ResourceUsedPct < 90)){
+			listMess.add([level: 1, message: """Warning: Usage rate of resource "${data.ResourceName}" is ${data.ResourceUsedPct}%. Value of current config is ${data.CurrentVal}. The limit value is ${data.LimitVal}!!!"""])
+		}
+		if((data.ResourceUsedPct >= 90) && (data.ResourceUsedPct < 95)){
+			listMess.add([level: 2, message: """Warning: Usage rate of resource "${data.ResourceName}" is ${data.ResourceUsedPct}%. Value of current config is ${data.CurrentVal}. The limit value is ${data.LimitVal}!!!"""])
+		}
+		if((data.ResourceUsedPct >= 95)){
+			listMess.add([level: 3, message: """Dangerous: Usage rate of resource "${data.ResourceName}" is too high. Value of current config is ${data.CurrentVal}. This value is close to the limit is ${data.LimitVal}!!!"""])
+		}
+ }
+ ret['message'] = listMess
+ return ret
+}

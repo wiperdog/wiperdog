@@ -1,0 +1,17 @@
+POLICY = {resultData->
+ def listMess = []
+ def ret = ['jobName' : 'Postgres.Database_Area.Tablespace_Free', 'istIid' : 'null']
+ resultData.each{data->
+  if((data.UsedPct >= 80 && data.UsedPct < 85)){
+   listMess.add([level: 1, message: """Warning: Free space of tablespace (${data.TablespaceName}) is quite low (Current value: ${data.UsedPct}%) !!!"""])
+  }
+  if((data.UsedPct >= 95)){
+   listMess.add([level: 3, message: """Dangerous: Free space of tablespace (${data.TablespaceName}) is very low. You need to free up memory (Current value: ${data.UsedPct}%) !!!"""])
+  }
+  if((data.UsedPct >= 85 && data.UsedPct < 95)){
+   listMess.add([level: 2, message: """Warning: Free space of tablespace (${data.TablespaceName}) is running low (Current value: ${data.UsedPct}%) !!!"""])
+  }
+ }
+ ret['message'] = listMess
+ return ret
+}

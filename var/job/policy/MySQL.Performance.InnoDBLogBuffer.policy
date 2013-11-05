@@ -1,0 +1,11 @@
+POLICY = {resultData->
+ def listMess = []
+ def ret = ['jobName' : 'MySQL.Performance.InnoDBLogBuffer', 'istIid' : 'null']
+ resultData.each{data->
+  if((data.WaitsPct > 80)){
+   listMess.add([level: 2, message: """Warning: Percentage of log wait and log write is too high (Current value: ${data.WaitsPct}%) !!!"""])
+  }
+ }
+ ret['message'] = listMess
+ return ret
+}

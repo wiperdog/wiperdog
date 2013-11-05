@@ -1,0 +1,14 @@
+POLICY = {resultData->
+ def listMess = []
+ def ret = ['jobName' : 'SQL_Server.Performance.Plan_Cache_Hit_Ratio', 'istIid' : 'null']
+ resultData.each{data->
+  if((data.PlanCacheHitRatioDiffPct >= 50 ) && (data.PlanCacheHitRatioDiffPct < 60)){
+   listMess.add([level: 1, message: """Warning: Plan cache hit rate is low. Current value: ${data.PlanCacheHitRatioDiffPct}%. The SQL Server is doing more work than it needs to!!!"""])
+  }
+  if((data.PlanCacheHitRatioDiffPct < 50)){
+   listMess.add([level: 2, message: """Warning: Plan cache hit rate is too low. Current value is ${data.PlanCacheHitRatioDiffPct}%. Performance of the SQL Server to reduction!!!"""])
+  }
+ }
+ ret['message'] = listMess
+ return ret
+}

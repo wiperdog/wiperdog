@@ -1,0 +1,11 @@
+POLICY = {resultData->
+ def listMess = []
+ def ret = ['jobName' : 'Postgres.Performance.Buffer_Cache_Hit', 'istIid' : 'null']
+ resultData.each{data->
+  if((data.BufferHitRatioPct != null && data.BufferHitRatioPct < 50)){
+   listMess.add([level: 1, message: """Warning: buffer hit percent is low => the access on disk will increase, so affect performance (Current value: ${data.BufferHitRatioPct}%) !!!"""])
+  }
+ }
+ ret['message'] = listMess
+ return ret
+}

@@ -1,0 +1,20 @@
+POLICY = {resultData->
+ def listMess = []
+ def ret = ['jobName' : 'Postgres.Performance.Buffer_Cache_Usage', 'istIid' : 'null']
+ resultData.each{data->
+  if((data.UsedCacheRatioPct == 100)){
+   listMess.add([level: 3, message: """Dangerous: out of buffer cache !!!"""])
+  }
+  if((data.DirtyCacheRatioPct >= 10 && data.DirtyCacheRatioPct <= 33)){
+   listMess.add([level: 2, message: """Warning: Dirty buffer is an area was taken memory but do not nothing and this area is quite large (Current value: ${data.DirtyCacheRatioPct}%) !!!"""])
+  }
+  if((data.UsedCacheRatioPct > 80 && data.UsedCacheRatioPct < 100)){
+   listMess.add([level: 2, message: """Warning: buffer cache has used nearly empty (Current value: ${data.UsedCacheRatioPct}%) !!!"""])
+  }
+  if((data.DirtyCacheRatioPct > 33)){
+   listMess.add([level: 3, message: """Dangerous: Dirty buffer is an area was taken memory but do not nothing and this area is too large (Current value: ${data.DirtyCacheRatioPct}%) !!!"""])
+  }
+ }
+ ret['message'] = listMess
+ return ret
+}

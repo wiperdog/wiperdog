@@ -1,0 +1,17 @@
+POLICY = {resultData->
+ def listMess = []
+ def ret = ['jobName' : 'SQL_Server.Database_Area.Database_free', 'istIid' : 'null']
+ resultData.each{data->
+	if((data.MaxUsedPct > 80) && (data.MaxUsedPct < 90)){
+		listMess.add([level: 1, message: """Warning: Current value of file size used of file name "${data.DBFileName}" is ${data.CurrentUsedSizePageInt} pages. The maximum size of file is ${data.MaxTotalSizePageInt} pages!!!"""])
+	}
+	if((data.MaxUsedPct >= 90) && (data.MaxUsedPct < 95)){
+		listMess.add([level: 2, message: """Warning: Current value of file size used of file name "${data.DBFileName}" is ${data.CurrentUsedSizePageInt} pages. The maximum size of file is ${data.MaxTotalSizePageInt} pages!!!"""])
+	}
+	if((data.MaxUsedPct >= 95)){
+		listMess.add([level: 3, message: """Dangerous: The size used of file name "${data.DBFileName}" is too high. Current value is ${data.CurrentUsedSizePageInt} pages. The size nearly maximum is ${data.MaxTotalSizePageInt} pages!!!"""])
+	}
+ }
+ ret['message'] = listMess
+ return ret
+}

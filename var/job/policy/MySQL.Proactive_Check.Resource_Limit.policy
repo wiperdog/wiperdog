@@ -1,0 +1,14 @@
+POLICY = {resultData->
+ def listMess = []
+ def ret = ['jobName' : 'MySQL.Proactive_Check.Resource_Limit', 'istIid' : 'null']
+ resultData.each{data->
+  if((data.ResourceUsedPct > 90)){
+   listMess.add([level: 2, message: """Warning: Current used value of the resource (${data.ResourceName}) is too high (Current value: ${data.ResourceUsedPct}%) !!!"""])
+  }
+  if((data.ResourceUsedPct > 80 && data.ResourceUsedPct <= 90)){
+   listMess.add([level: 1, message: """Warning: Current used value of the resource (${data.ResourceName}) is high (Current value: ${data.ResourceUsedPct}%) !!!"""])
+  }
+ }
+ ret['message'] = listMess
+ return ret
+}

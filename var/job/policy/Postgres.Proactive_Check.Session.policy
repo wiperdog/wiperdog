@@ -1,0 +1,11 @@
+POLICY = {resultData->
+ def listMess = []
+ def ret = ['jobName' : 'Postgres.Proactive_Check.Session', 'istIid' : 'null']
+ resultData.each{data->
+  if((data.SessLockedPct >= 50)){
+   listMess.add([level: 3, message: """Dangerous: There are many sessions were locked (Current value: ${data.NumOfLockWaitSessCnt} sessions), thus many database's manipulation may be unrealized !!!"""])
+  }
+ }
+ ret['message'] = listMess
+ return ret
+}

@@ -1,0 +1,11 @@
+POLICY = {resultData->
+ def listMess = []
+ def ret = ['jobName' : 'Postgres.Proactive_Check.Resource_Limit', 'istIid' : 'null']
+ resultData.each{data->
+  if((data.PercentSessionPct >= 90)){
+   listMess.add([level: 2, message: """Warning: Number of current sessions (${data.CurrentSessionCnt}) is too high (Session percent: ${data.PercentSessionPct}%) !!!"""])
+  }
+ }
+ ret['message'] = listMess
+ return ret
+}

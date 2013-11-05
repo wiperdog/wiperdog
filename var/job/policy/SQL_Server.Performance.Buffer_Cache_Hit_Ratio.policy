@@ -1,0 +1,14 @@
+POLICY = {resultData->
+ def listMess = []
+ def ret = ['jobName' : 'SQL_Server.Performance.Buffer_Cache_Hit_Ratio', 'istIid' : 'null']
+ resultData.each{data->
+  if((data.CacheHitRatioPct >= 80) && (data.CacheHitRatioPct < 90)){
+   listMess.add([level: 1, message: """Warning: Buffer cache hit rate is low. Current value is ${data.CacheHitRatioPct}%. SQL Server is under memory pressure and doing lots of physical disk reads to retrieve the required data.!!!"""])
+  }
+  if((data.CacheHitRatioPct < 80)){
+   listMess.add([level: 2, message: """Warning: Buffer cache hit rate is too low. Current value is ${data.CacheHitRatioPct}%. SQL Server is under memory pressure and doing lots of physical disk reads to retrieve the required data.!!!"""])
+  }
+ }
+ ret['message'] = listMess
+ return ret
+}

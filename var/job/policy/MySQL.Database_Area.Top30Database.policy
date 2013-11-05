@@ -1,0 +1,34 @@
+POLICY = {resultData->
+ def listMess = []
+ def ret = ['jobName' : 'MySQL.Database_Area.Top30Database', 'istIid' : 'null']
+ resultData.each {key,value ->
+  if(key == "D") {
+   value.each {data ->
+		if((data.UsedPct > 80) && (data.UsedPct < 90)){
+			listMess.add([level: 1, message: """Warning: Current value of database size used of database "${data.DatabaseNm}" is ${data.UsedSize} byte. The maximum size of file is ${data.TotalSize} byte!!!"""])
+		}
+		if((data.UsedPct >= 90) && (data.UsedPct < 95)){
+			listMess.add([level: 2, message: """Warning: Current value of database size used of database "${data.DatabaseNm}" is ${data.UsedSize} byte. The maximum size of file is ${data.TotalSize} byte!!!"""])
+		}
+		if((data.UsedPct >= 95)){
+			listMess.add([level: 3, message: """Dangerous: Database size used of database "${data.DatabaseNm}" is too high. Current value is ${data.UsedSize} byte. The file nearly maximum is ${data.TotalSize} byte!!!"""])
+		}
+   }
+  }
+  if(key == "M") {
+   value.each {data ->
+		if((data.UsedPct > 80) && (data.UsedPct < 90)){
+			listMess.add([level: 1, message: """Warning: Current value of database size used of database "${data.DatabaseNm}" is ${data.UsedSize} byte. The maximum size of file is ${data.TotalSize} byte!!!"""])
+		}
+		if((data.UsedPct >= 90) && (data.UsedPct < 95)){
+			listMess.add([level: 2, message: """Warning: Current value of database size used of database "${data.DatabaseNm}" is ${data.UsedSize} byte. The maximum size of file is ${data.TotalSize} byte!!!"""])
+		}
+		if((data.UsedPct >= 95)){
+			listMess.add([level: 3, message: """Dangerous: Database size used of database "${data.DatabaseNm}" is too high. Current value is ${data.UsedSize} byte. The file nearly maximum is ${data.TotalSize} byte!!!"""])
+		}
+   }
+  }
+ }
+ ret['message'] = listMess
+ return ret
+}

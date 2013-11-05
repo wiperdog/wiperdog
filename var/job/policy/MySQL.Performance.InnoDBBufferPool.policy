@@ -1,0 +1,17 @@
+POLICY = {resultData->
+ def listMess = []
+ def ret = ['jobName' : 'MySQL.Performance.InnoDBBufferPool', 'istIid' : 'null']
+ resultData.each{data->
+  if((data.DirtyRatioPct > 33)){
+   listMess.add([level: 3, message: """Dangerous: dirty pages / data pages ratio is too high (Current value: ${data.DirtyRatioPct}%) !!!"""])
+  }
+  if((data.HitRatioPct != null && data.HitRatioPct < 10)){
+   listMess.add([level: 1, message: """Warning: Number of times read from the buffer cache is too low (Current value: ${data.HitRatioPct}%) !!!"""])
+  }
+  if((data.BufferUsedRatioPct != null && data.BufferUsedRatioPct > 90)){
+   listMess.add([level: 2, message: """Warnning: data pages / total pages ratio is too high (Current value: ${data.BufferUsedRatioPct}%) !!!"""])
+  }
+ }
+ ret['message'] = listMess
+ return ret
+}
