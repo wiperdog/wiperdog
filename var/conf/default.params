@@ -7,7 +7,7 @@
    "@MSSQL-MSSQLSERVER2008": [dbconnstr: "jdbc:sqlserver://localhost:1433", user: "sa", dbHostId:"localhost", dbSid: "MSSQLSERVER2008" ],
    "@MSSQL": [dbconnstr: "jdbc:sqlserver://localhost:1433", user: "sa", dbHostId:"localhost", dbSid: "MSSQLSERVER2008" ]
   ],
-  dest: [ [ file: "stdout" ] ],
+  dest: [ [ file: "stdout" ], [mongoDB: "localhost:27017/wiperdog" ] ],
    datadirectory: [				
     ORACLE: [default:"",getData:[sql:"",append:""]],				
     SQLS: [default:"",getData:[sql:" declare @rc int, @dir nvarchar(4000) exec @rc = master.dbo.xp_instance_regread N'HKEY_LOCAL_MACHINE', N'Software\\Microsoft\\MSSQLServer\\Setup',N'SQLPath', @dir output, 'no_output'select @dir AS InstallationDirectory",append:"\\Data"]],	
