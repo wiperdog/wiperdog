@@ -261,27 +261,29 @@ public class WPDInstallerGroovy{
         }                
         configFile.write(newFileText)
         
-        //------------------------------------ INSTALL WIPERDOG AS SERVICE ------------------------------------------//        
-        
-		
+        //---WIPERDOG_HOME---//
+        String osName = System.getProperty("os.name").toLowerCase() 
+		if(osName.indexOf("win") == -1){//-- LINUX
+            configFile = new File("bin/wiperdog")
+            fileText = configFile.text
+            def newHome = wiperdogHome.replaceAll(/\\+/, '/')                
+            newFileText = ""
+            macherPattern = "(WIPERDOGHOME=)((?:(?!\\n).)*)"
+            pattern = Pattern.compile(macherPattern, Pattern.DOTALL);
+            matcher = pattern.matcher(fileText);
+            while(matcher.find())
+            {
+                newFileText = fileText.replace(matcher.group(1) + matcher.group(2), matcher.group(1) + newHome)
+            }              
+            def crlfFixFileText = newFileText.replaceAll("\r","");
+            //write WIPERDOG_HOME to file bin/wiperdog
+            configFile.write(crlfFixFileText)
+		}
+        //------------------------------------ INSTALL WIPERDOG AS SERVICE ------------------------------------------//
         if(installAsService != null && installAsService.equalsIgnoreCase("yes")){
             println "Start install application as a system service"
-             String osName = System.getProperty("os.name").toLowerCase()    
             //-- configure Wiperdog Home in service script            
             if(osName.indexOf("win") == -1){//-- LINUX
-                configFile = new File("bin/wiperdog")
-                fileText = configFile.text
-                def newHome = wiperdogHome.replaceAll(/\\+/, '/')                
-                newFileText = ""
-                macherPattern = "(WIPERDOGHOME=)((?:(?!\\n).)*)"
-                pattern = Pattern.compile(macherPattern, Pattern.DOTALL);
-                matcher = pattern.matcher(fileText);
-                while(matcher.find())
-                {
-                    newFileText = fileText.replace(matcher.group(1) + matcher.group(2), matcher.group(1) + newHome)
-                }              
-                def crlfFixFileText = newFileText.replaceAll("\r","");
-                configFile.write(crlfFixFileText)
                 /** Replace CRLF to LF to fit Unix file format **/
                 
                 /* Install service script */
