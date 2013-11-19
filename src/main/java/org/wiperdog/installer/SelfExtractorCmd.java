@@ -225,7 +225,7 @@ public class SelfExtractorCmd {
 		if(InstallerXML.getInstance().getRunInstallerSyntax() == null || InstallerXML.getInstance().getRunInstallerSyntax().equals(""))
 			throw new Exception("Cannot run configuration for newly installed Wiperdog");
 		
-		//Run java process, e.g: java -jar lib/java/bundle/groovy-all-2.0.2-beta-2.jar installer/installer.groovy
+		//Run java process, e.g: java -jar lib/java/bundle/groovy-all-2.2.0.jar installer/installer.groovy
 		String runInstallerSyntax =  InstallerXML.getInstance().getRunInstallerSyntax();
 		
 		runInstallerSyntax += " "+OUTPUT_FOLDER  + " " + strArgs;

@@ -130,7 +130,7 @@ fi
 if [ -z "$GROOVY_CONF" ] ; then
     GROOVY_CONF="$GROOVY_HOME/etc/groovy-starter.conf"
 fi
-STARTER_CLASSPATH="$GROOVY_HOME/lib/java/bundle/groovy-all-2.2.0-beta-1.jar"
+STARTER_CLASSPATH="$GROOVY_HOME/lib/java/bundle.a/groovy-all-2.2.0.jar"
 BUNDLE_CLASSPATH="$GROOVY_HOME/lib/java/bundle/*"
 BUNDLE_A_CLASSPATH="$GROOVY_HOME/lib/java/bundle.a/*"
 BUNDLE_WRAP_CLASSPATH="$GROOVY_HOME/lib/java/bundle.wrap/*"
