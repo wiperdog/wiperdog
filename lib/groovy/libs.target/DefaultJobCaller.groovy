@@ -66,12 +66,14 @@ class DefaultJobCaller {
 		this.sender = sender
 	}
 
-	def runCommand(commandline, mapFormat) {
+	def runCommand(osInfo,commandline, mapFormat) {
 		def recordarray = []
 		try{
-			def proc
+			def procData = null
 			try {
-				proc = commandline.execute()
+				//proc = commandline.execute()
+				def proc = new ProcessRunner(osInfo)
+				procData = proc.procExecute(commandline,true)					
 			} catch (Exception ex) {
 				logger.info (MessageFormat.format(mapMessage['ERR005'],"'" + commandline + "'"))
 				isJobFinishedSuccessfully = false
@@ -80,45 +82,49 @@ class DefaultJobCaller {
 			if (mapFormat != null) {
 				def rxMatch = mapFormat['match']
 				def rxSplit = mapFormat['split']
-				proc.getInputStream().eachLine { it ->
-					// make one record
-					if (rxMatch != null) {
-						def s = new Scanner(it)
-						s.findInLine(rxMatch)
-						def newrecord = [:]
-						def colindex = 1
-						def result = s.match()
-						def grpCount = result.groupCount()
-						for (i in 1..grpCount) {
-							def keyname = mapFormat[colindex]
-							if (keyname != null) {
-								newrecord[keyname] = result.group(i)
-							}
-							++colindex
-						}
-						s.close();
-						recordarray.push(newrecord)
-					// make one record
-					} else if(rxSplit != null) {
-						def arySplitResults = it.split(rxSplit)
-						def colindex = 1
-						def	recordData = [:]
-						mapFormat.each {
-							// Get key for recordData
-							def keyname = mapFormat[colindex]
-							if(colindex > 0) {
-								if(keyname != null) {
-									// Set value for recordData
-									recordData[keyname] = arySplitResults[colindex - 1]
+				if(procData.out != null) {
+					procData.out.split("\n").each { it ->
+						// make one record
+						if (rxMatch != null) {
+							def s = new Scanner(it)
+							s.findInLine(rxMatch)
+							def newrecord = [:]
+							def colindex = 1
+							def result = s.match()
+							def grpCount = result.groupCount()
+							for (i in 1..grpCount) {
+								def keyname = mapFormat[colindex]
+								if (keyname != null) {
+									newrecord[keyname] = result.group(i)
 								}
+								++colindex
 							}
-							++colindex
+							s.close();
+							recordarray.push(newrecord)
+						// make one record
+						} else if(rxSplit != null) {
+							def arySplitResults = it.split(rxSplit)
+							def colindex = 1
+							def	recordData = [:]
+							mapFormat.each {
+								// Get key for recordData
+								def keyname = mapFormat[colindex]
+								if(colindex > 0) {
+									if(keyname != null) {
+										// Set value for recordData
+										recordData[keyname] = arySplitResults[colindex - 1]
+									}
+								}
+								++colindex
+							}
+							recordarray.push(recordData)
+						} else {
+							recordarray.push([it])
 						}
-						recordarray.push(recordData)
-					} else {
-						recordarray.push([it])
 					}
 				}
+			} else {
+				return procData
 			}
 		} catch (Exception ex) {
 			String stackTrace = org.apache.commons.lang.exception.ExceptionUtils.getFullStackTrace(ex)
@@ -274,6 +280,8 @@ class DefaultJobCaller {
 			def strUser = null
 			def strPwd = null
 			def strAccumulate = null
+			def strOSInfo = null
+			def strMorType = null
 			// groupKeys keys for mapping records
 			def groupKeys = null
 			def resultData = null
@@ -303,6 +311,16 @@ class DefaultJobCaller {
 			
 			// Get DBHOSTID
 			strHostId = getVarFromBinding(binding, ResourceConstants.DBHOSTID)
+			//Get Monitoring type of job
+			strMorType = getVarFromBinding(binding, ResourceConstants.MONITORINGTYPE)
+			def osInfo = null
+			if(strMorType.equals("OS")){
+				//Get OSINFO
+				osInfo = getVarFromBinding(binding, ResourceConstants.OSINFO)
+				//Set process runner for os monitoring job
+				def procRunner = new ProcessRunner(osInfo)
+				binding.setVariable("procRunner", procRunner)
+			}
 			if(strHostId == null) {
 				strHostId = paramsJob.dbHostId
 			}
@@ -344,7 +362,7 @@ class DefaultJobCaller {
 			if (cFetchAction == null && strCommand != null) {
 				// start command
 				logger.debug("fileName: " + fileName + " ---Start Process Command---")
-				resultData = runCommand(strCommand, mapFormat)
+				resultData = runCommand(osInfo,strCommand, mapFormat)
 				logger.debug("fileName: " + fileName + " ---Finish Process Command---")
 			}
 			if (cFetchAction != null) {
@@ -756,4 +774,163 @@ class DefaultJobCaller {
 		}
 		return dbInformation
 	}
+}
+
+//Run command by java process
+class ProcessRunner{
+	//build list command for connect to remote host
+	List<String> listCmd = null
+	def osInfo = null
+	ProcessRunner(){
+	}
+	ProcessRunner(osInfo){
+		this.osInfo = osInfo
+	}
+
+	// build list command to remote host 
+	private buildListCmdRemote(mapCommand){
+		if(this.osInfo.os == "win" ){
+			//Commands  for remote Windows host
+			if(this.osInfo.host != "" && this.osInfo.host != "localhost" ) {
+				// if command format is Map : [type:'wmic or remote' ,commandStr:"command"]
+				if(mapCommand instanceof Map){
+					if(mapCommand.type == "wmic") {
+						listCmd.add("wmic")
+						listCmd.add("/NODE:" + this.osInfo.host)
+						listCmd.add("/user:" + this.osInfo.user)
+						listCmd.add("/password:" + this.osInfo.pass)
+					} else {
+						this.netUse()
+						this.listCmd = new ArrayList<String>()		
+						//PSExec place in %Wiperdog_Home%/bin
+						this.listCmd.add("PsExec.exe")
+						this.listCmd.add("\\\\" +this.osInfo.host )
+						this.listCmd.add("-u")
+						this.listCmd.add(this.osInfo.user)
+						this.listCmd.add("-p")
+						this.listCmd.add(this.osInfo.pass)
+					}
+				}
+				//If command format is String ,set default remote using PsExec
+				if(mapCommand instanceof String){
+					this.netUse()
+					this.listCmd = new ArrayList<String>()		
+					//PSExec place in %Wiperdog_Home%/bin
+					this.listCmd.add("PsExec.exe")
+					this.listCmd.add("\\\\" +this.osInfo.host )
+					this.listCmd.add("-u")
+					this.listCmd.add(this.osInfo.user)
+					this.listCmd.add("-p")
+					this.listCmd.add(this.osInfo.pass)
+				}
+				
+			} else {
+				if(mapCommand instanceof Map ) {
+					if(mapCommand.type == "wmic") {
+						listCmd.add("wmic")
+					}
+				}
+			}
+		} else {
+			//Commands for remote Linux host
+			if(this.osInfo.host != "" && this.osInfo.host != "localhost" ) {
+				listCmd.add("/usr/bin/ssh")
+				listCmd.add(this.osInfo.host)
+			}
+		}
+		return this.listCmd
+	}
+	//Access to shared resources of remote host
+	private netUse(){
+		this.listCmd = new ArrayList<String>()
+		this.listCmd.add("net")
+		this.listCmd.add("use")
+		this.listCmd.add("\\\\"+this.osInfo.host+"\\ipc\$")
+		this.listCmd.add("/user:"+this.osInfo.user)
+		this.listCmd.add(this.osInfo.pass)
+		def process = listCmd.execute()
+		this.listCmd = null
+
+	}
+	//Run process closure
+	def procExecute(mapCommand,boolean isWaitFor){
+		def resultData = [:]
+		def tmpList = null
+		try {
+			this.listCmd = new ArrayList<String>()		
+			if(this.osInfo != null) {
+				if((this.osInfo.host != null) && (this.osInfo.host != "") || (this.osInfo.host != "localhost")){
+					this.listCmd = buildListCmdRemote(mapCommand)
+				}
+				if(mapCommand instanceof Map){					
+					tmpList = (mapCommand.commandStr.trim().split(" ") as List)
+				}
+				if(mapCommand instanceof String){					
+					tmpList = (mapCommand.split(" ") as List)
+				}
+				
+			} else {
+				if(mapCommand instanceof Map){
+					if(mapCommand.type =="wmic"){
+						listCmd.add("wmic")
+					}
+					tmpList = (mapCommand.commandStr.trim().split(" ") as List)
+				}
+				if(mapCommand instanceof String){
+					tmpList = (mapCommand.split(" ") as List)
+				}
+			}			
+			listCmd.addAll(tmpList)
+			ProcessBuilder builder = new ProcessBuilder(listCmd)
+			Process proc = builder.start()
+			StreamGobbler errorGobbler = new StreamGobbler(proc.getErrorStream(), resultData,'err');
+			StreamGobbler outputGobbler = new StreamGobbler(proc.getInputStream(), resultData,'out');
+			errorGobbler.start();
+			outputGobbler.start();
+			//Read output and error from process executing
+			proc.getOutputStream().close()
+			if(isWaitFor){
+				resultData['exitVal'] = proc.waitFor()
+			}
+			errorGobbler.join()
+			outputGobbler.join()
+		} catch (Exception ex){
+			ex.printStackTrace();
+		}
+		return resultData
+	}
+}
+
+// Thread to get data from output/error stream of process
+class StreamGobbler extends Thread {
+    InputStream is;
+    def resultData;
+	def type;
+	
+    StreamGobbler(InputStream is,resultData,type) {
+        this.is = is;
+        this.resultData = resultData;
+		this.type = type;
+    }
+	
+    public void run() {
+        try {
+            InputStreamReader isr = new InputStreamReader(is);
+            BufferedReader br = new BufferedReader(isr);
+			StringBuffer str = new StringBuffer()
+            String line=null;
+            while ( (line = br.readLine()) != null){
+				str.append(line + "\n")
+			}
+			this.is.close()
+			isr.close()
+			br.close()	
+			this.resultData[this.type] = str.toString()
+        } catch (IOException ioe){
+            ioe.printStackTrace();
+			this.is.close()
+			isr.close()
+			br.close()	
+        }
+    }
 }

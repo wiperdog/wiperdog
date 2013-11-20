@@ -46,6 +46,7 @@ class ResourceConstants{
 	public static final String DEF_DBEXEC_VARIABLE = "DBEXEC_VARIABLE"	
 	public static final String DEF_FINALLY = "FINALLY"
 	public static final String DEF_DBTYPE = "DBTYPE"
+	public static final String OSINFO = "OSINFO"
 	public static final String ORACLE = "@ORA"
 	public static final String MYSQL= "@MYSQL"
 	public static final String POSTGRES = "@PGSQL"
