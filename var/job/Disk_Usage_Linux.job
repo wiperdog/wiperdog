@@ -1,0 +1,63 @@
+JOB = [name:"Disk_Usage_Linux"]
+FETCHACTION = {
+	def cmdDiskInfo= "df"
+	def dataDiskInfo =  procRunner.procExecute(cmdDiskInfo,true).out
+	def listHeader = ["FileName","SizeInt","UsedSizeInt","AvailableSizeInt","UsedPct","MountedOnName"]
+	def checkHeader = false
+	def listData = []
+	dataDiskInfo.eachLine{line->
+		if(!checkHeader){
+			checkHeader = true
+		} else {
+			def data = line.trim().split(" ").findAll{!it.trim().equals("")}
+			listData.add(data)
+		}
+	}
+	//Merge if data not in a line
+	for(int i = 0 ; i < listData.size() ; i++ ){
+		if(listData[i].size() < 6 ){
+			listData[i].addAll(listData[i+1])
+			listData.remove(listData[i+1])
+		}
+	}
+	//Merge data with headers
+	def resultData = []
+	for(int i = 0 ; i < listData.size() ; i++ ){
+		def tmpMap = [:]
+		for(int j = 0 ; j < listData[i].size() ; j++ ){	
+			try	{
+				if((idx = listData[i][j].indexOf("%")) != -1){
+					listData[i][j] = listData[i][j].substring(0,idx)
+					tmpMap[listHeader[j]] = listData[i][j].toLong()
+				} else {
+					tmpMap[listHeader[j]] = Math.round((listData[i][j].toLong())/1024)
+				}
+			} catch(Exception ex){
+				tmpMap[listHeader[j]] = listData[i][j]
+			}
+		}
+		resultData.add(tmpMap)
+	}
+	return resultData
+}
+
+KEYEXPR = ['_root':['FileName'], '_sequence':['SizeInt','UsedSizeInt','AvailableSizeInt']]
+KEYEXPR._unit = ["SizeInt":"KB", "UsedSizeInt":"KB", "AvailableSizeInt":"KB", "UsedPct":"%"]
+KEYEXPR._chart = [
+	[
+        "type": "pie",
+        "name": "Disk Usage",
+        "chart_columns": ["UsedSizeInt", "AvailableSizeInt"]
+    ],
+    [
+        "type": "line",
+        "name": "Used Space Rate",
+        "chart_columns": ["UsedPct"]
+    ]
+]
+
+SENDTYPE = "Store"
+RESOURCEID = "Linux/DiskUage"
+DEST = parameters.dest
+OSINFO = parameters.osinfo
+MONITORINGTYPE = 'OS'

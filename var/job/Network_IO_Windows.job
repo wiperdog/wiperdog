@@ -1,0 +1,65 @@
+JOB = [name:"Network_IO_Windows"]
+FETCHACTION = {
+   def command = [type:"wmic",commandStr:"path Win32_PerfRawData_Tcpip_NetworkInterface Get Name,PacketsReceivedPerSec,PacketsSentPerSec,BytesReceivedPersec,BytesSentPersec /format:csv"]
+   def procData = procRunner.procExecute(command,true)
+   def output = procData.out
+   def checkHeader = false
+   def headers = []
+   def rawData = []
+   //process raw data
+   output.eachLine{
+		if(!checkHeader){
+			if(it.trim() != "") {
+				headers = (it.split(",") as List)
+				checkHeader = true
+			}
+		} else {
+			if(it.trim() != "") {
+				rawData.add((it.split(",") as List))
+			}
+		}
+   }
+   //remove redundant data 
+   headers.remove(0)
+    rawData.each{
+		it.remove(0)
+   }
+   def resultData = []
+   //Merge headers and data
+   rawData.each {
+		def elemData = [:]
+		for(int i = 0; i < it.size(); i++ ){
+			try	{
+				elemData[headers[i]] = it[i].toLong()
+			} catch(NumberFormatException  ex){
+				if(headers[i] == "Name"){
+					headers[i] = "NetworkCardName"
+				}
+				elemData[headers[i]] = it[i]
+			}
+		}
+		resultData.add(elemData)
+   }
+   //Merge listData and list device
+   return resultData
+}
+KEYEXPR = [_root:["NetworkCardName"] , _sequence:["PacketsReceivedPerSec","BytesReceivedPersec"]]
+KEYEXPR._unit = ["PacketsReceivedPerSec" : "count/sec", "PacketsSentPerSec":"count/sec", "BytesReceivedPersec":"byte/sec", "BytesSentPersec":"byte/sec"]
+KEYEXPR._chart = [
+    [
+        "type": "line",
+        "name": "Network I/O Windows - Packets transfering ",
+        "chart_columns": ["PacketsReceivedPerSec", "PacketsSentPerSec"]
+    ],
+    [
+        "type": "line",
+        "name": "Network I/O Windows - Bytes transfering ",
+        "chart_columns": ["BytesReceivedPersec", "BytesSentPersec"]
+
+    ]
+]
+SENDTYPE = "Store"
+RESOURCEID = "Windows/NetworkIO"
+DEST = parameters.dest
+OSINFO = parameters.osinfo
+MONITORINGTYPE = 'OS'

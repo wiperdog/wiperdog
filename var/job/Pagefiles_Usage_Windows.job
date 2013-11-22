@@ -1,0 +1,59 @@
+JOB = [name:"Pagefiles_Usage_Windows"]
+FETCHACTION = {
+	def cmdGetPagefile= [type:"wmic",commandStr:"PAGEFILE GET Name,CurrentUsage,AllocatedBasesize /format:csv"]
+	def dataPagefile = procRunner.procExecute(cmdGetPagefile,true).out
+	def checkHeader = false
+	def headers = []
+	def rawData = []
+	//process raw data
+	dataPagefile.eachLine{
+		if(!checkHeader){
+			if(it.trim() != "") {
+				headers = (it.split(",") as List)
+				checkHeader = true
+			}
+		} else {
+			if(it.trim() != "") {
+				rawData.add((it.split(",") as List))
+			}
+		}
+	}
+	def resultData = []
+	//Merge headers and data
+	rawData.each {
+		def elemData = [:]
+		for(int i = 1; i < it.size(); i++ ){
+			try{
+				elemData[headers[i]] = it[i].toLong()
+			} catch(Exception ex){
+				elemData[headers[i]] = it[i]
+			}
+		}
+		def finalData = [:]
+		finalData["PagefileLocName"] = elemData["Name"]
+		finalData["FreePagefileKB"] = elemData["AllocatedBaseSize"] - elemData["CurrentUsage"]
+		finalData["UsedPct"] = Math.round((elemData["CurrentUsage"]/elemData["AllocatedBaseSize"])*100)
+		finalData["CurrentUsageKB"] = elemData["CurrentUsage"]
+		finalData["TotalPagefileSizeKB"] = elemData["AllocatedBaseSize"]
+		resultData.add(finalData)
+		
+	}
+	return resultData
+}
+KEYEXPR = [_root:["PagefileLocName"],_sequence:["CurrentUsageKB","FreePagefileKB","UsedPct"]]
+KEYEXPR._unit = [ "TotalPagefileSizeKB" : "KB", "CurrentUsageKB": "KB", "FreePagefileKB" : "KB","UsedPct":"%" ]
+KEYEXPR._chart = [
+	[
+		type:"line",
+		name:"Pagefiles Usage Windows - Usage percentage",
+		chart_columns:["UsedPct"]
+	],
+	[	
+		type:"pie",
+		name:"Pagefiles Usage Windows",
+		chart_column:["CurrentUsageKB","FreePagefileKB"]
+	] 
+]
+DEST = parameters.dest
+OSINFO = parameters.osinfo
+MONITORINGTYPE = 'OS'

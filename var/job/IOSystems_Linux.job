@@ -1,0 +1,63 @@
+JOB = [name:"IOSystems"]
+
+FETCHACTION = {
+	def command = "iostat"
+	def resultData = []
+	//data remote
+	def output = procRunner.procExecute(command,false).out
+	def listRows = []
+	output.eachLine{line->
+	 	def row = line.trim()
+		if(row.size() > 0){
+			listRows.add(row)
+		}
+	}
+	listRows.remove(0)
+	//split data Device
+	def tmpHeaderDev = listRows[2].trim().split(" ").findAll{!it.trim().equals("")}
+	def tmpDataDev
+	for(int j=3;j < listRows.size(); j++){
+	def rowDataDev = listRows[j].trim().split(" ").findAll{!it.trim().equals("")}	
+	tmpDataDev = [:]
+	for(int k=0; k<tmpHeaderDev.size(); k++){
+		if(k == 0){
+			tmpDataDev["DeviceName"] = rowDataDev[k]
+		} else {
+			def data = Double.parseDouble(rowDataDev[k])
+			if(tmpHeaderDev[k] == "tps"){
+				tmpDataDev["NumberTransfersRateVal"] = data
+			}
+			if(tmpHeaderDev[k] == "Blk_read/s"){
+				tmpDataDev["NumberBlockReadRateVal"] = data
+			}
+			if(tmpHeaderDev[k] == "Blk_wrtn/s"){
+				tmpDataDev["NumberBlockWriteRateVal"] = data
+			}
+			if(tmpHeaderDev[k] == "Blk_read"){
+				tmpDataDev["NumberBlocksReadInt"] = data
+			}
+			if(tmpHeaderDev[k] == "Blk_wrtn"){
+				tmpDataDev["NumberBlocksWriteInt"] = data
+			}
+		}
+	}
+	resultData.add(tmpDataDev)
+	}
+	return resultData
+}
+
+KEYEXPR = ['_root':['DeviceName'], '_sequence':['NumberTransfersRateVal','NumberBlockReadRateVal','NumberBlockWriteRateVal']]
+KEYEXPR._unit = ["NumberTransfersRateVal":"count/sec", "NumberBlockReadRateVal":"count/sec", "NumberBlockWriteRateVal":"count/sec", "NumberBlocksReadInt":"count", "NumberBlocksWriteInt":"count"]
+KEYEXPR._chart = [
+	[
+        "type": "line",
+        "name": "IO Systems",
+        "chart_columns": ["NumberTransfersRateVal", "NumberBlockReadRateVal", "NumberBlockWriteRateVal"]
+    ]
+]
+
+SENDTYPE = "Store"
+RESOURCEID = "Linux/IOSystems"
+DEST = parameters.dest
+OSINFO = parameters.osinfo
+MONITORINGTYPE = 'OS'

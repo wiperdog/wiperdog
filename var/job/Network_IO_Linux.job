@@ -1,0 +1,84 @@
+JOB = [name:"Network_IO_Linux"]
+FETCHACTION = {
+	def command = 'ifconfig'
+	def output = procRunner.procExecute(command,false)
+	def map = [:]
+	def data = output.out.split("\\n\\n")
+	def resultData = []
+	data.each{d->
+		def checkHeader = false
+		def tmpMapRX = [:]
+		def tmpMapTX = [:]
+		def networkCard = ""
+		def mapData = [:]
+		d.eachLine{
+			if(it.trim() != ""){
+				if(!checkHeader){
+					checkHeader = true
+					mapData["NetworkCardName"] = it.trim().split(" ")[0]
+				} else {
+					if(it.contains("RX packets")){
+						def dataRX = ((it.trim()).split(" ") as List)
+						for(int i = 1 ; i< dataRX.size() ; i++){
+							def item = dataRX[i].split(":")
+							tmpMapRX[item[0]] = item[1].toLong()
+						}
+						tmpMapRX.each{ key,value ->
+							if(key.trim().equals("packets")){
+								mapData["ReceivedPacketsCnt"] = value
+							}
+						}
+					}
+					if(it.contains("TX packets")){
+						def dataTX = ((it.trim()).split(" ") as List)
+						for(int i = 1 ; i< dataTX.size() ; i++){
+							def item = dataTX[i].split(":")
+							tmpMapTX[item[0]] = item[1].toLong()
+						}
+						tmpMapTX.each{ key,value ->
+							if(key.trim().equals("packets")){
+								mapData["TransferedPacketsCnt"] = value
+							}
+						}
+					}
+					if(it.contains("RX byte")){
+						def dataBytes = it.split("  ")
+						dataBytes.each{ dbyte->
+							if(dbyte.contains("RX")){
+								def idx =  dbyte.split(":")[1].indexOf("(")
+								//tmpMapRX["bytes"] = dbyte.split(":")[1].substring(0,idx).toInteger()
+								mapData["ReceivedBytes"] = dbyte.split(":")[1].substring(0,idx).toInteger()
+							}
+							if(dbyte.contains("TX")){
+								def idx =  dbyte.split(":")[1].indexOf("(")
+								mapData["TransferedBytes"] = dbyte.split(":")[1].substring(0,idx).toInteger()
+							}
+						}
+					}
+				}
+			}
+		}
+		resultData.add(mapData)
+	}
+	return resultData
+}
+
+KEYEXPR = [_root:["NetworkCardName"] , _sequence:["ReceivedPacketsCnt","TransferedPacketsCnt"]]
+KEYEXPR._unit = ["ReceivedPacketsCnt" : "count", "TransferedPacketsCnt":"count", "ReceivedBytes":"byte", "TransferedBytes":"byte"]
+KEYEXPR._chart = [
+    [
+        "type": "line",
+        "name": "Network I/O Windows - Packets transfering ",
+        "chart_columns": ["ReceivedPacketsCnt", "TransferedPacketsCnt"]
+    ],
+    [
+        "type": "line",
+        "name": "Network I/O Windows - Bytes transfering ",
+        "chart_columns": ["ReceivedBytes", "TransferedBytes"]
+    ]
+]
+SENDTYPE = "Store"
+RESOURCEID = "Linux/NetworkIO"
+DEST = parameters.dest
+OSINFO = parameters.osinfo
+MONITORINGTYPE = 'OS'

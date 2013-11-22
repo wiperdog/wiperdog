@@ -1,0 +1,74 @@
+JOB = [name:"CPU_Linux"]
+
+FETCHACTION = {
+	def command = "mpstat"
+	def resultData = [:]
+	def listData = []
+	def listRows = []
+	//data remote
+	def output = procRunner.procExecute(command,false).out
+	output.eachLine{line->
+		def row = line.trim().split(" ").findAll{!it.trim().equals("")}
+		if(row.size() > 0){
+			listRows.add(row)
+		}
+	}
+	//remove row title
+	listRows.remove(0)
+	if(listRows.size() == 2){
+		for(int i=3; i< listRows[0].size(); i++){
+			def data = Double.parseDouble(listRows[1][i])
+			if(listRows[0][i] == "%user"){
+				resultData['UserLevelPct'] = data
+			}
+			if(listRows[0][i] == "%nice"){
+				resultData['UserLevelWithNicePriPct'] = data
+			}
+			if(listRows[0][i] == "%sys"){
+				resultData['SystemLevelPct'] = data
+			}
+			if(listRows[0][i] == "%iowait"){
+				resultData['SystemWithIOPct'] = data
+			}
+			if(listRows[0][i] == "%irq"){
+				resultData['TimetoInterruptsPct'] = data
+			}
+			if(listRows[0][i] == "%soft"){
+				resultData['TimetoSoftwareInterruptPct'] = data
+			}
+			if(listRows[0][i] == "%steal"){
+				resultData['StealPct'] = data
+			}
+			if(listRows[0][i] == "%idle"){
+				resultData['IdlePct'] = data
+			}
+			if(listRows[0][i] == "intr/s"){
+				resultData['TotalInterruptsReceivedRateVal'] = data
+			}
+		}
+		resultData['UsedPct'] = resultData['UserLevelPct'] + resultData['UserLevelWithNicePriPct'] + resultData['SystemLevelPct'] + resultData['SystemWithIOPct'] + resultData['StealPct']
+	}
+	listData.add(resultData)
+	return listData
+}
+
+KEYEXPR = ['_sequence':['NumberTransfersRateVal','NumberBlockReadRateVal','NumberBlockWriteRateVal']]
+KEYEXPR._unit = ["UserLevelPct":"%", "UserLevelWithNicePriPct":"%", "SystemLevelPct":"%", "SystemWithIOPct":"%", "TimetoInterruptsPct":"%", "TimetoSoftwareInterruptPct":"%", "StealPct":"%", "IdlePct":"%", "UsedPct":"%", "TotalInterruptsReceivedRateVal":"count/sec"]
+KEYEXPR._chart = [
+	[
+        "type": "line",
+        "name": "Information Usage CPU",
+        "chart_columns": ["UsedPct", "IdlePct"]
+    ],
+    [
+        "type": "line",
+        "name": "Total Interrupts Received",
+        "chart_columns": ["TotalInterruptsReceivedRateVal"]
+    ]
+]
+
+SENDTYPE = "Store"
+RESOURCEID = "Linux/CPU"
+DEST = parameters.dest
+OSINFO = parameters.osinfo
+MONITORINGTYPE = 'OS'
