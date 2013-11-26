@@ -28,17 +28,38 @@ FETCHACTION = {
 		tmpData = [:]
 		for(int i=1; i < headers.size(); i++){
 			if(headers[i] == "Caption"){
-				tmpData["DiskName"] = it[i]
+				if(it[i] != null ) {
+					tmpData["DiskName"] = it[i]
+				} else {
+					tmpData["DiskName"] = null
+				}
 			}
 			if(headers[i] == "FreeSpace"){
-				tmpData["AvaiableSpaceInt"] = it[i].toLong()
+				if(it[i] != null ) {
+					tmpData["AvaiableSpaceInt"] = it[i].toLong()
+				} else {
+					tmpData["AvaiableSpaceInt"] = null
+				}
 			}
 			if(headers[i] == "Size"){
-				tmpData["TotalSpaceInt"] = it[i].toLong()
+				//tmpData["TotalSpaceInt"] = it[i].toLong()
+				if(it[i] != null ) {
+					tmpData["TotalSpaceInt"] = it[i].toLong()
+				} else {
+					tmpData["TotalSpaceInt"] = null
+				}
 			}
 		}
-		tmpData["UsedSpaceInt"] = tmpData["TotalSpaceInt"] - tmpData["AvaiableSpaceInt"]
-		tmpData["UsedPct"] = tmpData["UsedSpaceInt"]*100/tmpData["TotalSpaceInt"]
+		if( (tmpData["TotalSpaceInt"] != null ) && (tmpData["AvaiableSpaceInt"] != null )){
+			tmpData["UsedSpaceInt"] = tmpData["TotalSpaceInt"] - tmpData["AvaiableSpaceInt"]			
+		} else {
+			tmpData["UsedSpaceInt"] = null
+		}
+		if( tmpData["UsedSpaceInt"] && tmpData["TotalSpaceInt"]) {
+			tmpData["UsedPct"] = Math.round(tmpData["UsedSpaceInt"]*100/tmpData["TotalSpaceInt"])
+		} else {
+			tmpData["UsedPct"] = null
+		}
 		listData.add(tmpData)
 	}
 	return listData

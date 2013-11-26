@@ -19,34 +19,87 @@ FETCHACTION = {
 		for(int i=3; i< listRows[0].size(); i++){
 			def data = Double.parseDouble(listRows[1][i])
 			if(listRows[0][i] == "%user"){
-				resultData['UserLevelPct'] = data
+				if(data != null ){
+					resultData['UserLevelPct'] = data
+				} else {
+					resultData['UserLevelPct'] = null
+				}
 			}
 			if(listRows[0][i] == "%nice"){
-				resultData['UserLevelWithNicePriPct'] = data
+				if(data != null ){
+					resultData['UserLevelWithNicePriPct'] = data
+				} else {
+					resultData['UserLevelWithNicePriPct'] = null	
+				}			
 			}
 			if(listRows[0][i] == "%sys"){
-				resultData['SystemLevelPct'] = data
+				if(data != null ){
+					resultData['SystemLevelPct'] = data
+				} else {
+					resultData['SystemLevelPct'] = null	
+				}							
 			}
 			if(listRows[0][i] == "%iowait"){
-				resultData['SystemWithIOPct'] = data
+				if(data != null ){
+					resultData['SystemWithIOPct'] = data
+				} else {
+					resultData['SystemWithIOPct'] = null	
+				}					
+
 			}
 			if(listRows[0][i] == "%irq"){
-				resultData['TimetoInterruptsPct'] = data
+				if(data != null ){
+					resultData['TimetoInterruptsPct'] = data
+				} else {
+					resultData['TimetoInterruptsPct'] = null	
+				}	
 			}
 			if(listRows[0][i] == "%soft"){
-				resultData['TimetoSoftwareInterruptPct'] = data
+				if(data != null ){
+					resultData['TimetoSoftwareInterruptPct'] = data
+				} else {
+					resultData['TimetoSoftwareInterruptPct'] = null	
+				}					
 			}
 			if(listRows[0][i] == "%steal"){
 				resultData['StealPct'] = data
+				if(data != null ){
+					resultData['StealPct'] = data
+				} else {
+					resultData['StealPct'] = null	
+				}						
 			}
 			if(listRows[0][i] == "%idle"){
-				resultData['IdlePct'] = data
+				if(data != null ){
+					resultData['IdlePct'] = data
+				} else {
+					resultData['IdlePct'] = null	
+				}				
 			}
 			if(listRows[0][i] == "intr/s"){
-				resultData['TotalInterruptsReceivedRateVal'] = data
+				if(data != null ){
+					resultData['TotalInterruptsReceivedRateVal'] = data
+				} else {
+					resultData['TotalInterruptsReceivedRateVal'] = null	
+				}				
 			}
 		}
-		resultData['UsedPct'] = resultData['UserLevelPct'] + resultData['UserLevelWithNicePriPct'] + resultData['SystemLevelPct'] + resultData['SystemWithIOPct'] + resultData['StealPct']
+		resultData['UsedPct'] = 0
+		if(resultData['UserLevelPct'] != null){
+			resultData['UsedPct'] = resultData['UserLevelPct']
+		} 
+		if(resultData['UserLevelWithNicePriPct'] != null){
+			resultData['UsedPct'] += resultData['UserLevelWithNicePriPct']
+		}
+		if(resultData['SystemLevelPct'] != null){
+			resultData['UsedPct'] += resultData['SystemLevelPct']
+		}	
+		if(resultData['SystemWithIOPct'] != null){
+			resultData['UsedPct'] += resultData['SystemWithIOPct']
+		}	
+		if(resultData['StealPct'] != null){
+			resultData['UsedPct'] += resultData['StealPct']
+		}			
 	}
 	listData.add(resultData)
 	return listData

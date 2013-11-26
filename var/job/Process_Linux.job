@@ -15,6 +15,17 @@ FETCHACTION = {
 			}
 		}
 	}
+	//Convert data from MB,GB to KB
+	def dataConverter = {data->
+		if(data.contains("m")){
+			data = (Double.parseDouble(data.replace('m','')))*1024
+		} else if(data.contains("g")){
+			data = (Double.parseDouble(data.replace('g','')))*1024*1024					
+		} else {
+			data = data.toLong()
+		}
+		return data
+	}
 	def tmpHeaderDev = listRows[0].trim().split(" ").findAll{!it.trim().equals("")}
 	def tmpDataDev
 	for(int i=1; i<listRows.size(); i++){
@@ -43,30 +54,16 @@ FETCHACTION = {
 			}
 			//get virtual memory used by the process
 			if(tmpHeaderDev[k] == "VIRT"){
-				if(tmpData.contains("m")){
-					tmpData = (Double.parseDouble(tmpData.replace('m','')))*1024
-				} else {
-					tmpData = tmpData.toLong()
-				}
-				tmpDataDev["TotalVirtualMemUsedKB"] = tmpData
+				
+				tmpDataDev["TotalVirtualMemUsedKB"] = dataConverter(tmpData)
 			}
 			//get physical memory used from the process
 			if(tmpHeaderDev[k] == "RES"){
-				if(tmpData.contains("m")){
-					tmpData = (Double.parseDouble(tmpData.replace('m','')))*1024
-				} else {
-					tmpData = tmpData.toLong()
-				}
-				tmpDataDev["ResidentTaskSizeKB"] = tmpData
+				tmpDataDev["ResidentTaskSizeKB"] = dataConverter(tmpData)
 			}
 			//get shared memory of the process
 			if(tmpHeaderDev[k] == "SHR"){
-				if(tmpData.contains("m")){
-					tmpData = (Double.parseDouble(tmpData.replace('m','')))*1024
-				} else {
-					tmpData = tmpData.toLong()
-				}
-				tmpDataDev["TotalSharedMemUsedKB"] = tmpData
+				tmpDataDev["TotalSharedMemUsedKB"] = dataConverter(tmpData)
 			}
 			//get indicates the status of the process
 			if(tmpHeaderDev[k] == "S"){
