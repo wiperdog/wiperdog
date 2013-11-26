@@ -1,0 +1,89 @@
+JOB = [name:"Process_Windows"]
+
+FETCHACTION = {
+	def command = [type:"wmic",commandStr:"Process GET ProcessId,Name,WorkingSetSize,Priority,PageFileUsage,ExecutablePath /format:csv"]
+	def procData = procRunner.procExecute(command,true)
+	//get output data
+	def output = procData.out
+	def checkHeader = false
+	def headers = []
+	def rawData = []
+	def tmpData
+	def listData = []
+	def finalData = []
+	//process raw data
+	output.eachLine{
+		if(!checkHeader){
+			if(it.trim() != "") {
+				headers = (it.split(",") as List)
+				checkHeader = true
+			}
+		} else {
+			if(it.trim() != "") {
+				rawData.add((it.split(",") as List))
+			}
+		}
+	}
+	//get list data final
+	rawData.each{
+		tmpData = [:]
+		for(int i=1; i < headers.size(); i++){
+			if(headers[i] == "ExecutablePath"){
+				tmpData["ExecutablePathName"] = it[i]
+			}
+			if(headers[i] == "Name"){
+				tmpData["Name"] = it[i]
+			}
+			if(headers[i] == "PageFileUsage"){
+				tmpData["PageFileUsageInt"] = it[i].toLong()
+			}
+			if(headers[i] == "Priority"){
+				tmpData["PriorityInt"] = it[i].toLong()
+			}
+			if(headers[i] == "ProcessId"){
+				tmpData["ProcessId"] = it[i].toLong()
+			}
+			if(headers[i] == "WorkingSetSize"){
+				tmpData["WorkingSetSizeInt"] = it[i].toLong()
+			}
+		}
+		listData.add(tmpData)
+	}
+	// Sort records by WorkingSetSizeInt and PageFileUsageInt
+	def arrayMapData = listData.toArray(listData)
+	Arrays.sort(arrayMapData, new Comparator() {
+		public int compare(arg0, arg1) {
+			def first = arg0
+			def second = arg1
+			int countTime = (second['WorkingSetSizeInt'] != null ? second['WorkingSetSizeInt'] : 0) - (first['WorkingSetSizeInt'] != null ? first['WorkingSetSizeInt'] : 0)
+			if (countTime == 0) {
+				int countExecute = (second['PageFileUsageInt'] != null ? second['PageFileUsageInt'] : 0) - (first['PageFileUsageInt'] != null ? first['PageFileUsageInt'] : 0)
+				countTime = (countExecute < 0 ? -1 : (countExecute == 0 ? 0 : 1))
+			}
+			return countTime
+		}
+	})
+	//get top 10 process
+	if (listData.size() > 10) {
+		 finalData = arrayMapData.getAt(0..9)
+	} else {
+		 finalData = arrayMapData
+	}
+	return finalData
+}
+
+KEYEXPR = [_root:['ProcessId'],_sequence:['WorkingSetSizeInt','PageFileUsageInt','PriorityInt']]
+KEYEXPR._unit = ["PageFileUsageInt": "KB", "WorkingSetSizeInt":"byte"]
+KEYEXPR._chart = [
+	[
+        "type": "line",
+        "name": "Process Information",
+        "chart_columns": ["PageFileUsageInt", "WorkingSetSizeInt"]
+    ]
+]
+
+SENDTYPE = "Store"
+RESOURCEID = "Windows/Process"
+DEST = parameters.dest
+OSINFO = parameters.osinfo
+MONITORINGTYPE = 'OS'

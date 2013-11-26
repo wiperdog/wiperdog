@@ -1,0 +1,55 @@
+JOB = [name:"OS_Information_Linux"]
+FETCHACTION = {
+	def resultData = [:]
+	//Get OS Name
+	def cmdOSName = "lsb_release -d"
+	def procData = procRunner.procExecute(cmdOSName,true)
+	//get output data
+	resultData["OSName"] = procData.out.trim().split(":")[1].trim()
+	//Get OS architect
+	def cmdOSArch = "/bin/uname -m"
+	procData = procRunner.procExecute(cmdOSArch,true)
+	resultData["OSArchName"] = procData.out.trim()
+	//Count number of users 
+	def cmdOSUserCount = "cat /etc/passwd"
+	procData = procRunner.procExecute(cmdOSUserCount,true)
+	def numOfUser = 0
+	
+	procData.out.eachLine{
+		if(it.trim() != ""){
+			numOfUser++ 
+		}
+	}
+	resultData["OSUserCnt"] = numOfUser
+	//Get host name
+	def cmdOSHostname = "hostname"
+	procData = procRunner.procExecute(cmdOSHostname,true)
+	resultData["OSHostName"] = procData.out.trim()
+	//Get os install date 
+	def cmdOSInstDate = 'ls -lct /etc '
+	 
+	def lastLine = null	
+	procData = procRunner.procExecute(cmdOSInstDate,true)
+	procData.out.eachLine{
+		if(it.trim() != ""){
+			lastLine = it
+		}
+	}
+	def dataDate = lastLine.trim().split(" ")
+	dataDate = dataDate.findAll{!it.trim().equals("")}
+	if(dataDate[6].toInteger() < 10 ){
+		dataDate[6] = "0"+dataDate[6]
+	}
+	resultData["OSInstallDate"] = dataDate[5] + "-" + dataDate[6] + "-" +dataDate[7] 
+	java.text.SimpleDateFormat sf = new java.text.SimpleDateFormat("MMM-dd-yyyy")
+	def date = sf.parse(resultData["OSInstallDate"])
+	sf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+	resultData["OSInstallDate"] = sf.format(date)	
+	return resultData
+}
+
+SENDTYPE = "Store"
+RESOURCEID = "Windows/OSInfomation"
+DEST = parameters.dest
+OSINFO = parameters.osinfo
+MONITORINGTYPE = 'OS'
