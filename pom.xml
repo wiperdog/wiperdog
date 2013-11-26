@@ -12,7 +12,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.wiperdog</groupId>
   <artifactId>wiperdog-assembly</artifactId>
-  <version>0.2.3-SNAPSHOT</version>
+  <version>0.2.3</version>
 
   <packaging>jar</packaging>
   <name>wiperdog-assembly</name>
@@ -29,7 +29,7 @@
     <url>scm:git:https://github.com/wiperdog/org.wiperdog.wiperdog.git</url>
     <connection>scm:git:https://github.com/wiperdog/org.wiperdog.wiperdog.git</connection>
     <developerConnection>scm:git:https://github.com/wiperdog/org.wiperdog.wiperdog.git</developerConnection>
-    <tag>HEAD</tag>
+    <tag>v0.2.3</tag>
   </scm>
 
   <dependencies>
