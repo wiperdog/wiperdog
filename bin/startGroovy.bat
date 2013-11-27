@@ -230,7 +230,7 @@ set CMD_LINE_ARGS=%$
 :execute
 @rem Setup the command line
 ::set STARTER_CLASSPATH=%GROOVY_HOME%\lib\groovy-1.8.6.jar
-set STARTER_CLASSPATH=%GROOVY_HOME%\lib\java\bundle.a\groovy-all-2.2.0.jar
+set STARTER_CLASSPATH=%GROOVY_HOME%\lib\java\bundle.a\groovy-all-2.2.1.jar
 set BUNDLE_CLASSPATH=%GROOVY_HOME%\lib\java\bundle\*
 set BUNDLE_A_CLASSPATH=%GROOVY_HOME%\lib\java\bundle.a\*
 set BUNDLE_WRAP_CLASSPATH=%GROOVY_HOME%\lib\java\bundle.wrap\*
