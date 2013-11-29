@@ -1,4 +1,4 @@
-JOB = [name:"IOSystems"]
+JOB = [name:"OS.IOSystems_Linux"]
 
 FETCHACTION = {
 	def command = "iostat"

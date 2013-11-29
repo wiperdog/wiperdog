@@ -1,4 +1,4 @@
-JOB = [name:"CPU_Linux"]
+JOB = [name:"OS.CPU_Linux"]
 
 FETCHACTION = {
 	def command = "mpstat"

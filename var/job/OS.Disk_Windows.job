@@ -1,4 +1,4 @@
-JOB = [name:"Disk_Windows"]
+JOB = [name:"OS.Disk_Windows"]
 
 FETCHACTION = {
 	def command = [type:"wmic",commandStr:"logicaldisk get size,freespace,caption /format:csv"]

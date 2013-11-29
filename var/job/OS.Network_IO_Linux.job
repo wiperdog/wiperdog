@@ -1,4 +1,4 @@
-JOB = [name:"Network_IO_Linux"]
+JOB = [name:"OS.Network_IO_Linux"]
 FETCHACTION = {
 	def command = 'ifconfig'
 	def output = procRunner.procExecute(command,false)
@@ -46,12 +46,12 @@ FETCHACTION = {
 						dataBytes.each{ dbyte->
 							if(dbyte.contains("RX")){
 								def idx =  dbyte.split(":")[1].indexOf("(")
-								//tmpMapRX["bytes"] = dbyte.split(":")[1].substring(0,idx).toInteger()
-								mapData["ReceivedBytes"] = dbyte.split(":")[1].substring(0,idx).toInteger()
+								//tmpMapRX["bytes"] = dbyte.split(":")[1].substring(0,idx).toLong()
+								mapData["ReceivedBytes"] = dbyte.split(":")[1].substring(0,idx).toLong()
 							}
 							if(dbyte.contains("TX")){
 								def idx =  dbyte.split(":")[1].indexOf("(")
-								mapData["TransferedBytes"] = dbyte.split(":")[1].substring(0,idx).toInteger()
+								mapData["TransferedBytes"] = dbyte.split(":")[1].substring(0,idx).toLong()
 							}
 						}
 					}

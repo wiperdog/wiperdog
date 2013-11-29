@@ -1,4 +1,4 @@
-JOB = [name:"CPU_Windows"]
+JOB = [name:"OS.CPU_Windows"]
 
 FETCHACTION = {
 	def command = [type:"wmic",commandStr:"cpu get loadpercentage /value"]

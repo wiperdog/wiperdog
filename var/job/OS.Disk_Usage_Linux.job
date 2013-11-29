@@ -1,4 +1,4 @@
-JOB = [name:"Disk_Usage_Linux"]
+JOB = [name:"OS.Disk_Usage_Linux"]
 FETCHACTION = {
 	def cmdDiskInfo= "df"
 	def dataDiskInfo =  procRunner.procExecute(cmdDiskInfo,true).out

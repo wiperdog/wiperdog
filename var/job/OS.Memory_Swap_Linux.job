@@ -1,4 +1,4 @@
-JOB = [name:"Memory_Swap_Linux"]
+JOB = [name:"OS.Memory_Swap_Linux"]
 FETCHACTION = {
  def command = "free"
  def resultData = []

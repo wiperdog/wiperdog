@@ -1,4 +1,4 @@
-JOB = [name:"OS_Information_Windows"]
+JOB = [name:"OS.OS_Information_Windows"]
 
 FETCHACTION = {
 	def command = [type:"wmic",commandStr:"OS GET Caption,Version,WindowsDirectory,NumberOfUsers,CSName,InstallDate,ServicePackMajorVersion /format:csv"]
@@ -62,7 +62,8 @@ FETCHACTION = {
 	
 	return listData
 }
-SENDTYPE = "STORE"
+SENDTYPE = "Store"
 DEST = parameters.dest
 OSINFO = parameters.osinfo
 MONITORINGTYPE = 'OS'
+RESOURCEID = "Windows/OSInfo"

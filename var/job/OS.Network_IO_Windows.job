@@ -1,4 +1,4 @@
-JOB = [name:"Network_IO_Windows"]
+JOB = [name:"OS.Network_IO_Windows"]
 FETCHACTION = {
    def command = [type:"wmic",commandStr:"path Win32_PerfRawData_Tcpip_NetworkInterface Get Name,PacketsReceivedPerSec,PacketsSentPerSec,BytesReceivedPersec,BytesSentPersec /format:csv"]
    def procData = procRunner.procExecute(command,true)

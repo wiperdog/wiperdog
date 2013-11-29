@@ -1,4 +1,4 @@
-JOB = [name:"Memory_Usage_Windows"]
+JOB = [name:"OS.Memory_Usage_Windows"]
 FETCHACTION = {
 	def cmdGetPhysMem= [type:"wmic",commandStr:"OS GET FreePhysicalMemory,TotalVisibleMemorySize /format:csv"]
 	def dataPhysMem =  procRunner.procExecute(cmdGetPhysMem,true).out
@@ -51,9 +51,11 @@ KEYEXPR._chart = [
 	[	
 		type:"pie",
 		name:"Memory Usage Windows",
-		chart_column:["FreeMemorySizeKB","UsedMemorySizeKB"]
+		chart_columns:["FreeMemorySizeKB","UsedMemorySizeKB"]
 	] 
 ]
 DEST = parameters.dest
 OSINFO = parameters.osinfo
 MONITORINGTYPE = 'OS'
+RESOURCEID = "Windows/Memory"
+SENDTYPE = "Store"

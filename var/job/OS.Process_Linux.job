@@ -1,4 +1,4 @@
-JOB = [name:"Process_Linux"]
+JOB = [name:"OS.Process_Linux"]
 
 FETCHACTION = {
 	def command = "top -b -n 1"
@@ -48,7 +48,7 @@ FETCHACTION = {
 				}
 				tmpDataDev["PriorityInt"] = tmpData
 			}
-			//get the ìNICEî value of the process
+			//get the ìNICEÅEvalue of the process
 			if(tmpHeaderDev[k] == "NI"){
 				tmpDataDev["NicePriorityInt"] = Integer.parseInt(tmpData)
 			}
@@ -140,6 +140,6 @@ KEYEXPR._chart = [
 
 SENDTYPE = "Store"
 RESOURCEID = "Linux/Process"
-DEST = [[file:"stdout"],[file:"Process_Linux.txt"]]
+DEST = parameters.dest
 OSINFO = parameters.osinfo
 MONITORINGTYPE = 'OS'

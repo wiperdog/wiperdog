@@ -1,4 +1,4 @@
-JOB = [name:"IOSystems_Windows"]
+JOB = [name:"OS.IOSystems_Windows"]
 
 FETCHACTION = {
 	def command = [type:"wmic",commandStr:"path Win32_PerfRawData_PerfDisk_PhysicalDisk Get DiskTransfersPerSec,DiskReadsPerSec,DiskWritesPerSec,DiskBytesPerSec,DiskReadBytesPerSec,DiskWriteBytesPerSec,SplitIOPerSec /format:csv"]

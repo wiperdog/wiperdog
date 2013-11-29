@@ -1,4 +1,4 @@
-JOB = [name:"Pagefiles_Usage_Windows"]
+JOB = [name:"OS.Pagefiles_Usage_Windows"]
 FETCHACTION = {
 	def cmdGetPagefile= [type:"wmic",commandStr:"PAGEFILE GET Name,CurrentUsage,AllocatedBasesize /format:csv"]
 	def dataPagefile = procRunner.procExecute(cmdGetPagefile,true).out
@@ -51,9 +51,11 @@ KEYEXPR._chart = [
 	[	
 		type:"pie",
 		name:"Pagefiles Usage Windows",
-		chart_column:["CurrentUsageKB","FreePagefileKB"]
+		chart_columns:["CurrentUsageKB","FreePagefileKB"]
 	] 
 ]
 DEST = parameters.dest
 OSINFO = parameters.osinfo
 MONITORINGTYPE = 'OS'
+RESOURCEID = "Windows/PageFilesUsage"
+SENDTYPE = "Store"

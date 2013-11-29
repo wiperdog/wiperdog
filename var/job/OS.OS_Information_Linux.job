@@ -1,5 +1,6 @@
-JOB = [name:"OS_Information_Linux"]
+JOB = [name:"OS.OS_Information_Linux"]
 FETCHACTION = {
+        def finalReturn = []
 	def resultData = [:]
 	//Get OS Name
 	def cmdOSName = "lsb_release -d"
@@ -37,7 +38,7 @@ FETCHACTION = {
 	}
 	def dataDate = lastLine.trim().split(" ")
 	dataDate = dataDate.findAll{!it.trim().equals("")}
-	if(dataDate[6].toInteger() < 10 ){
+	if(dataDate[6].toLong() < 10 ){
 		dataDate[6] = "0"+dataDate[6]
 	}
 	resultData["OSInstallDate"] = dataDate[5] + "-" + dataDate[6] + "-" +dataDate[7] 
@@ -45,7 +46,8 @@ FETCHACTION = {
 	def date = sf.parse(resultData["OSInstallDate"])
 	sf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
 	resultData["OSInstallDate"] = sf.format(date)	
-	return resultData
+        finalReturn.add(resultData)
+	return finalReturn
 }
 
 SENDTYPE = "Store"

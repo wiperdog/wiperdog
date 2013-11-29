@@ -1,4 +1,4 @@
-JOB = [name:"Process_Windows"]
+JOB = [name:"OS.Process_Windows"]
 
 FETCHACTION = {
 	def command = [type:"wmic",commandStr:"Process GET ProcessId,Name,WorkingSetSize,Priority,PageFileUsage,ExecutablePath /format:csv"]
