@@ -16,6 +16,12 @@ import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
@@ -31,8 +37,7 @@ import org.wiperdog.installer.internal.XMLErrorHandler;
  */
 public class SelfExtractorCmd {	 
 	public static String OUTPUT_FOLDER = "";
-	public static void main(String args[]){
-	
+	public static void main(String args[]){	
 		//Argurments : -d (wiperdog home) ,-j(jetty port),-m(mongodb host),-p(mongodb port),-n(database name),-u(user database),-pw(password database),-mp(mail policy),-s(install as OS service)
 		List<String> listParams = new ArrayList<String>();
 		listParams.add("-d");
@@ -47,9 +52,42 @@ public class SelfExtractorCmd {
 		List<String> listArgs = Arrays.asList(args);
 		try {
 			// check command syntax
-			if ((args.length < 2) || (!args[0].trim().equals("-d")) ) {
+			if (args.length == 0) {
+				//Get current dir
+				String currentDir = System.getProperty("user.dir");
+				
+				//Get jar file name, create install directory name
+				String jarFileName = new java.io.File(SelfExtractorCmd.class.getProtectionDomain().getCodeSource().getLocation().getPath()).getName();
+				String macherPattern = "(.*)(-unix|-win)(.jar)";
+				Pattern pattern = Pattern.compile(macherPattern, Pattern.DOTALL);
+				Matcher matcher = pattern.matcher(jarFileName);
+				while(matcher.find()){
+					jarFileName = matcher.group(1);
+				}
+				
+				//wiperdog home path
+				String wiperdogPath = currentDir + File.separator + jarFileName;
+				
+				//Check install or not
+				System.out.println("You omitted to specify WIPERDOG HOME.");
+				InputStreamReader converter = new InputStreamReader(System.in);
+	            BufferedReader inp = new BufferedReader(converter, 512);
+	            String confirmStr = "";
+	            
+	            while ((!confirmStr.toLowerCase().equalsIgnoreCase("y")) && (!confirmStr.toLowerCase().equalsIgnoreCase("n"))) {
+	            	System.out.println("Are you sure to install wiperdog at " + wiperdogPath + " ? [y/n] :");
+	            	confirmStr = inp.readLine().trim();
+	            	if (confirmStr.toLowerCase().equalsIgnoreCase("y")) {
+	            		OUTPUT_FOLDER = wiperdogPath;
+	            	} else if (confirmStr.toLowerCase().equalsIgnoreCase("n")) {
+	            		System.exit(0);
+	            	}
+	            }
+			} else if ((args.length < 2) || (!args[0].trim().equals("-d")) ) {
 				System.out.println("Wrong parameter. Usage:\n \t\t java -jar [Installer Jar] -d [INSTALL_PATH>] \n \t\t or \n \t\t java -jar [Installer Jar] -d [INSTALL_PATH] -j [jettyport] -m [mongodb host] -p [mongodb port] -n [mongodb database name] -u [mongodb user name] -pw [mongodb password] -mp [mail policy] -s [yes/no install as OS service]");
 				System.exit(0);
+			} else {
+				OUTPUT_FOLDER = (String) args[1];
 			}
 			//Get default params not in arguments
 			List<String> defaultParams = new ArrayList<String>();
@@ -176,8 +214,7 @@ public class SelfExtractorCmd {
 					}
 				}
 			} 
-
-			OUTPUT_FOLDER = (String) args[1];			
+			
 			File outputDir = new File(OUTPUT_FOLDER);
 			//check if wiperdog home params is not an absolute path
 		    if(!outputDir.isAbsolute()) {
@@ -225,7 +262,7 @@ public class SelfExtractorCmd {
 		if(InstallerXML.getInstance().getRunInstallerSyntax() == null || InstallerXML.getInstance().getRunInstallerSyntax().equals(""))
 			throw new Exception("Cannot run configuration for newly installed Wiperdog");
 		
-		//Run java process, e.g: java -jar lib/java/bundle/groovy-all-2.2.0.jar installer/installer.groovy
+		//Run java process, e.g: java -jar lib/java/bundle/groovy-all-2.2.1.jar installer/installer.groovy
 		String runInstallerSyntax =  InstallerXML.getInstance().getRunInstallerSyntax();
 		
 		runInstallerSyntax += " "+OUTPUT_FOLDER  + " " + strArgs;
