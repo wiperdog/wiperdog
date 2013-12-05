@@ -47,26 +47,75 @@ WiperDog server is the control center of WiperDog solution.
 You just need to download and unpack to where you like.  
 Package(WiperDog server assembly) is located [here](http://develop.wiperdog.org/jenkins/job/wiperdog-assembly-v0.1.0/lastSuccessfulBuild/artifact/target/wiperdog-0.1.0-unix.zip)  
 or [here(for Windows)](http://develop.wiperdog.org/jenkins/job/wiperdog-assembly-v0.1.0/lastSuccessfulBuild/artifact/target/wiperdog-0.1.0-win.zip)  
-After unpacking the WiperDog assembly, You need to do some 'dirty work'.  
-1.  You need  to edit bin/wiperdog file
+After downloaded packages above, you can simply invoke it as installer, the usage is:
 
-    ...
-    . /etc/rc.d/init.d/functions  
-    
-    WIPERDOGHOME=/home/luvina/wiperdog
-    ...
-Change the value of WIPERDOGHOME above to the directory you unpacked WiperDog assembly.  
-2.  You need to edit var/conf/default.params like:
+    Usage:
+                 java -jar [Installer Jar] -d [INSTALL_PATH>]
+                 or
+                 java -jar [Installer Jar] -d [INSTALL_PATH] -j [jettyport] -m [mongodb host] -p [mongodb port] -n [mongodb database name] -u [mongodb user name] -pw [mongodb password] -mp [mail policy] -s [yes/no install as OS service]
 
+the "-d" option can be omitted.  
+The installation process is like as following...   
+
+     $ java -jar wiperdog-0.2.4-unix.jar
+     You omitted to specify WIPERDOG HOME.
+     Are you sure to install wiperdog at [current working directory]/wiperdog-0.2.4 ? [y/n] :
+     y <--- you type "y" if it is OK to install at the directory specified above.
+     Wiperdog will be install to directory: /home/kurohara/work/wiperdog_test/wiperdog/target/wiperdog-0.2.4
+     Wiperdog installer, unzip to file : /home/kurohara/work/wiperdog_test/wiperdog/target/wiperdog-0.2.4/lib/java/bundle.wrap/ojdbc5.jar
      ...
-      ],
-     dest: [ [ file: "stdout" ] ],
-     datadirectory: [
      ...
-The value of "dest: " is what you need to change, for this version, just change like this:  
+     ...
+     Wiperdog installer, unzip to file : /home/kurohara/work/wiperdog_test/wiperdog/target/wiperdog-0.2.4/lib/java/ext/org.apache.felix.framework-4.2.1.jar
+     Self-extracting done!
+     ----------------------------------------------------------------
+     ------------------    INSTALLATION     -------------------------
+     ----------------------------------------------------------------
+     Welcome to the installation of Wiperdog multi purposes monitoring system - Version: 1.0.1
+     
+     Wiperdog is multi purpose monitoring DBMS system writing in Groovy.
+     Wiperdog has some major components as followings:
+     1. MongoDB is used as a storage DBMS for storing monitoring result data.
+     Mongodb is good for large scale system with high concurrence access, it also provide a very good performance
+     2. XWiki is used as a front-end user GUI. It is easy customizable and configurable
+     3. Groovy monitoring framework, has built by Insight-tech, is well-structure, easy for maintenance, scalable and configurable
+     Thank you for using wiperdog, please follow screen construction to continue the installation
+     
+     Getting input parameters for pre-configured wiperdog, press any key to continue...
+     Please input Jetty Port(default set to 13111):
+     <---- you can type just ENTER.
+     Please input database server (Mongodb) IP address (default set to 127.0.0.1):
+     <---- you can type just ENTER.
+     Please input database server port, Mongodb port (default set to 27017):
+     <---- you can type just ENTER.
+     Please input database name (default set to wiperdog):
+     <---- you can type just ENTER.
+     Please input database server user name, (Mongodb user name, default set to empty):
+     <---- you can type just ENTER.
+     Please input database server password, (Mongodb password, default set to empty):
+     <---- you can type just ENTER.
+     Please input mail send data policy, Mail Policy (default set to testmail@gmail.com):
+     <---- you can type just ENTER.
+     Do you want to install wiperdog as system service, default set to 'yes' (type yes|no), enter for default value:
+     no <-- type 'no' if you don't want to setup WiperDog server as System service.(or if you simply don't have the administrater permission)
+     
+     
+     Please CONFIRM The following configuration are correct:
+     Wiperdog Home:/home/kurohara/work/wiperdog_test/wiperdog/target/wiperdog-0.2.4
+     Server Port:13111
+     Database address:127.0.0.1
+     Database port:27017
+     Database name:wiperdog
+     User name:
+     Password:
+     Mail Policy:testmail@gmail.com
+     Install as OS service:no
+     
+     
+     Your input are correct(Y|y|N|n):
+     y <-- type 'y' if all is OK.
 
-    dest: [ [ http: "localhost:13111/spool/tfm_test" ] ],  
-
+     
 Now you can try to start WiperDog server as:   
 
     $ bin/startWiperdog.sh
@@ -78,26 +127,6 @@ or(for Windows)
 Please check you don't see kinda errors.
 
 You can finish startup test by pressing CTRL-C.
-### For Linux OS(Redhat/CentOS), registering Wiperdog as service
-bin/wiperdog file you modified above is used by WiperDog GUI, and also can be used as service run command file.  
-After entering root account do as following  
-
-    # cd bin
-    # chkconfig --add wiperdog
-    # chkconfig --level 345 wiperdog on
-
-### For Windows OS, registering Windows Service
-This is just for Windows OS user.
-If you choosed Windows OS to install WiperDog, You should register WiperDog server as Windows Service or you may not able to control WiperDog Server from XWiki GUI.
-You can register WiperDog Server as Windows Service after startup test successflly finished.  
-1. Open command prompt, then set JAVA_HOME environment variable to where your jre installed.  
-   Be careful, never quote the path.  
-2. Go to the directory service\javaservice then invoke   
-
-    service\javaservice> create_wiperdog_service DIRECTORY_WHERE_WIPERDOG_SERVER_PLACED
-Please replace DIRECTORY\_WHERE\_WIPERDOG\_SERVER\_PLACED to the directory path where the WiperDog server placed.  
-Again, You need to using 32bit version of jre to successfully register Windows Service.
-
 
 Download and Install WiperDog XWiki app
 ---------------------------------
@@ -151,6 +180,6 @@ You need to setup WiperDog GUI to use WiperDog.
 
 
 That's all.
-You cat re-visit WiperDog space, then start your tour around WiperDog.  
+You can re-visit WiperDog space, then start your tour around WiperDog.  
 Enjoy.
 
