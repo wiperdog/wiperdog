@@ -30,10 +30,10 @@ Downloading binary packages.
 -------------------------------------
 You need 2 packages to install WiperDog.  
 
-1.  [WiperDog Server assembly(for linux)](http://demo.wiperdog.org/jenkins/job/wiperdog-assembly/lastSuccessfulBuild/artifact/target/wiperdog-0.1.0-SNAPSHOT-unix.zip).  
-or  [WiperDog Server assembly(for Windows)](http://demo.wiperdog.org/jenkins/job/wiperdog-assembly/lastSuccessfulBuild/artifact/target/wiperdog-0.1.0-SNAPSHOT-win.zip)   
+1.  [WiperDog Server assembly(for linux)](http://develop.wiperdog.org/jenkins/job/wiperdog-assembly-v0.2.4/lastSuccessfulBuild/artifact/target/wiperdog-0.2.4-unix.jar).  
+or  [WiperDog Server assembly(for Windows)](http://develop.wiperdog.org/jenkins/job/wiperdog-assembly-v0.2.4/lastSuccessfulBuild/artifact/target/wiperdog-0.2.4-win.jar)   
 (There are no significant difference between Linux version and Windows version except line endings.)
-2.  [WiperDog XWiki Application](http://develop.wiperdog.org/jenkins/job/wiperdog-xwiki-app/lastSuccessfulBuild/artifact/target/wiperdog-xwiki-app-0.1.0.xar).  
+2.  [WiperDog XWiki Application](http://develop.wiperdog.org/jenkins/job/wiperdog-xwiki-app/lastSuccessfulBuild/artifact/target/wiperdog-ui-0.2.3-SNAPSHOT.xar).  
 
 Installation
 -------------------------------------
