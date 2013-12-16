@@ -2,7 +2,22 @@
 
 jobname=$1
 IST_HOME=`cd \`dirname $0\`/../;pwd`
-JOBDATA_DIR=${IST_HOME}/tmp/monitorjobdata
+if [ "$jobname" = "-f" ];then
+  forkname=$2
+  jobname=$3
+fi
+if [ "$forkname" = "" ];then
+  JOBDATA_DIR=${IST_HOME}/tmp/monitorjobdata
+else
+  JOBDATA_DIR=${IST_HOME}/fork/${forkname}/tmp/monitorjobdata
+fi
+
+# Check tmp folder exist or not
+if [ ! -d ${JOBDATA_DIR} ];then
+   echo $JOBDATA_DIR directory does not exist !!!
+   exit
+fi
+
 LASTEXECUTION_DIR=${JOBDATA_DIR}/LastExecution
 PERSISTENTDATA_DIR=${JOBDATA_DIR}/PersistentData
 PREVOUTPUT_DATA=${JOBDATA_DIR}/PrevOUTPUT
@@ -21,6 +36,7 @@ fi
 
 # if no jobname specified, list all jobs that have data file.
 if [ "$jobname" = "" ];then
+  echo "Usage: clearjobdata [-f FORK_NAME] JOB_NAME"
   echo No jobname specified, getting list.
   lastexecution_data=`cd ${LASTEXECUTION_DIR};ls *.txt 2>/dev/null`
   # It's enough to see only lastexecution directory, this directory should include all presense of other directory.
@@ -57,4 +73,3 @@ if [ -e ${PREVOUTPUT_DATA}/${jobname}.txt ];then
 else
    echo Nothing to do for PrevOUTPUT files of ${jobname}.
 fi
-

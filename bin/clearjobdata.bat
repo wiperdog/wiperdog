@@ -3,15 +3,23 @@
 setlocal enabledelayedexpansion
   set SELF=%~n0
   set JOB_NAME=%~1
+  if "%JOB_NAME%" == "-f" (
+    set FORK_NAME=%~2
+    set JOB_NAME=%~3
+  )
   
   for %%i in ("%~dps0..") do set PIEX_HOME=%%~fi
-  set MONITOR_JOB_DATA=%PIEX_HOME%\tmp\monitorjobdata
+  if "%FORK_NAME%" == "" (
+  	set MONITOR_JOB_DATA=%PIEX_HOME%\tmp\monitorjobdata
+  ) else (
+    set MONITOR_JOB_DATA=%PIEX_HOME%\fork\%FORK_NAME%\tmp\monitorjobdata
+  )
   set LAST_EXECUTION=%MONITOR_JOB_DATA%\LastExecution
   set PERSISTENT_DATA=%MONITOR_JOB_DATA%\PersistentData
   set PREV_OUTPUT=%MONITOR_JOB_DATA%\PrevOUTPUT
   
   if "%JOB_NAME%" == "" (
-    echo Usage: %SELF% JOB_NAME >&2
+    echo Usage: clearjobdata [-f FORK_NAME] JOB_NAME
     echo.
     echo Job name list
     echo.
@@ -53,4 +61,3 @@ setlocal
   for /f "tokens=*" %%i in (%f1%) do findstr /x /c:"%%i" %f2% > NUL || (echo %%i) >> %f2%
 endlocal & exit /b 0
 goto :EOF
-

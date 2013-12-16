@@ -17,13 +17,25 @@ fi
 PREFIX=`cd "$dir/.." && pwd`
 cd "$PREFIX/bin"
 
+# GET FORK IF HAVE DATA
+if [ ! "$1"="-f" ]; then 
+	export fork=""
+else
+	export fork=$2
+	export forkFolder="$PREFIX/fork/$fork"
+	if [ ! -d "$forkFolder" ]; then
+        echo "Fork folder does not exists for port $fork, please try to create fork by createFork shell !!!"
+        exit 1
+    fi
+fi
+
 # MAIN FUNCTION
 function main() {
     chooseOption
     getDataInput
     setDefaultValue
     confirm=""
-    while [[ $confirm != "N" ]] && [[ $confirm != "Y" ]]
+    while [ "$confirm" != "N" ] && [ "$confirm" != "Y" ]
     do
         # CONFIRM INPUT DATA
         echo ========== INFORMATION ENTERED ==========
@@ -87,12 +99,14 @@ function getDataInput() {
     # port
     echo -n "Port (Default 27017): "
     read port
+    export isNumber=1
     checkPort $port
     while [ $isNumber -eq 0 ]
     do	
         echo "Port is not a valid number. Please reconfig !!!"
         echo -n "Port (Default 27017): "
         read port
+        export isNumber=1
         checkPort $port
     done
     # db name
@@ -127,21 +141,20 @@ function setDefaultValue() {
 
 # CHECK PORT MUST BE NUMBER
 function checkPort() {
-    export isNumber=1
     if ! [[ $1 =~ ^[0-9]+$ ]]
     then
         if [ "$1" == "" ]
         then
             isNumber=1
         else
-	    isNumber=0
+	        isNumber=0
         fi
     fi
 }
 
 # SEND DATA INPUT TO GROOVY FILE
 function sendToGroovy() {
-    "./groovy" "./gendbmongoinfo.groovy" "$status" "$host" "$port" "$dbName" "$user" "$pass"
+    "./groovy" "./gendbmongoinfo.groovy" "$fork" "$status" "$host" "$port" "$dbName" "$user" "$pass"
 }
 
 # CALL MAIN FUNCTION

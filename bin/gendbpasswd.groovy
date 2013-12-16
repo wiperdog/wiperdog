@@ -7,10 +7,10 @@ import java.nio.charset.Charset;
 
 public class AES {
 	static final String COMMON_UTIL_FILE = "/lib/groovy/libs.target/CommonUltis.groovy"
-	static final String ORACLE_PASSWD_DIR = "/var/conf/"
-
+	static final String PASSWD_DIR = "/var/conf/"
+	static final String FORK_DIR = "/fork/"
+	
 	public static void main(String[] args) throws Exception {
-
 		//get CommonUtils.groovy file to parse
 		def felix_home = getFelixHome()
 		def commonUtilFile = new File( felix_home + COMMON_UTIL_FILE)
@@ -31,8 +31,11 @@ public class AES {
 		def sid = ""
 		def password = null
 		def encryptedString = null
+		def forkFolderPath = ""
+		def numOfParams = args.length
+		
 		// Get args
-		if((args.length == 3 ) && (args[0] =='-f')) {
+		if((numOfParams == 3 ) && (args[0] =='-f')) {
 			//get file csv from 2nd params
 			fileCSV = new File(args[1])
 			if(!fileCSV.isAbsolute()){
@@ -65,21 +68,19 @@ public class AES {
 				}
 			}
 		} else {
-			if(args[0] == '-t') {
-				DBType = args[1]
+			for (int i = 0; i < (numOfParams - 1); i++) {
+				if(args[i] == '-t') {
+					DBType = args[i + 1]
+				}else if(args[i] == '-u') {
+					username = args[i + 1]
+				}else if(args[i] == '-h') {
+					hostId = args[i + 1]
+				}else if(args[i] == '-s') {
+					sid = args[i + 1]
+				}else if(args[i] == '-f') {
+					forkFolderPath = args[i + 1]
+				}
 			}
-			if(args[2] == '-u') {
-				username = args[3]
-			}
-			if((args.length >= 6) && (args[4] == '-h')) {
-				hostId = args[5]
-			}
-			if((args.length == 8) && (args[6] == '-s')) {
-				sid = args[7]
-			} else 	if((args.length == 6) && (args[4] == '-s')) {
-				sid = args[5]
-			}
-
 			println "DBType:" + DBType
 			println "Username:" + username
 			println "HostId:" + hostId
@@ -87,13 +88,22 @@ public class AES {
 
 			if ((DBType == null) || (username == null) || (DBType == "") || (username == "")) {
 				println "Incorrect parameters !!!"
-				println "Correct format of commmand: gendbpasswd -t DBType -u username [-h hostId] [-s sid] OR  gendbpasswd -f 'pathFile'"
+				println "Correct format of commmand: gendbpasswd -t DBType -u username [-h hostId] [-s sid] [-f fork_folder]"
+				println "      OR  gendbpasswd -f 'pathFile'"
 				return
 			}
 
 			if (!DBTypeList.contains(DBType)) {
 				println "DBType is incorrect. DBType may accept following value: @ORA , @MYSQL ,@PGSQL ,@MSSQL"
 				return
+			}
+			if ((forkFolderPath != null) && (forkFolderPath != "")) {
+				//Check fork folder exit
+				File forkFolder = new File(felix_home + FORK_DIR + forkFolderPath)
+				if (!(forkFolder.exists() && forkFolder.isDirectory())){
+					println "Fork folder does not exist !!!"
+					return
+				}
 			}
 			try {
 				println "-----------------------------"
@@ -109,7 +119,7 @@ public class AES {
 					def passwdFilename = commonUtil_obj.getPasswdFileName(DBType, hostId, sid)
 
 					//Update password to file
-					updatePwdFile(commonUtil_obj,passwdFilename, username, password)
+					updatePwdFile(commonUtil_obj,passwdFilename, username, password, forkFolderPath)
 					println "Create password successfully for [${DBType},${username}, ${hostId}, ${sid}]"
 				}
 			} catch (Exception ex){
@@ -226,14 +236,19 @@ public class AES {
 				return tmpListOfMaps
 			}
 	}
-	public static void updatePwdFile(commonUtil_obj,passwdFilename, username, password){
+	public static void updatePwdFile(commonUtil_obj,passwdFilename, username, password, forkFolderPath = ""){
 		//encryped password
 		def encryptedPasswd = commonUtil_obj.encrypt(password);
 		//get password file
 		def mapPasswd = [:]
 		def felix_home = getFelixHome()
 		try {
-			def pwdFile = new File(felix_home + ORACLE_PASSWD_DIR + passwdFilename)
+			def pwdFile
+			if ((forkFolderPath != null) && (forkFolderPath != "")) {
+				pwdFile = new File(felix_home + FORK_DIR + forkFolderPath +  PASSWD_DIR + passwdFilename)
+			} else {
+				pwdFile = new File(felix_home + PASSWD_DIR + passwdFilename)
+			}
 			if (!pwdFile.exists()) {
 				pwdFile.createNewFile()
 			}

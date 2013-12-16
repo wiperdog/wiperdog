@@ -38,7 +38,16 @@ public class WiperDogBoot{
 	public static void main(String[] args) throws Exception {
 		// Load system properties.
 		WiperDogBoot.loadSystemProperties()
-		
+        def bundleFileName = "ListBundle.csv"
+        def idx = 0
+        def argsLength = args.length
+        for (int i = 0; i < (argsLength - 1); i++) {
+        	if (args[i] == "-b") {
+        		if ((args[i + 1] != null) && (args[i + 1] != "")) {
+        			bundleFileName = args[i + 1]
+        		}
+        	}
+        }
 		// Read configuration properties.
         Properties configProps = WiperDogBoot.loadConfigProperties();
         // If no configuration properties were found, then create
@@ -62,7 +71,8 @@ public class WiperDogBoot{
 		def felix_home = System.getProperty("felix.home").replace("\\", "/");
 		def context = m_fwk.getBundleContext()
 		//Get list bundle and order by run level
-		def bundleList = processCSVFile("ListBundle.csv")
+		//def bundleList = processCSVFile("ListBundle.csv")
+		def bundleList = processCSVFile(bundleFileName)
 		def mapBundle = [:]
 		
 		bundleList.each { bundleCfg ->
@@ -300,7 +310,8 @@ public class WiperDogBoot{
 		def listBundleFromCSV = []
 		def fileCSV = new File(filePath)
 		if(!fileCSV.exists()){
-			println "File not found : " + fileCSV.getName()
+			println "File not found : " + fileCSV.getAbsolutePath()
+			System.exit(0);
 		} else {
 			def checkHeader = false
 			def headers = []

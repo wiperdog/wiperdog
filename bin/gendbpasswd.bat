@@ -26,13 +26,17 @@ if %ARGS_COUNT% == 2 (
 			if %ARGS_COUNT% == 8 (
 				"%WIPERDOGHOME%\bin\groovy.bat" "%WIPERDOGHOME%\bin\gendbpasswd.groovy" %1 %2 %3 %4 %5 %6 %7 %8
 			) ELSE (
-				 ECHO Incorrect parameters !!!
-				 ECHO Correct format of commmand: gendbpasswd -t DBType -u username [-h hostId] [-s sid]  
-				 ECHO								OR gendbpasswd -f "File csv contains user/password information"
-				 ECHO     DBType may accept following value:  @ORA , @MYSQL ,@PGSQL ,@MSSQL
-				 ECHO      Example : gendbpasswd -t @ORA -u username -h hostId -s piex
-				 ECHO                gendbpasswd -f "C:\path\dbpassword.csv"
-				 PAUSE
+				if %ARGS_COUNT% == 10 (
+					"%WIPERDOGHOME%\bin\groovy.bat" "%WIPERDOGHOME%\bin\gendbpasswd.groovy" %*
+				) ELSE (
+					 ECHO Incorrect parameters !!!
+					 ECHO Correct format of commmand: gendbpasswd -t DBType -u username [-h hostId] [-s sid]  [-f fork_folder]
+					 ECHO								OR gendbpasswd -f "File csv contains user/password information"
+					 ECHO     DBType may accept following value:  @ORA , @MYSQL ,@PGSQL ,@MSSQL
+					 ECHO      Example : gendbpasswd -t @ORA -u username -h hostId -s piex -f 13111
+					 ECHO                gendbpasswd -f "C:\path\dbpassword.csv"
+					 PAUSE
+				 )
 			)
 		)
 	)

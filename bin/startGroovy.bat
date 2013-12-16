@@ -269,8 +269,8 @@ set PREFIX=%~dp0..
 for %%i in ("%PREFIX%") do set PREFIX=%%~fsi
 
 "%JAVA_EXE%" -Dfelix.home="%PREFIX%" ^
-	-Dfelix.system.properties="file:%PREFIX%\etc\system.properties" ^
-	-Djava.util.logging.config.file="%PREFIX%\etc\java.util.logging.properties" ^
+	-Dfelix.system.properties="file:%FORK_PREFIX%\etc\system.properties" ^
+	-Djava.util.logging.config.file="%FORK_PREFIX%\etc\java.util.logging.properties" ^
 	-Dlog4j.ignoreTCL=true ^
 	-Djava.ext.dirs="%PREFIX%\lib\java\ext;%JAVA_HOME%\lib\ext" ^
     -Dbin_home=%DIRNAME% %GROOVY_OPTS% %JAVA_OPTS% -classpath "%STARTER_CLASSPATH%;%BUNDLE_CLASSPATH%;%BUNDLE_A_CLASSPATH%;%BUNDLE_WRAP_CLASSPATH%;%BUNDLE_EXT_CLASSPATH%" %STARTER_MAIN_CLASS% --main %CLASS% --conf "%STARTER_CONF%" --classpath "%CP%" %CMD_LINE_ARGS%
