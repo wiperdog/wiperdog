@@ -341,6 +341,6 @@ public class WPDInstallerGroovy{
             }
             println "The installation has been completed successfully! \n Please use command 'net start/stop wiperdog' to control the service \n  thank you for choosing Wiperdog!"
          }//-- END install as system service
-         
+         println "Install successfully."
     }//-- end main
 }

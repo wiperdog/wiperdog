@@ -24,6 +24,7 @@ import java.io.BufferedReader;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import java.net.URI;
 
 import org.w3c.dom.Document;
 import org.wiperdog.installer.internal.InstallerUtil;
@@ -223,8 +224,8 @@ public class SelfExtractorCmd {
 			}			
 			System.out.println("Wiperdog will be install to directory: "
 					+ OUTPUT_FOLDER);
-			String jarPath = SelfExtractorCmd.class.getProtectionDomain()
-					.getCodeSource().getLocation().getFile();
+			String jarPath = new URI(SelfExtractorCmd.class.getProtectionDomain()
+					.getCodeSource().getLocation().getFile()).getPath();
 			//-- Stopping service 						
 			if(System.getProperty("os.name").toLowerCase().indexOf("win") != -1){
 				System.out.println("");				
@@ -265,7 +266,7 @@ public class SelfExtractorCmd {
 		//Run java process, e.g: java -jar lib/java/bundle/groovy-all-2.2.1.jar installer/installer.groovy
 		String runInstallerSyntax =  InstallerXML.getInstance().getRunInstallerSyntax();
 		
-		runInstallerSyntax += " "+OUTPUT_FOLDER  + " " + strArgs;
+		// runInstallerSyntax += " "+OUTPUT_FOLDER  + " " + strArgs;
 			if (runInstallerSyntax != null && !runInstallerSyntax.equals("")) {
 				String[] cmdArray = runInstallerSyntax.split(" ");
 				List<String> listCmd = new LinkedList<String>();
@@ -285,6 +286,11 @@ public class SelfExtractorCmd {
 						} else {
 							listCmd.add(cmdArray[i]);
 						}
+					}
+					listCmd.add(OUTPUT_FOLDER);
+					cmdArray = strArgs.split(" ");
+					for(int i = 0; i < cmdArray.length; i++){
+						listCmd.add(cmdArray[i]);
 					}
 					ProcessBuilder builder = new ProcessBuilder(listCmd);
                     builder.directory(workDir);
