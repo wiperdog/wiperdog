@@ -12,18 +12,17 @@ public class ProcessGenJob {
 	static final Map mapDefaultValue = ["JOBNAME": "\"\"", "FETCHACTION": "{}", "QUERY": "\"\"", "COMMAND": "\"\"", "DBEXEC": "\"\""]
 
 	/**
-	 * main: 
-	 * @param args: 
+	 * main: main process
+	 * @param args: data receive from batch/bash file
 	*/
 	public static void main(String[] args) throws Exception {
-		println "==================="
-		println args
-		println "==================="
 		// Process Job File
 		def filePath = System.getProperty("user.dir")
+		def checkDefaultPath = true
 		args.eachWithIndex {item, index ->
 			if (index < args.size() - 1 && item == "--fp" && args[index+1] != null && !args[index+1].contains("--")) {
 				filePath = args[index+1]
+				checkDefaultPath = false
 			}
 		}
 		filePath += "/"
@@ -53,19 +52,29 @@ public class ProcessGenJob {
 		// Check job file exists to process create/update
 		if (new File(filePath + fileName).exists()) { // Update job
 			if (updateDataToJobFile(filePath, fileName, jobData)) {
-				println ">>>>>>>>>> UPDATE JOB {$jobData.JOBNAME} SUCCESS <<<<<<<<<<"
+				println ">>>>>>>>>> [SUCCESS] JOB {$filePath$jobData.JOBNAME} WAS UPDATED <<<<<<<<<<"
 			} else {
-				println ">>>>>>>>>> CAN NOT UPDATE JOB, PLEASE PUT AGAIN <<<<<<<<<<"
+				println ">>>>>>>>>> [FAILURE] CAN NOT UPDATE JOB <<<<<<<<<<"
 			}
 		} else { // Create job
 			if (writeDataToJobFile(filePath, fileName, jobData)) {
-				println ">>>>>>>>>> CREATE JOB {$jobData.JOBNAME} SUCCESS <<<<<<<<<<"
+				println ">>>>>>>>>> [SUCCESS] JOB {$jobData.JOBNAME} WAS CREATED IN FOLDER {$filePath} <<<<<<<<<<"
+				if (checkDefaultPath) {
+					println "Note: To specify the folder contains job, you can use \"--fp\" command !"
+				}
 			} else {
-				println ">>>>>>>>>> CAN NOT CREATE JOB, PLEASE PUT AGAIN <<<<<<<<<<"
+				println ">>>>>>>>>> [FAILURE] CAN NOT CREATE JOB <<<<<<<<<<"
 			}
 		}
 	}
 
+	/**
+	 * updateDataToJobFile: process update job if it exits
+	 * @param filePath: path to file
+	 * @param fileName: job name
+	 * @param jobData: data fill to job
+	 * @return true/false
+	*/
 	public static boolean updateDataToJobFile(filePath, fileName, jobData){
 		def oldData = getDataJob(filePath, fileName)
 		def newData = oldData.clone()
@@ -83,6 +92,12 @@ public class ProcessGenJob {
 		}
 	}
 
+	/**
+	 * getDataJob: process get data from job (exists)
+	 * @param filePath: path to file
+	 * @param fileName: job name
+	 * @return mapResult
+	*/
 	public static getDataJob(filePath, fileName) {
 		def jobFile = new File(filePath + fileName)
 		def stringOfJob = jobFile.getText()
@@ -108,6 +123,13 @@ public class ProcessGenJob {
 		return mapResult
 	}
 	
+	/**
+	 * writeDataToJobFile: process create job if it's not exits
+	 * @param filePath: path to file
+	 * @param fileName: job name
+	 * @param jobData: data fill to job
+	 * @return true/false
+	*/
 	public static boolean writeDataToJobFile(filePath, fileName, jobData){
 		def jobStr = ""
 
@@ -217,9 +239,11 @@ public class ProcessGenJob {
 	}
 	
 	/**
-	 * Write data to file with CHARSET encode
-	 * @param paramFile
-	 * @return true/false
+	 * writeToFile: Write data to file with CHARSET encode
+	 * @param filePath: path to file
+	 * @param fileName: job name
+	 * @param data: data fill to job
+	 * @return true: if write success/false: if write failure
 	 */
 	public static boolean writeToFile(filePath, fileName, data) {
 		try {
