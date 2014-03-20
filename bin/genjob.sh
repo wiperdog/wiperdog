@@ -24,9 +24,8 @@ function helper() {
 	exit
 }
 
-arrResult=${*}
 if [ $1 == "--n" ]; then
-	"./groovy" "./genjob.groovy" $arrResult
+	"./groovy" "./genjob.groovy" "$@"
 else
 	helper
 fi
