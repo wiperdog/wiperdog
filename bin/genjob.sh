@@ -24,8 +24,23 @@ function helper() {
 	exit
 }
 
+haspath="n"
+
+for var in "$@"
+do
+    if [ "$var" == "-fp" ]
+    then
+        haspath="y"
+    fi
+done
+
 if [ $1 == "-n" ]; then
+    if [ $haspath == "y" ]
+    then
 	"./groovy" "./genjob.groovy" "$@"
+    else
+        "./groovy" "./genjob.groovy" "$@" -fp "$path"
+    fi
 else
 	helper
 fi

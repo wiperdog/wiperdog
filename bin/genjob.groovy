@@ -19,12 +19,20 @@ public class ProcessGenJob {
 		// Process Job File
 		def filePath = System.getProperty("user.dir")
 		def checkDefaultPath = true
+		def listProcessKey = []	
+		listProcessKey.add("-fp")	
+		
+		mapKeyInput.each { key, value ->
+			listProcessKey.add(key) 
+		}
+
 		args.eachWithIndex {item, index ->
-			if (index < args.size() - 1 && item == "-fp" && args[index+1] != null && !args[index+1].contains("-")) {
+			if ((index < (args.size() - 1)) && (item == "-fp") && (args[index+1] != null) && (!listProcessKey.contains(args[index+1]))) {
 				filePath = args[index+1]
 				checkDefaultPath = false
 			}
 		}
+		
 		filePath += "/"
 		String fileName = ""
 		if (args.size() > 1 && !args[1].contains("-")) {
