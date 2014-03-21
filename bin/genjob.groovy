@@ -8,8 +8,8 @@ import java.util.regex.Pattern;
 public class ProcessGenJob {
 	static final String CHARSET = 'utf-8'
 	static final List listKey = ["JOB", "GROUPKEY", "QUERY", "QUERY_VARIABLE", "DBEXEC", "DBEXEC_VARIABLE", "COMMAND", "FORMAT", "FETCHACTION", "ACCUMULATE", "FINALLY", "KEYEXPR", "KEYEXPR._root", "KEYEXPR._sequence", "KEYEXPR._unit", "KEYEXPR._chart", "KEYEXPR._description", "SENDTYPE", "RESOURCEID", "MONITORINGTYPE", "DBTYPE", "DEST", "HOSTID", "SID"]
-	static final Map mapKeyInput = ["--n": "JOBNAME", "--f": "FETCHACTION", "--q": "QUERY", "--c": "COMMAND", "--d": "DBEXEC"]
-	static final Map mapDefaultValue = ["JOBNAME": "\"\"", "FETCHACTION": "{}", "QUERY": "\"\"", "COMMAND": "\"\"", "DBEXEC": "\"\""]
+	static final Map mapKeyInput = ["-n": "JOBNAME", "-f": "FETCHACTION", "-q": "QUERY", "-c": "COMMAND", "-d": "DBEXEC"]
+	static final Map mapDefaultValue = ["JOBNAME": "\"\"", "FETCHACTION": "/*code FETCHACTION here*/", "QUERY": "\"\"", "COMMAND": "\"\"", "DBEXEC": "\"\""]
 
 	/**
 	 * main: main process
@@ -19,20 +19,28 @@ public class ProcessGenJob {
 		// Process Job File
 		def filePath = System.getProperty("user.dir")
 		def checkDefaultPath = true
+		def listProcessKey = []	
+		listProcessKey.add("-fp")	
+		
+		mapKeyInput.each { key, value ->
+			listProcessKey.add(key) 
+		}
+
 		args.eachWithIndex {item, index ->
-			if (index < args.size() - 1 && item == "--fp" && args[index+1] != null && !args[index+1].contains("--")) {
+			if ((index < (args.size() - 1)) && (item == "-fp") && (args[index+1] != null) && (!listProcessKey.contains(args[index+1]))) {
 				filePath = args[index+1]
 				checkDefaultPath = false
 			}
 		}
+		
 		filePath += "/"
 		String fileName = ""
-		if (!args[1].contains("--")) {
+		if (args.size() > 1 && !args[1].contains("-")) {
 			fileName = "${args[1].trim()}.job"
 		} else {
 			println "Incorrect format !!!"
 			println "Correct format of command: "
-			println "genjob --n <jobName> [--f <strFetchAction>] [--q <strQuery>] [--c <strCommand>] [--d <strDbExec>] [--fp <pathToFile>]"
+			println "genjob -n <jobName> [-f <strFetchAction>] [-q <strQuery>] [-c <strCommand>] [-d <strDbExec>] [-fp <pathToFile>]"
 			return
 		}
 
@@ -41,7 +49,7 @@ public class ProcessGenJob {
 		args.eachWithIndex {item, index ->
 			if (mapKeyInput[item] != null) {
 				//If data in mapKeyInput and next data not in mapKeyInput, get this next data to value
-				if ((args[index+1] != null && !args[index+1].contains("--")) && (mapKeyInput[args[index+1]] == null)) {
+				if (index < args.size() - 1 && (args[index+1] != null && !args[index+1].contains("-")) && (mapKeyInput[args[index+1]] == null)) {
 					jobData[mapKeyInput[item]] = args[index+1]
 				} else {
 					jobData[mapKeyInput[item]] = mapDefaultValue[mapKeyInput[item]]
@@ -60,7 +68,7 @@ public class ProcessGenJob {
 			if (writeDataToJobFile(filePath, fileName, jobData)) {
 				println ">>>>>>>>>> [SUCCESS] JOB {$jobData.JOBNAME} WAS CREATED IN FOLDER {$filePath} <<<<<<<<<<"
 				if (checkDefaultPath) {
-					println "Note: To specify the folder contains job, you can use \"--fp\" command !"
+					println "Note: To specify the folder contains job, you can use \"-fp\" command !"
 				}
 			} else {
 				println ">>>>>>>>>> [FAILURE] CAN NOT CREATE JOB <<<<<<<<<<"
@@ -201,7 +209,7 @@ public class ProcessGenJob {
 		
 		// process FETCHACTION variable
 		if(jobData.FETCHACTION != null && jobData.FETCHACTION != ""){
-			jobStr += "FETCHACTION = " + jobData.FETCHACTION + "\n"
+			jobStr += "FETCHACTION = {\n\t" + jobData.FETCHACTION + "\n}\n"
 		} else {
 			jobStr += "//FETCHACTION = {\n\t/*code FETCHACTION here*/\n//}\n"
 		}

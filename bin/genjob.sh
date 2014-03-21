@@ -20,13 +20,27 @@ cd "$PREFIX/bin"
 function helper() {
 	echo "Incorrect format !!!"
 	echo "Correct format of command: "
-	echo "genjob --n <jobName> [--f <strFetchAction>] [--q <strQuery>] [--c <strCommand>] [--d <strDbExec>] [--fp <pathToFile>]"
+	echo "genjob -n <jobName> [-f <strFetchAction>] [-q <strQuery>] [-c <strCommand>] [-d <strDbExec>] [-fp <pathToFile>]"
 	exit
 }
 
-arrResult=${*}
-if [ $1 == "--n" ]; then
-	"./groovy" "./genjob.groovy" $arrResult
+haspath="n"
+
+for var in "$@"
+do
+    if [ "$var" == "-fp" ]
+    then
+        haspath="y"
+    fi
+done
+
+if [ $1 == "-n" ]; then
+    if [ $haspath == "y" ]
+    then
+	"./groovy" "./genjob.groovy" "$@"
+    else
+        "./groovy" "./genjob.groovy" "$@" -fp "$path"
+    fi
 else
 	helper
 fi
