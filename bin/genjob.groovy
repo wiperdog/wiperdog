@@ -35,7 +35,7 @@ public class ProcessGenJob {
 		
 		filePath += "/"
 		String fileName = ""
-		if (args.size() > 1 && !args[1].contains("-")) {
+		if (args.size() > 1 && !args[1].contains("-") && args[1].trim() != "") {
 			fileName = "${args[1].trim()}.job"
 		} else {
 			println "Incorrect format !!!"
