@@ -49,7 +49,7 @@ public class ProcessGenJob {
 		args.eachWithIndex {item, index ->
 			if (mapKeyInput[item] != null) {
 				//If data in mapKeyInput and next data not in mapKeyInput, get this next data to value
-				if (index < args.size() - 1 && (args[index+1] != null && !args[index+1].contains("-")) && (mapKeyInput[args[index+1]] == null)) {
+				if (index < args.size() - 1 && (args[index+1] != null && args[index+1] != "" && !args[index+1].contains("-")) && (mapKeyInput[args[index+1]] == null)) {
 					jobData[mapKeyInput[item]] = args[index+1]
 				} else {
 					jobData[mapKeyInput[item]] = mapDefaultValue[mapKeyInput[item]]
