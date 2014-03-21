@@ -30,13 +30,19 @@ public class ProcessGenJob {
 			if ((index < (args.size() - 1)) && (item == "-fp") && (args[index+1] != null) && (!listProcessKey.contains(args[index+1]))) {
 				filePath = args[index+1]
 				checkDefaultPath = false
+				if (!(new File(filePath).exists())) {
+					new File(filePath).mkdirs()
+				}
 			}
 		}
-		
 		filePath += "/"
 		String fileName = ""
-		if (args.size() > 1 && !args[1].contains("-")) {
-			fileName = "${args[1].trim()}.job"
+		if (args.size() > 1 && !args[1].contains("-") && args[1].trim() != "") {
+			if (args[1].trim().contains(".job")) {
+				fileName = args[1].trim()
+			} else {
+				fileName = "${args[1].trim()}.job"
+			}
 		} else {
 			println "Incorrect format !!!"
 			println "Correct format of command: "
@@ -49,7 +55,7 @@ public class ProcessGenJob {
 		args.eachWithIndex {item, index ->
 			if (mapKeyInput[item] != null) {
 				//If data in mapKeyInput and next data not in mapKeyInput, get this next data to value
-				if (index < args.size() - 1 && (args[index+1] != null && !args[index+1].contains("-")) && (mapKeyInput[args[index+1]] == null)) {
+				if (index < args.size() - 1 && (args[index+1] != null && args[index+1] != "" && !args[index+1].contains("-")) && (mapKeyInput[args[index+1]] == null)) {
 					jobData[mapKeyInput[item]] = args[index+1]
 				} else {
 					jobData[mapKeyInput[item]] = mapDefaultValue[mapKeyInput[item]]
@@ -143,7 +149,7 @@ public class ProcessGenJob {
 
 		// process JOB variable
 		def mapJOB = [:]
-		mapJOB['name'] = "\"" + jobData.JOBNAME + "\""
+		mapJOB['name'] = "\"" + jobData.JOBNAME.replace(".job", "") + "\""
 		mapJOB['jobclass'] = "/*Job class name here*/"
 		jobStr += "JOB = " + mapJOB.toString() + "\n"
 		
@@ -151,7 +157,7 @@ public class ProcessGenJob {
 		jobStr += "//GROUPKEY = /*group key here*/\n"
 		
 		// process QUERY variable
-		if (jobData.QUERY != null && jobData.QUERY != "") {
+		if (jobData.QUERY != null) {
 			def queryStr = ""
 			if(jobData.QUERY.substring(0,1) == "\""
 				|| jobData.QUERY.substring(0,1) == "\'"
@@ -170,7 +176,7 @@ public class ProcessGenJob {
 		jobStr += "//QUERY_VARIABLE = // Variable to binding. \n"
 
 		// process dbExec variable
-		if (jobData.DBEXEC != null && jobData.DBEXEC != "") {
+		if (jobData.DBEXEC != null) {
 			def dbExecStr = ""
 			if (jobData.DBEXEC.substring(0,1) == "\""
 				|| jobData.DBEXEC.substring(0,1) == "\'"
@@ -189,7 +195,7 @@ public class ProcessGenJob {
 		jobStr += "//DBEXEC_VARIABLE = /*fill DBEXEC_VARIABLE here*/\n"
 		
 		// process command variable
-		if (jobData.COMMAND != null && jobData.COMMAND != "") {
+		if (jobData.COMMAND != null) {
 			def dbcommandStr = ""
 			if(jobData.COMMAND.substring(0,1) == "\""
 				|| jobData.COMMAND.substring(0,1) == "\'"
@@ -208,7 +214,7 @@ public class ProcessGenJob {
 		jobStr += "//FORMAT = /*fill FORMAT here*/\n"
 		
 		// process FETCHACTION variable
-		if(jobData.FETCHACTION != null && jobData.FETCHACTION != ""){
+		if(jobData.FETCHACTION != null){
 			jobStr += "FETCHACTION = {\n\t" + jobData.FETCHACTION + "\n}\n"
 		} else {
 			jobStr += "//FETCHACTION = {\n\t/*code FETCHACTION here*/\n//}\n"
