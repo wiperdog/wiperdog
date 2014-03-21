@@ -151,7 +151,7 @@ public class ProcessGenJob {
 		jobStr += "//GROUPKEY = /*group key here*/\n"
 		
 		// process QUERY variable
-		if (jobData.QUERY != null && jobData.QUERY != "") {
+		if (jobData.QUERY != null) {
 			def queryStr = ""
 			if(jobData.QUERY.substring(0,1) == "\""
 				|| jobData.QUERY.substring(0,1) == "\'"
@@ -170,7 +170,7 @@ public class ProcessGenJob {
 		jobStr += "//QUERY_VARIABLE = // Variable to binding. \n"
 
 		// process dbExec variable
-		if (jobData.DBEXEC != null && jobData.DBEXEC != "") {
+		if (jobData.DBEXEC != null) {
 			def dbExecStr = ""
 			if (jobData.DBEXEC.substring(0,1) == "\""
 				|| jobData.DBEXEC.substring(0,1) == "\'"
@@ -189,7 +189,7 @@ public class ProcessGenJob {
 		jobStr += "//DBEXEC_VARIABLE = /*fill DBEXEC_VARIABLE here*/\n"
 		
 		// process command variable
-		if (jobData.COMMAND != null && jobData.COMMAND != "") {
+		if (jobData.COMMAND != null) {
 			def dbcommandStr = ""
 			if(jobData.COMMAND.substring(0,1) == "\""
 				|| jobData.COMMAND.substring(0,1) == "\'"
