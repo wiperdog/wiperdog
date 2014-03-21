@@ -13,7 +13,6 @@ else
 fi
 	export currentdir=`pwd`/
 PREFIX=`cd "$dir/.." && pwd`
-cd "$PREFIX/bin"
 ##
  # helper: help when enter an incorrect format
 ##
@@ -24,23 +23,8 @@ function helper() {
 	exit
 }
 
-haspath="n"
-
-for var in "$@"
-do
-    if [ "$var" == "-fp" ]
-    then
-        haspath="y"
-    fi
-done
-
 if [ $1 == "-n" ]; then
-    if [ $haspath == "y" ]
-    then
-	"./groovy" "./genjob.groovy" "$@"
-    else
-        "./groovy" "./genjob.groovy" "$@" -fp "$path"
-    fi
+	"$PREFIX/bin/groovy" "$PREFIX/bin/genjob.groovy" "$@"
 else
 	helper
 fi

@@ -30,13 +30,19 @@ public class ProcessGenJob {
 			if ((index < (args.size() - 1)) && (item == "-fp") && (args[index+1] != null) && (!listProcessKey.contains(args[index+1]))) {
 				filePath = args[index+1]
 				checkDefaultPath = false
+				if (!(new File(filePath).exists())) {
+					new File(filePath).mkdirs()
+				}
 			}
 		}
-		
 		filePath += "/"
 		String fileName = ""
 		if (args.size() > 1 && !args[1].contains("-") && args[1].trim() != "") {
-			fileName = "${args[1].trim()}.job"
+			if (args[1].trim().contains(".job")) {
+				fileName = args[1].trim()
+			} else {
+				fileName = "${args[1].trim()}.job"
+			}
 		} else {
 			println "Incorrect format !!!"
 			println "Correct format of command: "
@@ -143,7 +149,7 @@ public class ProcessGenJob {
 
 		// process JOB variable
 		def mapJOB = [:]
-		mapJOB['name'] = "\"" + jobData.JOBNAME + "\""
+		mapJOB['name'] = "\"" + jobData.JOBNAME.replace(".job", "") + "\""
 		mapJOB['jobclass'] = "/*Job class name here*/"
 		jobStr += "JOB = " + mapJOB.toString() + "\n"
 		
@@ -208,7 +214,7 @@ public class ProcessGenJob {
 		jobStr += "//FORMAT = /*fill FORMAT here*/\n"
 		
 		// process FETCHACTION variable
-		if(jobData.FETCHACTION != null && jobData.FETCHACTION != ""){
+		if(jobData.FETCHACTION != null){
 			jobStr += "FETCHACTION = {\n\t" + jobData.FETCHACTION + "\n}\n"
 		} else {
 			jobStr += "//FETCHACTION = {\n\t/*code FETCHACTION here*/\n//}\n"
