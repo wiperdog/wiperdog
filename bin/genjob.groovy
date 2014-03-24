@@ -91,12 +91,7 @@ public class ProcessGenJob {
 	*/
 	public static boolean updateDataToJobFile(filePath, fileName, jobData){
 		def oldData = getDataJob(filePath, fileName)
-		def newData = [:]
-		oldData.each {oKey, oValue ->
-			if (!oKey.contains("//")) {
-				newData.put("//" + oKey, oValue)
-			}
-		}
+		def newData = oldData.clone()
 		jobData.each {key, value ->
 			if (oldData["//" + key] != null) {
 				newData.remove("//" + key)
@@ -215,8 +210,15 @@ public class ProcessGenJob {
 		jobStr += "//FORMAT = /*fill FORMAT here*/\n"
 		
 		// process FETCHACTION variable
-		if(jobData.FETCHACTION != null){
-			jobStr += "FETCHACTION = {\n\t" + jobData.FETCHACTION + "\n}\n"
+		if (jobData.FETCHACTION != null) {
+			//if (jobData.FETCHACTION)
+			def startFetch = jobData.FETCHACTION[0]
+			def endFetch = jobData.FETCHACTION[jobData.FETCHACTION.size() - 1]
+			if (startFetch != "{" && endFetch != "}") {
+				jobStr += "FETCHACTION = {\n\t" + jobData.FETCHACTION + "\n}\n"
+			} else {
+				jobStr += "FETCHACTION = " + jobData.FETCHACTION + "\n"
+			}
 		} else {
 			jobStr += "//FETCHACTION = {\n\t/*code FETCHACTION here*/\n//}\n"
 		}
