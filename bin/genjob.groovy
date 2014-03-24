@@ -91,7 +91,12 @@ public class ProcessGenJob {
 	*/
 	public static boolean updateDataToJobFile(filePath, fileName, jobData){
 		def oldData = getDataJob(filePath, fileName)
-		def newData = oldData.clone()
+		def newData = [:]
+		oldData.each {oKey, oValue ->
+			if (!oKey.contains("//")) {
+				newData.put("//" + oKey, oValue)
+			}
+		}
 		jobData.each {key, value ->
 			if (oldData["//" + key] != null) {
 				newData.remove("//" + key)
@@ -149,12 +154,8 @@ public class ProcessGenJob {
 
 		// process JOB variable
 		def mapJOB = [:]
-		mapJOB['name'] = "\"" + jobData.JOBNAME.replace(".job", "") + "\""
-		mapJOB['jobclass'] = "/*Job class name here*/"
+		mapJOB['name'] = "\"" + jobData.JOBNAME.replace(".job", "") + "\"" + "/*, jobclass: Job class name here*/"
 		jobStr += "JOB = " + mapJOB.toString() + "\n"
-		
-		// process GROUPKEY variable
-		jobStr += "//GROUPKEY = /*group key here*/\n"
 		
 		// process QUERY variable
 		if (jobData.QUERY != null) {
@@ -222,6 +223,9 @@ public class ProcessGenJob {
 		
 		// process accumulate variable
 		jobStr += "//ACCUMULATE = {\n\t/*code ACCUMULATE here*/\n//}\n"
+
+		// process GROUPKEY variable
+		jobStr += "//GROUPKEY = /*group key here*/\n"
 		
 		// process finally variable
 		jobStr += "//FINALLY = {\n\t/*code FINALLY here*/\n//}\n"
@@ -242,7 +246,7 @@ public class ProcessGenJob {
 		jobStr += "//DBTYPE = /*Config for DBTYPE*/\n"
 		
 		// process dest variable
-		jobStr += "//DEST = parameters.dest\n"
+		jobStr += "DEST = parameters.dest\n"
 		
 		// Set Job's String into file
 		if (!writeToFile(filePath, fileName, jobStr)) {

@@ -23,7 +23,7 @@ function helper() {
 	exit
 }
 
-if [ $1 == "-n" ]; then
+if [[ "$#" > 1 && $1 == "-n" ]]; then
 	"$PREFIX/bin/groovy" "$PREFIX/bin/genjob.groovy" "$@"
 else
 	helper
