@@ -328,7 +328,7 @@ public class WPDInstallerGroovy{
                 sBuff.append("	/bin/chmod 755 /etc/init.d/wiperdog\n")
                 sBuff.append("	\$chkconfig_cmd -f wiperdog remove\n")
                 sBuff.append("	\$chkconfig_cmd wiperdog defaults\n")
-                sBuff.append("	\$chkconfig_cmd wiperdog start 20 2 3 4 5\n")
+                sBuff.append("	\$chkconfig_cmd wiperdog start 20 2 3 4 5 .\n")
         		
                 sBuff.append("fi\n")
                 
@@ -370,9 +370,6 @@ public class WPDInstallerGroovy{
                 
                 println proc.err.text
                 println proc.in.text
-                
-                println "The installation has been completed successfully! \n Please use command 'service wiperdog start/stop' to control the service \n  thank you for choosing Wiperdog!"
-                println ""
             }else{//-- Window
                 def listCmd = []
                 
@@ -389,9 +386,11 @@ public class WPDInstallerGroovy{
                 def outputStr = proc.in.text
                 println outputStr
                 println errorStr
-                println "The installation has been completed successfully! \n Please use command 'net start/stop wiperdog' to control the service \n  thank you for choosing Wiperdog!"
-                println ""
+                
             }
+            println "The installation has been completed successfully! \n Please use command 'net start/stop wiperdog'(Window) or 'service wiperdog start/stop'(Linux) to control the service."
+            println "Thank you for choosing Wiperdog!"
+            println ""
          }//-- END install as system service
          
     }//-- end main
