@@ -288,10 +288,10 @@ public class WPDInstallerGroovy{
                 /* Install service script */
                 FileOutputStream fos = new FileOutputStream(new File("install_service.sh"))
                 StringBuffer sBuff = new StringBuffer(512)
-                sBuff.append("#!/bin/sh\n#\n#\n#\n")            
+                sBuff.append("#!/bin/bash\n#\n#\n#\n")            
                 
                 sBuff.append("isUbuntu=`uname -a | grep buntu`\n")
-               	sBuff.append("if [ ! -n \$isUbuntu ]\n")  // If is not ubuntu
+               	sBuff.append("if [ ! -n \"\$isUbuntu\" ]\n")  // If is not ubuntu
                 sBuff.append("then\n")
                 sBuff.append("	service_cmd=`which service`\n")
                 sBuff.append("	chkconfig_cmd=`which chkconfig`\n")
