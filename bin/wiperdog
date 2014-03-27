@@ -10,7 +10,7 @@
 # pidfile: /home/luvina/wiperdog/wiperdog.pid
 
 # Source function library.
-. /etc/rc.d/init.d/functions
+#. /etc/rc.d/init.d/functions
 
 WIPERDOGHOME=
 if [ "$WIPERDOGHOME" = "" ];then
@@ -19,7 +19,7 @@ if [ "$WIPERDOGHOME" = "" ];then
 fi
 
 # Source networking configuration.
-. /etc/sysconfig/network
+#. /etc/sysconfig/network
 execCmd=${WIPERDOGHOME}/bin/startWiperdog.sh
 lockFile=${WIPERDOGHOME}/var/run/wiperdog.lck
 pidiFile=${WIPERDOGHOME}/var/run/wiperdog.pid
@@ -29,14 +29,14 @@ start(){
     # check to see if it's already running
     if [ -e $lockFile ]; then
         # already running, do nothing
-        echo  "Wiperdog is already running: " /bin/true
+        echo  "Wiperdog is already running."
         ret=0
     else
         /bin/sh $execCmd > /dev/null 2>&1 &
         /bin/touch $lockFile
-        export output=`ps -ef | grep Dfelix.home|grep java`
+        output=`ps -ef | grep Dfelix.home|grep java`
         set -- $output
-        action $"Wiperdog started "$2 /bin/true
+        echo "Wiperdog started. "
     fi
 }
 debug(){
@@ -45,14 +45,14 @@ debug(){
 
     if [ -e $lockFile ]; then
         # already running, do nothing
-        echo "Wiperdog is already running: " /bin/true
+        echo "Wiperdog is already running."
         ret=0
     else
         /bin/sh $execCmd 2>&1 &
         /bin/touch $lockFile
-        export output=`ps -ef | grep Dfelix.home|grep java`
+        output=`ps -ef | grep Dfelix.home|grep java`
         set -- $output
-        action $"Wiperdog started. "$2 /bin/true
+        echo "Wiperdog started. "
     fi
 }
 stop(){
@@ -61,12 +61,12 @@ stop(){
 
     if [ -x $lockFile ]; then
         # not running, do nothing
-        action $"Wiperdog is not running: " /bin/true
+        echo "Wiperdog is not running."
         ret=0
     else
-        export output=`ps -ef | grep Dfelix.home|grep java`
+        output=`ps -ef | grep Dfelix.home|grep java`
         set -- $output
-        action $"Stoping Wiperdog with PID: "$2 /bin/true
+        echo "Stoping Wiperdog..."
         /bin/kill -9 $2
         /bin/rm -f $lockFile
     fi
