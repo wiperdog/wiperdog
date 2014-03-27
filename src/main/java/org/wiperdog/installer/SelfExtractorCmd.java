@@ -288,9 +288,11 @@ public class SelfExtractorCmd {
 						}
 					}
 					listCmd.add(OUTPUT_FOLDER);
-					cmdArray = strArgs.split(" ");
-					for(int i = 0; i < cmdArray.length; i++){
-						listCmd.add(cmdArray[i]);
+					if (strArgs != "") {
+					    cmdArray = strArgs.split(" ");
+					    for(int i = 0; i < cmdArray.length; i++){
+							listCmd.add(cmdArray[i]);
+						}
 					}
 					ProcessBuilder builder = new ProcessBuilder(listCmd);
                     builder.directory(workDir);
