@@ -304,7 +304,7 @@ public class WiperDogService{
         // If no configuration properties were found, then create
         // an empty properties object.
         if (configProps == null) {
-            println("No " + CONFIG_PROPERTIES_FILE_VALUE + " found.");
+            println("No " + WiperDogService.CONFIG_PROPERTIES_FILE_VALUE + " found.");
             configProps = new Properties();
         }
         
