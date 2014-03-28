@@ -25,31 +25,31 @@ lockFile=${WIPERDOGHOME}/var/run/wiperdog.lck
 pidiFile=${WIPERDOGHOME}/var/run/wiperdog.pid
 
 start(){
-    [ -x $execCmd ] || exit 5
+    [ -x "$execCmd" ] || exit 5
     # check to see if it's already running
-    if [ -e $lockFile ]; then
+    if [ -e "$lockFile" ]; then
         # already running, do nothing
         echo  "Wiperdog is already running."
         ret=0
     else
-        /bin/sh $execCmd > /dev/null 2>&1 &
-        /bin/touch $lockFile
+        /bin/sh "$execCmd" > /dev/null 2>&1 &
+        /bin/touch "$lockFile"
         output=`ps -ef | grep Dfelix.home|grep java`
         set -- $output
         echo "Wiperdog started. "
     fi
 }
 debug(){
-    [ -x $execCmd ] || exit 5
+    [ -x "$execCmd" ] || exit 5
     # check to see if it's already running
 
-    if [ -e $lockFile ]; then
+    if [ -e "$lockFile" ]; then
         # already running, do nothing
         echo "Wiperdog is already running."
         ret=0
     else
-        /bin/sh $execCmd 2>&1 &
-        /bin/touch $lockFile
+        /bin/sh "$execCmd" 2>&1 &
+        /bin/touch "$lockFile"
         output=`ps -ef | grep Dfelix.home|grep java`
         set -- $output
         echo "Wiperdog started. "
@@ -59,7 +59,7 @@ stop(){
     [ -x $stopCmd ] || exit 5
     # check to see if it's already running
 
-    if [ -x $lockFile ]; then
+    if [ -x "$lockFile" ]; then
         # not running, do nothing
         echo "Wiperdog is not running."
         ret=0
@@ -68,12 +68,12 @@ stop(){
         set -- $output
         echo "Stoping Wiperdog..."
         /bin/kill -9 $2
-        /bin/rm -f $lockFile
+        /bin/rm -f "$lockFile"
     fi
 }
 
 status(){
-    if [ -e $lockFile ]; then
+    if [ -e "$lockFile" ]; then
         # already running, do nothing
         echo "Wiperdog is running..."
     else

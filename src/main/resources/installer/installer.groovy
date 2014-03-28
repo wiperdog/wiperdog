@@ -332,7 +332,7 @@ public class WPDInstallerGroovy{
         		
                 sBuff.append("fi\n")
                 
-                sBuff.append("/bin/chmod 755 \""+ wiperdogHome +"/bin/*\" \n")
+                sBuff.append("/bin/chmod 755 \""+ wiperdogHome +"\"/bin/* \n")
                 sBuff.append("/bin/rm -f \""+ wiperdogHome +"/var/run/wiperdog.lck\" \n")
                 sBuff.append("vim_cmd=`which vi`\n")
                 sBuff.append("if [ ! -n \$vim_cmd ] || [ ! -x \$vim_cmd ]\n")
