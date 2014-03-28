@@ -40,17 +40,17 @@ REM below for using JRE
 -Dcom.lilypepper.groovy.localfolder="%WIPERDOG_HOME%\service" ^
 -Dcom.lilypepper.groovy.runner="com.lilypepper.groovy.ServiceRunner" ^
 -Djava.system.class.loader="com.lilypepper.groovy.boot.GoshClassLoader" ^
--Dfelix.home=%WIPERDOG_HOME% ^
--Dfelix.system.properties=file:%WIPERDOG_HOME%\etc\system.properties        ^
--Djava.util.logging.config.file=%WIPERDOG_HOME%\etc\java.util.logging.properties    ^
+-Dfelix.home="%WIPERDOG_HOME%" ^
+-Dfelix.system.properties="file:%WIPERDOG_HOME%\etc\system.properties" ^
+-Djava.util.logging.config.file="%WIPERDOG_HOME%\etc\java.util.logging.properties"    ^
 -Dlog4j.ignoreTCL=true ^
--Djava.ext.dirs=%WIPERDOG_HOME%\lib\java\ext;E:\wiperdog\opt\jre\lib\ext     ^
--Dbin_home=%WIPERDOG_HOME%\bin\ ^
+-Djava.ext.dirs="%WIPERDOG_HOME%"\lib\java\ext    ^
+-Dbin_home="%WIPERDOG_HOME%"\bin\ ^
 -Dprogram.name="" ^
 -Dgroovy.home="%WIPERDOG_HOME%" ^
 -Dgroovy.starter.conf="%WIPERDOG_HOME%\etc\groovy-starter.conf" ^
 -Dscript.name="%WIPERDOG_HOME%\bin\startWiperdog.groovy"  ^
--classpath %WIPERDOG_HOME%\lib\java\bundle.d\com.insight_tec.pi.scriptsupport.groovyrunner-3.1.0.jar;%WIPERDOG_HOME%\bin\..\lib\java\bundle\*;%WIPERDOG_HOME%\bin\..\lib\java\bundle.a\*;%WIPERDOG_HOME%\bin\..\lib\java\bundle.d\*;%WIPERDOG_HOME%\bin\..\lib\java\ext\* org.codehaus.groovy.tools.GroovyStarter --main groovy.ui.GroovyMain --conf %WIPERDOG_HOME%\bin\..\etc\groovy-starter.conf ^
+-classpath "%WIPERDOG_HOME%"\lib\java\bundle.d\com.insight_tec.pi.scriptsupport.groovyrunner-3.1.0.jar;"%WIPERDOG_HOME%"\bin\..\lib\java\bundle\*;"%WIPERDOG_HOME%"\bin\..\lib\java\bundle.a\*;"%WIPERDOG_HOME%"\bin\..\lib\java\bundle.d\*;"%WIPERDOG_HOME%"\bin\..\lib\java\ext\* org.codehaus.groovy.tools.GroovyStarter --main groovy.ui.GroovyMain --conf "%WIPERDOG_HOME%"\bin\..\etc\groovy-starter.conf ^
 -verbose:gc ^
 -Xmx1024M ^
 -Xrs ^
@@ -58,8 +58,8 @@ REM below for using JRE
 -XX:MaxPermSize=256m ^
 -start com.lilypepper.groovy.boot.Bootstrap -method main -params "start" "%GROOVY_SCRIPT%" ^
 -stop com.lilypepper.groovy.boot.Bootstrap -method main -params "stop" ^
--out "%LOGS_FOLDER%\stdout.log" ^
--err "%LOGS_FOLDER%\stderr.log" ^
+-out "%LOGS_FOLDER%"\stdout.log ^
+-err "%LOGS_FOLDER%"\stderr.log ^
 -current "%LOGS_FOLDER%"
 
 echo.
