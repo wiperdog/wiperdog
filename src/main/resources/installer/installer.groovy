@@ -272,7 +272,7 @@ public class WPDInstallerGroovy{
             matcher = pattern.matcher(fileText);
             while(matcher.find())
             {
-                newFileText = fileText.replace(matcher.group(1) + matcher.group(2), matcher.group(1) + newHome)
+                newFileText = fileText.replace(matcher.group(1) + matcher.group(2), matcher.group(1) + "\"" + newHome + "\"")
             }              
             def crlfFixFileText = newFileText.replaceAll("\r","");
             //write WIPERDOG_HOME to file bin/wiperdog
@@ -303,7 +303,7 @@ public class WPDInstallerGroovy{
                 sBuff.append("	fi\n") 
                 
                 sBuff.append("	\$service_cmd wiperdog stop \n")
-                sBuff.append("	/bin/cp "+wiperdogHome+"/bin/wiperdog /etc/init.d/\n")
+                sBuff.append("	/bin/cp \""+wiperdogHome+"/bin/wiperdog\" /etc/init.d/\n")
                 sBuff.append("	/bin/chmod 755 /etc/init.d/wiperdog\n")
                 sBuff.append("	\$chkconfig_cmd --del wiperdog\n")
                 sBuff.append("	\$chkconfig_cmd --add wiperdog\n")
@@ -324,7 +324,7 @@ public class WPDInstallerGroovy{
                 sBuff.append("	fi\n") 
                 
                 sBuff.append("	\$service_cmd wiperdog stop \n")
-                sBuff.append("	/bin/cp "+wiperdogHome+"/bin/wiperdog /etc/init.d/\n")
+                sBuff.append("	/bin/cp \""+wiperdogHome+"/bin/wiperdog\" /etc/init.d/\n")
                 sBuff.append("	/bin/chmod 755 /etc/init.d/wiperdog\n")
                 sBuff.append("	\$chkconfig_cmd -f wiperdog remove\n")
                 sBuff.append("	\$chkconfig_cmd wiperdog defaults\n")
@@ -332,8 +332,8 @@ public class WPDInstallerGroovy{
         		
                 sBuff.append("fi\n")
                 
-                sBuff.append("/bin/chmod 755 "+ wiperdogHome +"/bin/* \n")
-                sBuff.append("/bin/rm -f "+ wiperdogHome +"/var/run/wiperdog.lck \n")
+                sBuff.append("/bin/chmod 755 \""+ wiperdogHome +"/bin/*\" \n")
+                sBuff.append("/bin/rm -f \""+ wiperdogHome +"/var/run/wiperdog.lck\" \n")
                 sBuff.append("vim_cmd=`which vi`\n")
                 sBuff.append("if [ ! -n \$vim_cmd ] || [ ! -x \$vim_cmd ]\n")
                 sBuff.append("then\n")
@@ -341,13 +341,13 @@ public class WPDInstallerGroovy{
                 sBuff.append("    you need to change file format in  "+ wiperdogHome +"/bin/* manually\n")
                 sBuff.append("else\n")
                 //-- Set file format for executable unix shell script in 'bin' folder                
-                sBuff.append("\$vim_cmd +':w ++ff=unix' +':q' "+ wiperdogHome +"/bin/clearjobdata \n")
-                sBuff.append("\$vim_cmd +':w ++ff=unix' +':q' "+ wiperdogHome +"/bin/gendbpasswd.sh \n")
-                sBuff.append("\$vim_cmd +':w ++ff=unix' +':q' "+ wiperdogHome +"/bin/groovy \n")
-                sBuff.append("\$vim_cmd +':w ++ff=unix' +':q' "+ wiperdogHome +"/bin/jobrunner.sh \n")
-                sBuff.append("\$vim_cmd +':w ++ff=unix' +':q' "+ wiperdogHome +"/bin/startGroovy \n")
-                sBuff.append("\$vim_cmd +':w ++ff=unix' +':q' "+ wiperdogHome +"/bin/startWiperdog.sh  \n")
-                sBuff.append("\$vim_cmd +':w ++ff=unix' +':q' "+ wiperdogHome +"/bin/wiperdog \n")
+                sBuff.append("\$vim_cmd +':w ++ff=unix' +':q' \""+ wiperdogHome +"/bin/clearjobdata\" \n")
+                sBuff.append("\$vim_cmd +':w ++ff=unix' +':q' \""+ wiperdogHome +"/bin/gendbpasswd.sh\" \n")
+                sBuff.append("\$vim_cmd +':w ++ff=unix' +':q' \""+ wiperdogHome +"/bin/groovy\" \n")
+                sBuff.append("\$vim_cmd +':w ++ff=unix' +':q' \""+ wiperdogHome +"/bin/jobrunner.sh\" \n")
+                sBuff.append("\$vim_cmd +':w ++ff=unix' +':q' \""+ wiperdogHome +"/bin/startGroovy\" \n")
+                sBuff.append("\$vim_cmd +':w ++ff=unix' +':q' \""+ wiperdogHome +"/bin/startWiperdog.sh\"  \n")
+                sBuff.append("\$vim_cmd +':w ++ff=unix' +':q' \""+ wiperdogHome +"/bin/wiperdog\" \n")
                 sBuff.append("fi\n")
                 
                 fos.write(sBuff.toString().getBytes());
@@ -373,8 +373,8 @@ public class WPDInstallerGroovy{
             }else{//-- Window
                 def listCmd = []
                 
-                listCmd.add(wiperdogHome +"/service/javaservice/create_wiperdog_service.bat")
-                listCmd.add(wiperdogHome)                
+                listCmd.add("\"" + wiperdogHome +"/service/javaservice/create_wiperdog_service.bat" + "\"")
+                listCmd.add("\"" + wiperdogHome + "\"")                
                 File workDir = new File(wiperdogHome +"/service/javaservice");
                 ProcessBuilder builder = new ProcessBuilder(listCmd);
                 builder.directory(workDir);
