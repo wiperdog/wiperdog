@@ -322,7 +322,7 @@ public class WiperDogService{
 		def felix_home = System.getProperty("felix.home").replace("\\", "/");
 		def context = m_fwk.getBundleContext()
 		//Get list bundle and order by run level
-		def bundleList = WiperDogService.processCSVFile(felix_home + "/bin/ListBundle.csv")
+		def bundleList = WiperDogService.processCSVFile(felix_home + "/etc/ListBundle.csv")
 		def mapBundle = [:]
 		
 		bundleList.each { bundleCfg ->
