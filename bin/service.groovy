@@ -332,6 +332,10 @@ public class WiperDogService{
 				url =  (new File(felix_home, bundleCfg['PATH'])).toURI().toString()
 			} else if (bundleCfg['TYPE'] == "wrapfile") {
 				url = "wrap:" + (new File(felix_home, bundleCfg['PATH'])).toURI().toString()
+			} else if (bundleCfg['TYPE'] == "mvn") {
+				url = "mvn:" + bundleCfg['PATH'].replaceAll(":", "/")
+			} else if (bundleCfg['TYPE'] == "wrapmvn") {
+				url = "wrap:mvn:" + bundleCfg['PATH'].replaceAll(":", "/")
 			} else {
 				println ("Unknow resource: " + bundleCfg)
 			}
