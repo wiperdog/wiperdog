@@ -2,7 +2,16 @@
 if "%~1" == "" goto show_instructions
 SET WIPERDOG_HOME=%~1
 echo Param %WIPERDOG_HOME% "%~1"
-SET JAVASERVICE_STUB=%WIPERDOG_HOME%\bin\wiperdog_service.exe
+
+REM Check OS 64 bit or 32 bit
+if "%PROCESSOR_ARCHITECTURE%"=="AMD64" goto WIN_64bit
+SET JAVASERVICE_STUB=%WIPERDOG_HOME%\bin\wiperdog_service_32bit.exe
+GOTO SET_OTHER_PARAM
+
+:WIN_64bit
+SET JAVASERVICE_STUB=%WIPERDOG_HOME%\bin\wiperdog_service_64bit.exe
+
+:SET_OTHER_PARAM
 SET SERVICE_NAME=Wiperdog
 SET GROOVY_SCRIPT=%WIPERDOG_HOME%\bin\service.groovy
 SET LOGS_FOLDER=%WIPERDOG_HOME%\log
@@ -23,14 +32,40 @@ if not exist "%WIPERDOG_HOME%"\log md "%WIPERDOG_HOME%"\log
 REM stoping service
 net stop "%SERVICE_NAME%"
 "%JAVASERVICE_STUB%" -uninstall "%SERVICE_NAME%"
+
 REM check JDK/JRE
-if exist "%JAVA_HOME%"\bin\client GOTO SET_JRE_DLL
-REM set JDK jvm.dll path 
+if exist "%JAVA_HOME%"\bin\client GOTO SET_JRE_CLIENT_DLL
+if exist "%JAVA_HOME%"\bin\server GOTO SET_JRE_SERVER_DLL
+
+REM set JDK client jvm.dll path 
+if not exist "%JAVA_HOME%"\jre\bin\client GOTO SET_JDK_SERVER_DLL
 SET JVM_DLL=%JAVA_HOME%\jre\bin\client\jvm.dll
 GOTO START_MAIN_APP
-:SET_JRE_DLL
+
+REM set JDK server jvm.dll path 
+:SET_JDK_SERVER_DLL
+if not exist "%JAVA_HOME%"\jre\bin\server GOTO NOTFOUND_JVM
+SET JVM_DLL=%JAVA_HOME%\jre\bin\server\jvm.dll
+GOTO START_MAIN_APP
+
+:NOTFOUND_JVM
+echo.
+echo.
+echo Can not found JVM. Exit install service process.
+echo.
+echo.
+goto end
+
+:SET_JRE_CLIENT_DLL
 REM set JRE jvm.dll path
 SET JVM_DLL=%JAVA_HOME%\bin\client\jvm.dll
+GOTO START_MAIN_APP
+
+:SET_JRE_SERVER_DLL
+REM set JRE jvm.dll path
+SET JVM_DLL=%JAVA_HOME%\bin\server\jvm.dll
+GOTO START_MAIN_APP
+
 :START_MAIN_APP
 echo.
 REM for JDK only "%JAVASERVICE_STUB%" -install "%SERVICE_NAME%" "%JAVA_HOME%"\jre\bin\server\jvm.dll ^
@@ -50,7 +85,7 @@ REM below for using JRE
 -Dgroovy.home="%WIPERDOG_HOME%" ^
 -Dgroovy.starter.conf="%WIPERDOG_HOME%\etc\groovy-starter.conf" ^
 -Dscript.name="%WIPERDOG_HOME%\bin\startWiperdog.groovy"  ^
--classpath "%WIPERDOG_HOME%"\lib\java\bundle.d\com.insight_tec.pi.scriptsupport.groovyrunner-3.1.0.jar;"%WIPERDOG_HOME%"\bin\..\lib\java\bundle\*;"%WIPERDOG_HOME%"\bin\..\lib\java\bundle.a\*;"%WIPERDOG_HOME%"\bin\..\lib\java\bundle.d\*;"%WIPERDOG_HOME%"\bin\..\lib\java\ext\* org.codehaus.groovy.tools.GroovyStarter --main groovy.ui.GroovyMain --conf "%WIPERDOG_HOME%"\bin\..\etc\groovy-starter.conf ^
+-classpath "%WIPERDOG_HOME%"\bin\..\lib\java\bundle\*;"%WIPERDOG_HOME%"\bin\..\lib\java\bundle.a\*;"%WIPERDOG_HOME%"\bin\..\lib\java\bundle.d\*;"%WIPERDOG_HOME%"\bin\..\lib\java\ext\* org.codehaus.groovy.tools.GroovyStarter --main groovy.ui.GroovyMain --conf "%WIPERDOG_HOME%"\bin\..\etc\groovy-starter.conf ^
 -verbose:gc ^
 -Xmx1024M ^
 -Xrs ^
