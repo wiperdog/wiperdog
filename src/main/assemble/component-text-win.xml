@@ -20,7 +20,8 @@
         <include>*</include>
       </includes>
       <excludes>
-        <exclude>wiperdog_service.exe</exclude>
+        <exclude>wiperdog_service_32bit.exe</exclude>
+        <exclude>wiperdog_service_64bit.exe</exclude>
       </excludes>
       <lineEnding>windows</lineEnding>
       <fileMode>0755</fileMode>

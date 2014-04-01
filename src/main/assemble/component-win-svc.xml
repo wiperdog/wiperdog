@@ -41,7 +41,8 @@
     <fileSet>
       <directory>bin</directory>
       <includes>
-        <include>wiperdog_service.exe</include>
+        <include>wiperdog_service_32bit.exe</include>
+        <include>wiperdog_service_64bit.exe</include>
       </includes>
       <lineEnding>keep</lineEnding>
     </fileSet>

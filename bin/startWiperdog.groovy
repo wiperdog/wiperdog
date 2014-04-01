@@ -62,7 +62,27 @@ public class WiperDogBoot{
 		def felix_home = System.getProperty("felix.home").replace("\\", "/");
 		def context = m_fwk.getBundleContext()
 		//Get list bundle and order by run level
-		def bundleList = processCSVFile("ListBundle.csv")
+		def pathListBundle = ""
+		def strPath = ""
+		// get path to list bundle from command
+		args.eachWithIndex {item, index ->
+			if ((index < (args.size() - 1)) && (item == "-b") && (args[index+1] != null)) {
+				strPath = args[index+1].replaceAll("\"", "").replaceAll("\'", "").trim()
+			}
+		}
+		if (strPath == "") {
+			println "Start wiperdog without list bundle file setting, use default with /etc/ListBundle.csv"
+			println "You can start with specific list bundle file by syntax: startWiperdog -b [path/to/ListBundleX.csv]"
+			strPath = "etc/ListBundle.csv"
+		}
+		// check path to list bundle is relative path or not
+		File f = new File(strPath)
+		if (f.isAbsolute()) {
+			pathListBundle = strPath
+		} else {
+			pathListBundle = felix_home + "/" + strPath
+		}
+		def bundleList = processCSVFile(pathListBundle)
 		def mapBundle = [:]
 		
 		bundleList.each { bundleCfg ->
@@ -72,6 +92,10 @@ public class WiperDogBoot{
 				url =  (new File(felix_home, bundleCfg['PATH'])).toURI().toString()
 			} else if (bundleCfg['TYPE'] == "wrapfile") {
 				url = "wrap:" + (new File(felix_home, bundleCfg['PATH'])).toURI().toString()
+			} else if (bundleCfg['TYPE'] == "mvn") {
+				url = "mvn:" + bundleCfg['PATH'].replaceAll(":", "/")
+			} else if (bundleCfg['TYPE'] == "wrapmvn") {
+				url = "wrap:mvn:" + bundleCfg['PATH'].replaceAll(":", "/")
 			} else {
 				println ("Unknow resource: " + bundleCfg)
 			}
@@ -89,7 +113,6 @@ public class WiperDogBoot{
 			listBundle = installall(context, listURL)
 			startall(listBundle)
 		}
-		
 		// Wait for framework to stop to exit the VM.
 		try {
         	m_fwk.waitForStop(0);
@@ -109,7 +132,7 @@ public class WiperDogBoot{
 				bundle = context.installBundle(url)
 				lstBundle.add(bundle)
 			} catch(Exception e) {
-				println org.apache.commons.lang.exception.ExceptionUtils.getFullStackTrace(e)
+				println e
 			}
 		}
 		return lstBundle
