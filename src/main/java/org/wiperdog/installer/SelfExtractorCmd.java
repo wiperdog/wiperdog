@@ -16,9 +16,6 @@ import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import java.io.InputStreamReader;
 import java.io.BufferedReader;
 
@@ -59,15 +56,21 @@ public class SelfExtractorCmd {
 				
 				//Get jar file name, create install directory name
 				String jarFileName = new java.io.File(SelfExtractorCmd.class.getProtectionDomain().getCodeSource().getLocation().getPath()).getName();
-				String macherPattern = "((?:(?!-unix|-win).)*)((-unix|-win)*)(.jar)";
-				Pattern pattern = Pattern.compile(macherPattern, Pattern.DOTALL);
-				Matcher matcher = pattern.matcher(jarFileName);
-				while(matcher.find()){
-					jarFileName = matcher.group(1);
+				String wiperdogDirName = "";
+				if (jarFileName.endsWith(".jar")) {
+					wiperdogDirName = jarFileName.substring(0, jarFileName.length() - 4);
 				}
-				
+				if (wiperdogDirName.endsWith("-unix")) {
+					wiperdogDirName = wiperdogDirName.substring(0, wiperdogDirName.length() - 5);
+				}
+				if (wiperdogDirName.endsWith("-win")) {
+					wiperdogDirName = wiperdogDirName.substring(0, wiperdogDirName.length() - 4);
+				}
+				if (wiperdogDirName == "") {
+					wiperdogDirName = "wiperdogHome";
+				}
 				//wiperdog home path
-				String wiperdogPath = currentDir + File.separator + jarFileName;
+				String wiperdogPath = currentDir + File.separator + wiperdogDirName;
 				
 				//Check install or not
 				System.out.println("You omitted to specify WIPERDOG HOME.");
