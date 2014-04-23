@@ -59,7 +59,7 @@ public class SelfExtractorCmd {
 				
 				//Get jar file name, create install directory name
 				String jarFileName = new java.io.File(SelfExtractorCmd.class.getProtectionDomain().getCodeSource().getLocation().getPath()).getName();
-				String macherPattern = "(.*)(-unix|-win)(.jar)";
+				String macherPattern = "((?:(?!-unix|-win).)*)((-unix|-win)*)(.jar)";
 				Pattern pattern = Pattern.compile(macherPattern, Pattern.DOTALL);
 				Matcher matcher = pattern.matcher(jarFileName);
 				while(matcher.find()){
