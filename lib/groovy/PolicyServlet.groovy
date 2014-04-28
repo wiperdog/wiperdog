@@ -30,11 +30,13 @@ class ServletPolicy extends HttpServlet{
 			if(jobName != "" && jobName != null) {
 				// Policy Data
 				def listPolicy = readFromFile(jobName, jobTyped)
+				def params = readFileParam(jobName)
 				def mapFinalPolicy = [:]
 				mapFinalPolicy["POLICY"] = [:]
 				if(listPolicy != null) {
 					mapFinalPolicy["POLICY"]["listpolicy"] = listPolicy
 				}
+				mapFinalPolicy["POLICY"]["params"] = params
 				builder = new JsonBuilder(mapFinalPolicy)
 				out.println(builder.toPrettyString());
 			}
@@ -61,7 +63,19 @@ class ServletPolicy extends HttpServlet{
 	      	} else {
 	      		filename = data.jobName
 	      	}
-      		if(write2File(filename, data.policyStr)) {
+	      	
+	      	// Try to convert number string to number
+			data.params.each{key,value->
+				try{
+					data.params[key] = Double.valueOf(value)
+				}catch(NumberFormatException nfex){
+					// Do nothing with it
+				}
+			}
+			
+	      	builder = new JsonBuilder(data.params)
+	      	
+      		if(write2File(filename + ".policy", data.policyStr) &&  write2File(filename + ".params", builder.toString())) {
 	      		message = [status:"OK", message:"Process policy file successfully !!!"]
 				builder = new JsonBuilder(message)
 				out.print(builder.toString())
@@ -177,10 +191,21 @@ class ServletPolicy extends HttpServlet{
 		}
 	}
 
+	def readFileParam(jobname){
+		def params
+		def params_file = new File(HOMEPATH, POLICY_DIR + jobname + ".params")
+		if(params_file.exists()){
+			def json = params_file.getText()
+		    def slurper = new JsonSlurper()
+			params = slurper.parseText(json)
+		}
+		return params
+	}
+	
 	// WRITE DATA TO POLICY FILE
 	def write2File(filename, data){
 		def filePath = POLICY_DIR + filename
-		File policyFile = new File(HOMEPATH, filePath + ".policy")
+		File policyFile = new File(HOMEPATH, filePath)
 		if(data != "") {
 			try {
 				policyFile.setText(data)
