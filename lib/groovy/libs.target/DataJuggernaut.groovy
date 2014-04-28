@@ -2,7 +2,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder
 import com.gmongo.GMongo
 import org.apache.log4j.Logger;
-	
+import groovy.json.*
+
 class DataJuggernaut{
 	def logger = Logger.getLogger("org.wiperdog.scriptsupport.groovyrunner")
 	Gson gson = new GsonBuilder().setPrettyPrinting().create()
@@ -15,9 +16,19 @@ class DataJuggernaut{
 		def mongo
 		def ret // Format: [jobName:"aaaa", instanceName:"bbbb", message:[...]]
 		File policyFile = getpolicyFile(data.sourceJob, data.istIid)
+		File polParamFile = getParamFile(data.sourceJob, data.istIid)
 		if(policyFile != null){
 			def policyObj = shell.evaluate(policyFile)
 			def binding = policyObj.getBinding()
+			
+			if(polParamFile.exists()){
+				def slurper = new JsonSlurper()
+				params = slurper.parseText(polParamFile.getText())
+				params.each{key, value->
+					binding.setVariable(key, value)
+				}
+			}
+			
 			def policyClos = binding.getVariable("POLICY")
 			ret = policyClos(data.data)
 			ret['fetchedAt_bin'] = data.fetchedAt_bin
@@ -60,6 +71,18 @@ class DataJuggernaut{
 			if(!policyFile.exists()){
 				policyFile = null
 			}
+		}
+		return policyFile
+	}
+	
+	def getParamFile(jobName, istIid){
+		File policyFile
+		// Get policy file of instance
+		if(jobName != null && jobName != '' && istIid != null && istIid != ''){
+			policyFile = new File("${policyPath}/${jobName}.${istIid}.params")
+		}
+		if(jobName != null && jobName != ''){
+			policyFile = new File("${policyPath}/${jobName}.params")
 		}
 		return policyFile
 	}
