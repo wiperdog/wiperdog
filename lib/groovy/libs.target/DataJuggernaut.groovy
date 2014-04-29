@@ -23,7 +23,7 @@ class DataJuggernaut{
 			
 			if(polParamFile.exists()){
 				def slurper = new JsonSlurper()
-				params = slurper.parseText(polParamFile.getText())
+				def params = slurper.parseText(polParamFile.getText())
 				params.each{key, value->
 					binding.setVariable(key, value)
 				}
