@@ -244,20 +244,41 @@ public class HTTPSender implements Sender<Map>{
 	@Override
 	public void send(data2send){
 		if(checkCountandSize()){
-			// Write data to swap file
 			def jobname = (data2send.instanceName == null) ? data2send.sourceJob : (data2send.sourceJob + "_" + data2send.instanceName)
 			def sequence = HTTPSender.getFileName(jobname)
-			def swapFile = new File(properties.get(ResourceConstants.MONITORSWAP_DIRECTORY) + "/$alias/$sequence" + ".swp")
-			logger.debug("Write data of " + data2send.sourceJob + " to file " + swapFile.getName() + "\n into folder $alias")
-			def dataJson = output.toJson(data2send)
-			swapFile.setText(dataJson)
-			// put to queue
-			this.queue.add(swapFile.getName())
-			synchronized(this.queue) {
-				this.queue.notify()
+			// check queue is not empty or not
+			if(!this.queue.isEmpty()) {
+				// write data to swap file
+				writeData(data2send, sequence)
+			} else {
+				// send data to http
+				HashMap mapData2Send = new HashMap(data2send)
+				def isSuccess = senderThread.HTTPsend(mapData2Send)
+				if(!isSuccess) {
+					// write data to swap file
+					writeData(data2send, sequence)
+				}
 			}
 		}else{
 			logger.info("Reach max allowed number of files or size")
+		}
+	}
+	
+	/**
+	 * Write data to swap file and add to queue
+	 * @param data2send data send to http
+	 * @param sequence name of swap file corresponding to data
+	 */
+	public void writeData(data2send, sequence) {
+		def swapFile = new File(properties.get(ResourceConstants.MONITORSWAP_DIRECTORY) + "/$alias/$sequence" + ".swp")
+		logger.debug("Write data of " + data2send.sourceJob + " to file " + swapFile.getName() + "\n into folder $alias")
+		def dataJson = output.toJson(data2send)
+		// write data to swap file
+		swapFile.setText(dataJson)
+		// put to queue
+		this.queue.add(swapFile.getName())
+		synchronized(this.queue) {
+			this.queue.notify()
 		}
 	}
 	
