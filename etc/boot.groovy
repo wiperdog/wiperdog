@@ -38,7 +38,8 @@ def doBootStep() {
         def shell = new GroovyShell(rootloader,binding)
 
 //        def jettyLoader = new JettyLoader(ctx)
-        def jettyLoader = rootloader.loadClass("JettyLoader").newInstance([ctx] as Object[] )
+      //  def jettyLoader = rootloader.loadClass("JettyLoader").newInstance([ctx] as Object[] )
+          def nettyLoader = rootloader.loadClass("NettyLoader").newInstance([ctx] as Object[] )
 
         // IST_HOME/lib/groovy の直下のgroovyファイルを自動でロードするLoader
 //        def loader = new DefaultLoader(ctx, shell)

@@ -52,9 +52,9 @@ public class WPDInstallerGroovy{
 					        def test = inp.readLine()           
 					        params['WIPERDOGHOME'] = wiperdogHome
 					        
-					        println "Please input Jetty Port(default set to 13111):"
-					        def tmpJettyPort = inp.readLine().trim();
-					        params['jetty.port'] = (tmpJettyPort != null && ! tmpJettyPort.equals(""))?tmpJettyPort:'13111';
+					        println "Please input Netty port(default set to 13111):"
+					        def tmpNettyPort = inp.readLine().trim();
+					        params['netty.port'] = (tmpNettyPort != null && ! tmpNettyPort.equals(""))?tmpNettyPort:'13111';
 					            
 					        println "Please input database server (Mongodb) IP address (default set to 127.0.0.1):"
 					        def tmpMonitorjobfwMongodbHost = inp.readLine().trim();
@@ -87,7 +87,7 @@ public class WPDInstallerGroovy{
 							println "\n"
 							println "Please CONFIRM The following configuration are correct:"
 							println "Wiperdog Home:"+ params['WIPERDOGHOME']
-							println "Server Port:"+ params['jetty.port']
+							println "Server Port:"+ params['netty.port']
 							println "Database address:"+ params['monitorjobfw.mongodb.host']
 							println "Database port:"+ params['monitorjobfw.mongodb.port']
 							println "Database name:"+ params['monitorjobfw.mongodb.dbName']
@@ -103,9 +103,9 @@ public class WPDInstallerGroovy{
 					if(installerParam.length > 2) {
 						params['WIPERDOGHOME'] = wiperdogHome
 						for(int i = 1; i< installerParam.length; i++ ){
-						   //Get jetty port from argurment
+						   //Get Netty port from argurment
 							if(installerParam[i].equals('-j')) {
-								params['jetty.port'] = installerParam[i+1]
+								params['netty.port'] = installerParam[i+1]
 								i++
 							} 
 							//Get Mongodb Host from argurment
@@ -153,7 +153,7 @@ public class WPDInstallerGroovy{
 						println "----------------------------------------------------------------"												
 						println "------------------    Wiperdog setting     -------------------------"
 						println "Wiperdog Home:"+ params['WIPERDOGHOME']
-						println "Server Port:"+ params['jetty.port']
+						println "Server Port:"+ params['netty.port']
 						println "Database address:"+ params['monitorjobfw.mongodb.host']
 						println "Database port:"+ params['monitorjobfw.mongodb.port']
 						println "Database name:"+ params['monitorjobfw.mongodb.dbName']
@@ -167,21 +167,21 @@ public class WPDInstallerGroovy{
                 println ignore
             }
         //------------------------------------ CONFIGURE WIPERDOG ------------------------------------------//
-         // Configure system.properties for jetty.port
+         // Configure system.properties for netty.port
         def configFile = new File("etc/system.properties")
         def fileText = configFile.text 
         
         def newFileText = ""
-        String macherPattern = "(jetty.port=)((?:(?!\\n).)*)"
+        String macherPattern = "(netty.port=)((?:(?!\\n).)*)"
         Pattern pattern = Pattern.compile(macherPattern, Pattern.DOTALL);
         Matcher matcher = pattern.matcher(fileText);
         while(matcher.find())
         {
-            newFileText = fileText.replace(matcher.group(1) + matcher.group(2), matcher.group(1) + params['jetty.port'])
+            newFileText = fileText.replace(matcher.group(1) + matcher.group(2), matcher.group(1) + params['netty.port'])
         }                
         configFile.write(newFileText)
         
-        //def newFileText = fileText.replaceAll(/_jetty.port/, params['jetty.port'])                
+        //def newFileText = fileText.replaceAll(/_netty.port/, params['netty.port'])                
         configFile.write(newFileText)
          /*
               3. Configure monitorjobfw.cfg for 

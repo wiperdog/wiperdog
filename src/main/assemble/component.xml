@@ -20,6 +20,7 @@
       <includes>
         <include>ojdbc5.jar</include>
         <include>sqljdbc4.jar</include>
+        <include>netty-servlet-bridge-1.0.0-SNAPSHOT.jar</include>
       </includes>
     </fileSet>
     <!-- to include emptry log folder -->
