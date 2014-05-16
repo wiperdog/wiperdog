@@ -1,4 +1,5 @@
 @echo off
+SETLOCAL EnableDelayedExpansion
 if "%~1" == "" goto show_instructions
 SET WIPERDOG_HOME=%~1
 echo Param %WIPERDOG_HOME% "%~1"
@@ -107,3 +108,4 @@ echo Error: command must start with parameter WIPERDOG_HOME
 echo E.g.: create_wiperdog_service.bat E:\wiperdog
 echo NOTICE: you must use JRE instead of using JDK
 :end
+ENDLOCAL
