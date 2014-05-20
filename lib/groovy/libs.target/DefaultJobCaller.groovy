@@ -308,7 +308,6 @@ class DefaultJobCaller {
 			strDbType = getVarFromBinding(binding, ResourceConstants.DEF_DBTYPE)
 			// Get params of job
 			def paramsJob = binding.getVariable('parameters')
-			
 			// Get DBHOSTID
 			strHostId = getVarFromBinding(binding, ResourceConstants.DBHOSTID)
 			//Get Monitoring type of job
@@ -345,20 +344,27 @@ class DefaultJobCaller {
 				}
 			}
 			// Get DBInfo
-			dbInfo = getDbInfo(paramsJob, strDbType, strHostId, strSid)
-			if (dbInfo != null) {
+			if (strDbType == ResourceConstants.MONGODB) {
+				dbInfo = getMongoInfo(paramsJob, strDbType)
 				dbInfo['strDbType'] = strDbType
-				dbInfo['strDbTypeDriver'] = strDbTypeDriver
-				//Get DBCONNSTR
-				strCon = dbInfo.dbconnstr
-				//Get DB user
-				strUser = dbInfo.user
-				//If DB user haven't set, get default user
-				if (strUser == null && strDbType != null) {
-					strUser = iDBConnectionSource.getDefaultUser(dbInfo)
-					dbInfo.user = strUser
+				dbInfo['dbconnstr'] = ""
+			} else {
+				dbInfo = getDbInfo(paramsJob, strDbType, strHostId, strSid)
+				if (dbInfo != null) {
+					dbInfo['strDbType'] = strDbType
+					dbInfo['strDbTypeDriver'] = strDbTypeDriver
+					//Get DBCONNSTR
+					strCon = dbInfo.dbconnstr
+					//Get DB user
+					strUser = dbInfo.user
+					//If DB user haven't set, get default user
+					if (strUser == null && strDbType != null) {
+						strUser = iDBConnectionSource.getDefaultUser(dbInfo)
+						dbInfo.user = strUser
+					}
 				}
 			}
+			
 			if (cFetchAction == null && strCommand != null) {
 				// start command
 				logger.debug("fileName: " + fileName + " ---Start Process Command---")
@@ -493,9 +499,10 @@ class DefaultJobCaller {
 	def runFetchAction (fetchActionString, dbInfo) {
 		def binding = instanceJob.getBinding()
 		def resultData = null
+
 		synchronized (mapDBConnections) {
 			//If has data for connect, create connection
-			if((dbInfo != null) &&(dbInfo.dbconnstr != null) && (dbInfo.strDbType != null) && (dbInfo.user != null)) {
+			if((dbInfo != null) && (dbInfo.dbconnstr != null) && (dbInfo.strDbType != null) && (dbInfo.user != null)) {
 				def conInt = new ConnectionInit()
 				def db = conInt.getDbConnection(mapDBConnections, iDBConnectionSource, binding, dbInfo)
 				if (db == null) {
@@ -773,6 +780,30 @@ class DefaultJobCaller {
 			dbInformation.dbSid = sidString
 		}
 		return dbInformation
+	}
+
+	/**
+	 * getMongoInfo: get connect MONGODB information
+	 * @param paramsJob params of Job
+	 * @param strDbType type of DB was configed in Job
+	 * @return connect MONGODB information
+	 */
+	def getMongoInfo(paramsJob, strDbType) {
+		def mongoInfomation = [:]
+		if ( paramsJob.host != null && paramsJob.host != "" ) {// get data in job.params file
+			mongoInfomation['host']	= paramsJob.host
+			mongoInfomation['port']	= (paramsJob.port != null && paramsJob.port != "") ? paramsJob.port : "27017"
+			mongoInfomation['db'] = paramsJob.db
+			mongoInfomation['user']	= paramsJob.user
+			mongoInfomation['pass']	= paramsJob.pass
+		} else {// get data in default.params
+			mongoInfomation['host']	= paramsJob.dbinfo[strDbType].host
+			mongoInfomation['port']	= (paramsJob.dbinfo[strDbType].port != null && paramsJob.dbinfo[strDbType].port != "") ? paramsJob.dbinfo[strDbType].port : "27017"
+			mongoInfomation['db'] = paramsJob.dbinfo[strDbType].db
+			mongoInfomation['user']	= paramsJob.dbinfo[strDbType].user
+			mongoInfomation['pass']	= paramsJob.dbinfo[strDbType].pass
+		}
+		return mongoInfomation
 	}
 }
 

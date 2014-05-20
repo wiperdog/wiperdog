@@ -41,7 +41,12 @@ class ConnectionInit {
 		
 		if ((db == null) || (db.connection == null) || (db.connection.isClosed())) {
 			for(int i = 0; i < 20; i++){
-				db = iDBConnectionSource.newSqlInstance(dbInfo, datadir_params,dbversion_params,programdir_params,logdir_params)
+				if(strDbType == ResourceConstants.MONGODB) {// create connections to mongodb
+					def mongoConn = new MongoDBConnection()
+					db = mongoConn.createConnection(dbInfo)
+				} else {// create connections to another db
+					db = iDBConnectionSource.newSqlInstance(dbInfo, datadir_params,dbversion_params,programdir_params,logdir_params)
+				}
 				if (db != null) {
 					def objConnect = new DBConnections(strDbType, userString, connectionString)
 					objConnect.setConnection(db)
@@ -68,6 +73,8 @@ class ConnectionInit {
 			} catch(SQLException e){
 				connectionIsValid = false
 			}
+		} else if (strDbType == ResourceConstants.MONGODB) {
+			connectionIsValid = true
 		} else {
 			connectionIsValid = db.connection.isValid(0)
 		}		

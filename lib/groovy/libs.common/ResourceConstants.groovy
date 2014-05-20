@@ -51,6 +51,7 @@ class ResourceConstants{
 	public static final String MYSQL= "@MYSQL"
 	public static final String POSTGRES = "@PGSQL"
 	public static final String SQLS = "@MSSQL"	
+	public static final String MONGODB = "@MONGODB"
 	public static final String DEFAULTUSER = "#DEFAULTUSER"	
 	public static final String DEF_ACCUMULATE = "ACCUMULATE"	
 	public static final String DEF_GROUPKEY = "GROUPKEY"	
