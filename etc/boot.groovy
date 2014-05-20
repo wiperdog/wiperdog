@@ -64,7 +64,7 @@ def doBootStep() {
         // OSGi serviceに渡すproperty
         def props_jobsvc = new java.util.Hashtable(props);
         // 監視系ジョブ専用loaderをdirectory-watcherとして登録(未実装)
-        ctx.registerService(clsListener.getName(), jobLoader, props_jobsvc)
+        //ctx.registerService(clsListener.getName(), jobLoader, props_jobsvc)
 		 ctx.registerService(clsListener.getName(), jobListener, null)
 		 ctx.registerService(clsListener.getName(), trgListener, null)
 		 ctx.registerService(clsListener.getName(), instListener, null)
