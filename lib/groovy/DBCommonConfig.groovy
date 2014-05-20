@@ -11,15 +11,39 @@ import java.util.regex.Pattern;
 
 class DBCommonConfigServlet extends HttpServlet{
 	static final String HOMEPATH = System.getProperty("felix.home")
-	static final String JOB_DIR = "var/job/"
-	def static final listKey = ["JOB", "GROUPKEY", "QUERY", "QUERY_VARIABLE", "DBEXEC", "DBEXEC_VARIABLE", "COMMAND", "FORMAT", "FETCHACTION", "ACCUMULATE", "FINALLY", "KEYEXPR", "KEYEXPR._root", "KEYEXPR._sequence", "KEYEXPR._unit", "KEYEXPR._chart", "SENDTYPE", "RESOURCEID", "MONITORINGTYPE", "DBTYPE", "DEST", "HOSTID", "SID"]
+	static final String JOB_DIR = MonitorJobConfigLoader.getProperties().get(ResourceConstants.JOB_DIRECTORY)
+	def static final listKey = [
+		"JOB",
+		"GROUPKEY",
+		"QUERY",
+		"QUERY_VARIABLE",
+		"DBEXEC",
+		"DBEXEC_VARIABLE",
+		"COMMAND",
+		"FORMAT",
+		"FETCHACTION",
+		"ACCUMULATE",
+		"FINALLY",
+		"KEYEXPR",
+		"KEYEXPR._root",
+		"KEYEXPR._sequence",
+		"KEYEXPR._unit",
+		"KEYEXPR._chart",
+		"SENDTYPE",
+		"RESOURCEID",
+		"MONITORINGTYPE",
+		"DBTYPE",
+		"DEST",
+		"HOSTID",
+		"SID"
+	]
 	def properties = MonitorJobConfigLoader.getProperties()
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
 
 		resp.setContentType("json")
 		resp.addHeader("Access-Control-Allow-Origin", "*")
-
+		def job_dir = new File(JOB_DIR)
 		PrintWriter out = resp.getWriter()
 		def list_job = []
 		try{
@@ -43,7 +67,7 @@ class DBCommonConfigServlet extends HttpServlet{
 
 			if (strJobFileName != null && strJobFileName != ""){
 				// Get jobName
-				File jobFile = new File(HOMEPATH, JOB_DIR + strJobFileName + ".job")
+				File jobFile = new File(JOB_DIR + "/" + strJobFileName + ".job")
 				def mapJobScript = getJobScript(jobFile)
 					
 				def jobName = mapJobScript['JOB']
@@ -54,7 +78,7 @@ class DBCommonConfigServlet extends HttpServlet{
 				def shell = new GroovyShell()
 				def params = [:]
 				def jobFileParams = new File(properties.get(ResourceConstants.JOB_DIRECTORY) + "/${jobName}.params")
-				def jobFileInstance = new File(properties.get(ResourceConstants.JOB_DIRECTORY) + "/${jobName}.instances")
+				def jobFileInstance = new File(properties.get(ResourceConstants.JOBINST_DIRECTORY) + "/${jobName}.instances")
 				if (jobFileParams.exists()) {
 					params['params'] = shell.evaluate(jobFileParams)
 				}else{
@@ -88,25 +112,24 @@ class DBCommonConfigServlet extends HttpServlet{
 		def properties = MonitorJobConfigLoader.getProperties()
 		def contentText = req.getInputStream().getText()
 		def slurper = new JsonSlurper()
-      	def object = slurper.parseText(contentText)
+		def object = slurper.parseText(contentText)
 		def strJobName = object.job
 
 		def jobFileParams = new File(properties.get(ResourceConstants.JOB_DIRECTORY) + "/${strJobName}.params")
-		def jobFileInstance = new File(properties.get(ResourceConstants.JOB_DIRECTORY) + "/${strJobName}.instances")
+		def jobFileInstance = new File(properties.get(ResourceConstants.JOBINST_DIRECTORY) + "/${strJobName}.instances")
 
 		FileWriter fw = new FileWriter(jobFileParams)
-        BufferedWriter bw = new BufferedWriter(fw);
+		BufferedWriter bw = new BufferedWriter(fw);
 		def builder = new JsonBuilder(object.data.params)
 		def str_params = builder.toPrettyString().replaceAll("\\{","\\[").replaceAll("\\}","\\]").replaceAll("\\\\", "\\\\\\\\")
-        bw.write(str_params);
-        bw.close();
-
-        FileWriter fwInstance = new FileWriter(jobFileInstance)
-        BufferedWriter bwInstance = new BufferedWriter(fwInstance);
+		bw.write(str_params);
+		bw.close();
+		FileWriter fwInstance = new FileWriter(jobFileInstance)
+		BufferedWriter bwInstance = new BufferedWriter(fwInstance);
 		def builderInstance = new JsonBuilder(object.data.instances)
 		def str_paramsInstance = builderInstance.toPrettyString().replaceAll("\\{","\\[").replaceAll("\\}","\\]").replaceAll("\\\\", "\\\\\\\\")
-        bwInstance.write(str_paramsInstance);
-        bwInstance.close();
+		bwInstance.write(str_paramsInstance);
+		bwInstance.close();
 
 		PrintWriter out = resp.getWriter()
 		def message = [:]
@@ -122,54 +145,54 @@ class DBCommonConfigServlet extends HttpServlet{
 	 */
 	def getJobScript(jobFile){
 		def stringOfJob = jobFile.getText()
-			def strKeyPattern = ""
-			listKey.each {key->
-				strKeyPattern += key + "|"
-			}
-			strKeyPattern = strKeyPattern.subSequence(0, strKeyPattern.length() - 1)
-			//Create macher
-			String macherPattern = "("+ strKeyPattern + ")([ ]*=[ ]*)((?:(?!" + strKeyPattern + "[ ]*=[ ]*).)*)"
+		def strKeyPattern = ""
+		listKey.each {key->
+			strKeyPattern += key + "|"
+		}
+		strKeyPattern = strKeyPattern.subSequence(0, strKeyPattern.length() - 1)
+		//Create macher
+		String macherPattern = "("+ strKeyPattern + ")([ ]*=[ ]*)((?:(?!" + strKeyPattern + "[ ]*=[ ]*).)*)"
 
-			Pattern pattern = Pattern.compile(macherPattern, Pattern.DOTALL);
-			Matcher matcher = pattern.matcher(stringOfJob);
+		Pattern pattern = Pattern.compile(macherPattern, Pattern.DOTALL);
+		Matcher matcher = pattern.matcher(stringOfJob);
 
-			def mapResult = [:]
+		def mapResult = [:]
 
-			while(matcher.find())
-			{
-				mapResult[matcher.group(1)] = matcher.group(3)
-			}
-			def shell = new GroovyShell()
-			def temp
-			if(mapResult['JOB'] != null){
-				temp = shell.evaluate(mapResult['JOB'])
-				mapResult['JOB'] = temp['name']
-				mapResult['jobclass'] = temp['jobclass']
-			}
-			if(mapResult['KEYEXPR'] != null){
-				temp = shell.evaluate(mapResult['KEYEXPR'])
-				mapResult['KEYEXPR'] = temp	
-			}
-			if(mapResult['KEYEXPR._unit'] != null){
-				temp = shell.evaluate(mapResult['KEYEXPR._unit'])
-				mapResult['KEYEXPR._unit'] = temp	
-			}
-			if(mapResult['KEYEXPR._chart'] != null){
-				temp = shell.evaluate(mapResult['KEYEXPR._chart'])
-				mapResult['KEYEXPR._chart'] = temp	
-			}
-			// Get comment
-			// Create macher for job's comment
-			String commentMacherPattern = "((?:(?!" + strKeyPattern + "[ ]*=[ ]*).)*)" + "("+ strKeyPattern + ")"
-			Pattern commentPattern = Pattern.compile(commentMacherPattern, Pattern.DOTALL);
-			Matcher commentMatcher = commentPattern.matcher(stringOfJob);
-			def commentStr = ""
-			while(commentMatcher.find()){
-				commentStr = commentMatcher.group(1)
-				break;
-			}
-			mapResult['comment'] = commentStr
-			return mapResult
+		while(matcher.find())
+		{
+			mapResult[matcher.group(1)] = matcher.group(3)
+		}
+		def shell = new GroovyShell()
+		def temp
+		if(mapResult['JOB'] != null){
+			temp = shell.evaluate(mapResult['JOB'])
+			mapResult['JOB'] = temp['name']
+			mapResult['jobclass'] = temp['jobclass']
+		}
+		if(mapResult['KEYEXPR'] != null){
+			temp = shell.evaluate(mapResult['KEYEXPR'])
+			mapResult['KEYEXPR'] = temp
+		}
+		if(mapResult['KEYEXPR._unit'] != null){
+			temp = shell.evaluate(mapResult['KEYEXPR._unit'])
+			mapResult['KEYEXPR._unit'] = temp
+		}
+		if(mapResult['KEYEXPR._chart'] != null){
+			temp = shell.evaluate(mapResult['KEYEXPR._chart'])
+			mapResult['KEYEXPR._chart'] = temp
+		}
+		// Get comment
+		// Create macher for job's comment
+		String commentMacherPattern = "((?:(?!" + strKeyPattern + "[ ]*=[ ]*).)*)" + "("+ strKeyPattern + ")"
+		Pattern commentPattern = Pattern.compile(commentMacherPattern, Pattern.DOTALL);
+		Matcher commentMatcher = commentPattern.matcher(stringOfJob);
+		def commentStr = ""
+		while(commentMatcher.find()){
+			commentStr = commentMatcher.group(1)
+			break;
+		}
+		mapResult['comment'] = commentStr
+		return mapResult
 	}
 }
 

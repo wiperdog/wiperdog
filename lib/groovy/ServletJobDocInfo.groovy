@@ -24,8 +24,7 @@ import groovy.json.*
 
 public class JobDocInformation extends HttpServlet {
 
-	def properties = MonitorJobConfigLoader.getProperties()
-	static final String JOB_DIR = "var/job/"
+	static final String JOB_DIR = MonitorJobConfigLoader.getProperties().get(ResourceConstants.JOB_DIRECTORY)
 	static final String HOMEPATH = System.getProperty("felix.home")
 	static final String PARAMFILE = "var/conf/default.params"
 	
@@ -36,7 +35,7 @@ public class JobDocInformation extends HttpServlet {
 			
 			// Get list job
 			PrintWriter out = resp.getWriter()
-			def  job_dir = new File(properties.get(ResourceConstants.JOB_DIRECTORY))
+			def job_dir = new File(JOB_DIR)
 			def list_job = []
 			if(job_dir.isDirectory()){
 				job_dir.listFiles().each {file ->
@@ -110,11 +109,11 @@ public class JobDocInformation extends HttpServlet {
 			// Get job
 			def contentText = req.getInputStream().getText()
 			def slurper = new JsonSlurper()
-	      	def object = slurper.parseText(contentText)
+			def object = slurper.parseText(contentText)
 			def jobName = object.job
-			def jobPath = JOB_DIR + jobName
-			def jobFile = new File(HOMEPATH, jobPath)
-			
+			def jobPath = JOB_DIR +"/"+ jobName
+			def jobFile = new File(jobPath)
+
 			// Get jobdoc info
 			def jobDocInfo = new Job(jobFile, params)
 			
@@ -234,9 +233,7 @@ class JobParser {
 	}
 	
 	def getTargetVersion() {
-		def tag = tags.find {
-			it.name == "targetVersion"
-		}
+		def tag = tags.find { it.name == "targetVersion" }
 		if(tag != null) {
 			return tag.text
 		}
@@ -244,18 +241,14 @@ class JobParser {
 	}
 	
 	def getParams() {
-		def tags = this.tags.findAll {
-			it.name == "param"
-		}
+		def tags = this.tags.findAll { it.name == "param" }
 		return tags.collectEntries {
 			[(it.param):it.text]
 		}
 	}
 	
 	def getReturn() {
-		def tag = tags.find {
-			it.name == "return"
-		}
+		def tag = tags.find { it.name == "return" }
 		if(tag != null) {
 			return tag.text
 		}
@@ -263,9 +256,7 @@ class JobParser {
 	}
 
 	def getReturnParams() {
-		def tags = this.tags.findAll {
-			it.name == "returnParam"
-		}
+		def tags = this.tags.findAll { it.name == "returnParam" }
 		return tags.collectEntries {
 			[(it.param):it.text]
 		}

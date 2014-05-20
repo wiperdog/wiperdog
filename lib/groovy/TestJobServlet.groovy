@@ -11,9 +11,7 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 
 public class TestJob extends HttpServlet {
-	def properties = MonitorJobConfigLoader.getProperties()
-	static final String JOB_DIR = "/var/job/"
-	static final String HOMEPATH = System.getProperty("felix.home")
+	static final String JOB_DIR = MonitorJobConfigLoader.getProperties().get(ResourceConstants.JOB_DIRECTORY)
 	static final String PARAMFILE = "var/conf/default.params"
 	static final String CHARSET = 'utf-8'
 
@@ -21,11 +19,12 @@ public class TestJob extends HttpServlet {
 		resp.setContentType("text/html")
 		resp.addHeader("Access-Control-Allow-Origin", "*")
 		PrintWriter out = resp.getWriter()
+		def job_dir = new File(JOB_DIR)
 		try {
 			def jobFileName = req.getParameter("jobFileName")
 			if(jobFileName != null && jobFileName != "") {
-				def jobPath = JOB_DIR + jobFileName
-				def jobFile = new File(HOMEPATH, jobPath)
+				def jobPath = JOB_DIR + "/" + jobFileName
+				def jobFile = new File(jobPath)
 				def stringOfJob = ""
 				jobFile.eachLine{
 					stringOfJob+= it + "\n"
@@ -36,7 +35,6 @@ public class TestJob extends HttpServlet {
 				out.print(builder.toString())
 			} else {
 				if(jobFileName == null){
-					def  job_dir = new File(properties.get(ResourceConstants.JOB_DIRECTORY))
 					def list_job = []
 					if(job_dir.isDirectory()){
 						job_dir.listFiles().each {
@@ -117,10 +115,10 @@ public class TestJob extends HttpServlet {
 			def jobContent = object['data']
 			def mapJob = getTestJobScript("")
 			def action = object['action']
-			def jobDirPath = HOMEPATH + JOB_DIR
+			def jobDirPath = ""
 			if(action == 'run') {
 				jobContent = getTestJobScript(object['data'])
-				jobDirPath = HOMEPATH + JOB_DIR + "tmpTestJob/"
+				jobDirPath = JOB_DIR +"/tmpTestJob/"
 			}
 			File jobDir = new File(jobDirPath)
 			if(!jobDir.exists()){
