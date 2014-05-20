@@ -532,6 +532,10 @@ class DefaultJobCaller {
 				isJobFinishedSuccessfully = false
 			}
 		}
+		// close all connections with job monitoring mongodb
+		if (dbInfo.strDbType == ResourceConstants.MONGODB) {
+			(binding.getVariable('sql').gmongo).close()
+		}
 		return resultData
 	}
 	

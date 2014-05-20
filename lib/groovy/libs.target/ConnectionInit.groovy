@@ -38,22 +38,31 @@ class ConnectionInit {
 			}
 		}
 		mapDBConnections.removeAll(listRemove)
-		
-		if ((db == null) || (db.connection == null) || (db.connection.isClosed())) {
-			for(int i = 0; i < 20; i++){
-				if(strDbType == ResourceConstants.MONGODB) {// create connections to mongodb
+
+		if(strDbType != ResourceConstants.MONGODB) {
+			if ((db == null) || (db.connection == null) || (db.connection.isClosed())) {
+				for(int i = 0; i < 20; i++){
+					db = iDBConnectionSource.newSqlInstance(dbInfo, datadir_params,dbversion_params,programdir_params,logdir_params)
+					if (db != null) {
+						def objConnect = new DBConnections(strDbType, userString, connectionString)
+						objConnect.setConnection(db)
+						mapDBConnections.push(objConnect)
+						break
+					}
+					sleep(500)
+				}
+			}
+		} else {
+			// always create new connection after each job monitoring because mongo can not close each connection.
+			if(db == null) {
+				for(int i = 0; i < 20; i++){
 					def mongoConn = new MongoDBConnection()
 					db = mongoConn.createConnection(dbInfo)
-				} else {// create connections to another db
-					db = iDBConnectionSource.newSqlInstance(dbInfo, datadir_params,dbversion_params,programdir_params,logdir_params)
+					if (db != null) {
+						break
+					}
+					sleep(500)
 				}
-				if (db != null) {
-					def objConnect = new DBConnections(strDbType, userString, connectionString)
-					objConnect.setConnection(db)
-					mapDBConnections.push(objConnect)
-					break
-				}
-				sleep(500)
 			}
 		}
 		return db
