@@ -15,7 +15,7 @@ import org.osgi.framework.FrameworkUtil
  * job の記述が簡潔になるよう、いろいろコチラ側で処理してあげる。
  *  IST_HOME/var/jobs/*.job を監視してロードする。
  */
-class JobLoader implements Listener, ServiceTrackerCustomizer {
+class JobLoader implements ServiceTrackerCustomizer {
 	def shell
 	def dir
 	def interval
@@ -36,56 +36,6 @@ class JobLoader implements Listener, ServiceTrackerCustomizer {
 		trackerObj.open()
 	}
 
-	public boolean filterFile(File file) {
-		return file.getName().endsWith(".job") || file.getName().endsWith(".cls") || file.getName().endsWith(".trg") || file.getName().endsWith(".instances");
-	}
-
-	public String getDirectory() {
-		return dir;
-	}
-
-	public long getInterval() {
-		return interval;
-	}
-
-	public boolean notifyAdded(File target) throws IOException {
-		if (jobfacade == null) {
-			// falseを返せばこのファイルは未処理としてマークされる。
-			return false
-		}
-		return processFile(target);
-	}
-
-	public boolean notifyDeleted(File target) throws IOException {
-		return false;
-	}
-
-	public boolean notifyModified(File target) throws IOException {
-		if (jobfacade == null) {
-			// falseを返せばこのファイルは未処理としてマークされる。
-			return false
-		}
-		return processFile(target);
-	}
-
-	private boolean processFile(File target) {
-		if (jobdsl != null) {
-			if (target.getName().endsWith(".job")) {
-				return jobdsl.processJob(target)
-			} else if (target.getName().endsWith(".cls")) {
-				return jobdsl.processCls(target)
-			} else if (target.getName().endsWith(".trg")) {
-				return jobdsl.processTrigger(target)
-			} else if (target.getName().endsWith(".instances")) {
-				return jobdsl.processInstances(target)
-			} else {
-				return false;
-			}
-		} else {
-			return false;
-		}
-	}
-
 	/**
 	 * ServiceTrackerCustomizer.addingService
 	 * 以下は、ServiceTrackerCustomizerの実装部
@@ -99,6 +49,7 @@ class JobLoader implements Listener, ServiceTrackerCustomizer {
 			def JobDsl = shell.getClassLoader().loadClass("JobDsl")
 			jobdsl = JobDsl.newInstance(shell, jobfacade, context)
 		}
+		this.context.registerService(JobDSLService.class.getName(),jobdsl,null)
 		return oservice
 	}
 

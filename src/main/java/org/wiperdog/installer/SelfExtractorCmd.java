@@ -37,10 +37,15 @@ public class SelfExtractorCmd {
 	public static String OUTPUT_FOLDER = "";
 	public static void main(String args[]){	
 		//Argurments : -d (wiperdog home) ,-j(jetty port),-m(mongodb host),-p(mongodb port),-n(database name),-u(user database),-pw(password database),-mp(mail policy),-s(install as OS service)
+		//              -jd (job directory ) , -id (instances directory) , -cd (jobclass directory) 
 		List<String> listParams = new ArrayList<String>();
 		listParams.add("-d");
 		listParams.add("-j");
 		listParams.add("-m");
+		listParams.add("-jd");
+		listParams.add("-id");
+		listParams.add("-td");
+		listParams.add("-cd");
 		listParams.add("-p");
 		listParams.add("-n");
 		listParams.add("-u");
@@ -114,6 +119,49 @@ public class SelfExtractorCmd {
 								System.out.println( "Jetty port must be number: " + args[i]);
 								return;
 							}
+						} else {
+							System.out.println("Incorrect value of params: " + args[i]);
+							return;
+						}
+					}
+					// Get job directory from argurment
+					if (args[i].equals("-jd")) {
+						if ((args.length > i + 1) && (args[i + 1].trim() != "") && (!listParams.contains(args[i + 1].trim()))) {
+							strArgs += "-jd " + args[i + 1] + " ";
+							i++;
+						} else {
+							System.out.println("Incorrect value of params: " + args[i]);
+							return;
+						}
+					}
+
+					// Get intances directory from argurment
+					if (args[i].equals("-id")) {
+						if ((args.length > i + 1) && (args[i + 1].trim() != "") && (!listParams.contains(args[i + 1].trim()))) {
+							strArgs += "-id " + args[i + 1] + " ";
+							i++;
+						} else {
+							System.out.println("Incorrect value of params: " + args[i]);
+							return;
+						}
+					}
+					
+					// Get job class directory from argurment
+					if (args[i].equals("-cd")) {
+						if ((args.length > i + 1) && (args[i + 1].trim() != "") && (!listParams.contains(args[i + 1].trim()))) {
+							strArgs += "-cd " + args[i + 1] + " ";
+							i++;
+						} else {
+							System.out.println("Incorrect value of params: " + args[i]);
+							return;
+						}
+					}
+					
+					// Get trigger directory from argurment
+					if (args[i].equals("-td")) {
+						if ((args.length > i + 1) && (args[i + 1].trim() != "") && (!listParams.contains(args[i + 1].trim()))) {
+							strArgs += "-td " + args[i + 1] + " ";
+							i++;
 						} else {
 							System.out.println("Incorrect value of params: " + args[i]);
 							return;
@@ -203,6 +251,18 @@ public class SelfExtractorCmd {
 					}
 					if(defaultParams.get(i) == "-m"){
 						strArgs += "-m 127.0.0.1 ";
+					}
+					if (defaultParams.get(i) == "-jd") {
+						strArgs += "-jd ${felix.home}/var/job ";
+					}
+					if (defaultParams.get(i) == "-id") {
+						strArgs += "-id ${felix.home}/var/job ";
+					}
+					if (defaultParams.get(i) == "-td") {
+						strArgs += "-td ${felix.home}/var/job ";
+					}
+					if (defaultParams.get(i) == "-cd") {
+						strArgs += "-cd ${felix.home}/var/job ";
 					}
 					if(defaultParams.get(i) == "-p"){
 						strArgs += "-p 27017 ";

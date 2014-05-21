@@ -39,7 +39,7 @@ def doBootStep() {
 
 //        def jettyLoader = new JettyLoader(ctx)
       //  def jettyLoader = rootloader.loadClass("JettyLoader").newInstance([ctx] as Object[] )
-          def nettyLoader = rootloader.loadClass("NettyLoader").newInstance([ctx] as Object[] )
+      def nettyLoader = rootloader.loadClass("NettyLoader").newInstance([ctx] as Object[] )
 
         // IST_HOME/lib/groovy の直下のgroovyファイルを自動でロードするLoader
 //        def loader = new DefaultLoader(ctx, shell)
@@ -54,11 +54,22 @@ def doBootStep() {
         //
         // IST_HOME/var/job 直下のjobファイルを自動でロードするLoader
 //        def jobLoader = new JobLoader(ctx, shell)
+		// Registering job,trigger,jobcls,instances directory watcher listener 
         def jobLoader = rootloader.loadClass("JobLoader").newInstance([ctx, shell] as Object[] )
+		def jobListener = rootloader.loadClass("JobListener").newInstance([ctx] as Object[] )		
+		def trgListener = rootloader.loadClass("TriggerListener").newInstance([ctx] as Object[] )
+		def instListener = rootloader.loadClass("JobInstanceListener").newInstance([ctx] as Object[] )
+		def jobClassListener = rootloader.loadClass("JobClassListener").newInstance([ctx] as Object[] )
+		
         // OSGi serviceに渡すproperty
         def props_jobsvc = new java.util.Hashtable(props);
         // 監視系ジョブ専用loaderをdirectory-watcherとして登録(未実装)
-        ctx.registerService(clsListener.getName(), jobLoader, props_jobsvc)
+        //ctx.registerService(clsListener.getName(), jobLoader, props_jobsvc)
+		 ctx.registerService(clsListener.getName(), jobListener, null)
+		 ctx.registerService(clsListener.getName(), trgListener, null)
+		 ctx.registerService(clsListener.getName(), instListener, null)
+		 ctx.registerService(clsListener.getName(), jobClassListener, null)		 
+		 def restServiceLoader = rootloader.loadClass("RestServiceLoader").newInstance([ctx] as Object[] )
 }
 
 /**

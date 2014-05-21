@@ -10,7 +10,7 @@ import org.quartz.TriggerKey;
 import org.quartz.TriggerListener;
 import org.apache.log4j.Logger;
 
-class JobDsl {
+class JobDsl implements JobDSLService {
 	def shell
 	def jobfacade
 	def loader	

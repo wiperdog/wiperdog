@@ -56,6 +56,21 @@ public class WPDInstallerGroovy{
 					        def tmpNettyPort = inp.readLine().trim();
 					        params['netty.port'] = (tmpNettyPort != null && ! tmpNettyPort.equals(""))?tmpNettyPort:'13111';
 					            
+					println "Please input job directory: (default set to ${wiperdogHome}/var/job)"
+					def tmpMonitorjobfwJobDir = inp.readLine().trim();
+					params['monitorjobfw.directory.job'] = (tmpMonitorjobfwJobDir != null && ! tmpMonitorjobfwJobDir.equals(""))?tmpMonitorjobfwJobDir:'${felix.home}/var/job';
+
+					println "Please input trigger directory:(default set to ${wiperdogHome}/var/job)"
+					def tmpMonitorjobfwTrgDir = inp.readLine().trim();
+					params['monitorjobfw.directory.trigger'] = (tmpMonitorjobfwTrgDir != null && ! tmpMonitorjobfwTrgDir.equals(""))?tmpMonitorjobfwTrgDir:'${felix.home}/var/job';
+
+					println "Please input job class directory:(default set to ${wiperdogHome}/var/job)"
+					def tmpMonitorjobfwJobClsDir = inp.readLine().trim();
+					params['monitorjobfw.directory.jobcls'] = (tmpMonitorjobfwJobClsDir != null && ! tmpMonitorjobfwJobClsDir.equals(""))?tmpMonitorjobfwJobClsDir:'${felix.home}/var/job';
+
+					println "Please input job instance directory:(default set to ${wiperdogHome}/var/job)"
+					def tmpMonitorjobfwJobInstDir = inp.readLine().trim();
+					params['monitorjobfw.directory.instances'] = (tmpMonitorjobfwJobInstDir != null && ! tmpMonitorjobfwJobInstDir.equals(""))?tmpMonitorjobfwJobInstDir:'${felix.home}/var/job';
 					        println "Please input database server (Mongodb) IP address (default set to 127.0.0.1):"
 					        def tmpMonitorjobfwMongodbHost = inp.readLine().trim();
 					        params['monitorjobfw.mongodb.host'] = (tmpMonitorjobfwMongodbHost != null && ! tmpMonitorjobfwMongodbHost.equals(""))?tmpMonitorjobfwMongodbHost:'127.0.0.1';
@@ -88,6 +103,10 @@ public class WPDInstallerGroovy{
 							println "Please CONFIRM The following configuration are correct:"
 							println "Wiperdog Home:"+ params['WIPERDOGHOME']
 							println "Server Port:"+ params['netty.port']
+					println "Job directory:"+ params['monitorjobfw.directory.job']
+					println "Trigger directory:"+ params['monitorjobfw.directory.trigger']
+					println "Job class directory:"+ params['monitorjobfw.directory.jobcls']
+					println "Job instances directory:"+ params['monitorjobfw.directory.instances']
 							println "Database address:"+ params['monitorjobfw.mongodb.host']
 							println "Database port:"+ params['monitorjobfw.mongodb.port']
 							println "Database name:"+ params['monitorjobfw.mongodb.dbName']
@@ -108,6 +127,31 @@ public class WPDInstallerGroovy{
 								params['netty.port'] = installerParam[i+1]
 								i++
 							} 
+						//Get Job directory config from argurment
+						if(installerParam[i].equals('-jd')) {
+							params['monitorjobfw.directory.job'] = installerParam[i+1]
+							i++
+						}
+
+						//Get Trigger directory from argurment
+						if(installerParam[i].equals('-td')) {
+							params['monitorjobfw.directory.trigger'] = installerParam[i+1]
+							i++
+						}
+
+
+						//Get job class directory from argurment
+						if(installerParam[i].equals('-cd')) {
+							params['monitorjobfw.directory.jobcls'] = installerParam[i+1]
+							i++
+						}
+
+
+						//Get instances directory from argurment
+						if(installerParam[i].equals('-id')) {
+							params['monitorjobfw.directory.instances'] = installerParam[i+1]
+							i++
+						}
 							//Get Mongodb Host from argurment
 							if(installerParam[i].equals('-m')) {
 								params['monitorjobfw.mongodb.host'] = installerParam[i+1]
@@ -155,6 +199,10 @@ public class WPDInstallerGroovy{
 						println "Wiperdog Home:"+ params['WIPERDOGHOME']
 						println "Server Port:"+ params['netty.port']
 						println "Database address:"+ params['monitorjobfw.mongodb.host']
+					println "Job directory:"+ params['monitorjobfw.directory.job']
+					println "Trigger directory:"+ params['monitorjobfw.directory.trigger']
+					println "Job class directory:"+ params['monitorjobfw.directory.jobcls']
+					println "Job instances directory:"+ params['monitorjobfw.directory.instances']
 						println "Database port:"+ params['monitorjobfw.mongodb.port']
 						println "Database name:"+ params['monitorjobfw.mongodb.dbName']
 						println "User name:"+ params['monitorjobfw.mongodb.user']
@@ -185,6 +233,10 @@ public class WPDInstallerGroovy{
         configFile.write(newFileText)
          /*
               3. Configure monitorjobfw.cfg for 
+	        monitorjobfw.directory.job
+		monitorjobfw.directory.trigger
+		monitorjobfw.directory.jobcls
+		monitorjobfw.directory.instances
                 monitorjobfw.mongodb.host
                 monitorjobfw.mongodb.port
                 monitorjobfw.mongodb.dbName
@@ -192,7 +244,55 @@ public class WPDInstallerGroovy{
                 monitorjobfw.mongodb.pass
                 monitorjobfw.mail.toMail
           */
-        //host name
+		//write job directory config to file
+		configFile = new File("etc/monitorjobfw.cfg")
+		fileText = configFile.text
+		macherPattern = "(monitorjobfw.directory.job=)((?:(?!\\n).)*)"
+		pattern = Pattern.compile(macherPattern, Pattern.DOTALL);
+		matcher = pattern.matcher(fileText);
+		while(matcher.find())
+		{
+			newFileText = fileText.replace(matcher.group(1) + matcher.group(2), matcher.group(1) + params['monitorjobfw.directory.job'])
+		}
+		configFile.write(newFileText)
+
+		//write trigger directory config to file
+		configFile = new File("etc/monitorjobfw.cfg")
+		fileText = configFile.text
+		macherPattern = "(monitorjobfw.directory.trigger=)((?:(?!\\n).)*)"
+		pattern = Pattern.compile(macherPattern, Pattern.DOTALL);
+		matcher = pattern.matcher(fileText);
+		while(matcher.find())
+		{
+			newFileText = fileText.replace(matcher.group(1) + matcher.group(2), matcher.group(1) + params['monitorjobfw.directory.trigger'])
+		}
+		configFile.write(newFileText)
+
+		//write job class directory config to file
+		configFile = new File("etc/monitorjobfw.cfg")
+		fileText = configFile.text
+		macherPattern = "(monitorjobfw.directory.jobcls=)((?:(?!\\n).)*)"
+		pattern = Pattern.compile(macherPattern, Pattern.DOTALL);
+		matcher = pattern.matcher(fileText);
+		while(matcher.find())
+		{
+			newFileText = fileText.replace(matcher.group(1) + matcher.group(2), matcher.group(1) + params['monitorjobfw.directory.jobcls'])
+		}
+		configFile.write(newFileText)
+
+		//write job instances directory config to file
+		configFile = new File("etc/monitorjobfw.cfg")
+		fileText = configFile.text
+		macherPattern = "(monitorjobfw.directory.instances=)((?:(?!\\n).)*)"
+		pattern = Pattern.compile(macherPattern, Pattern.DOTALL);
+		matcher = pattern.matcher(fileText);
+		while(matcher.find())
+		{
+			newFileText = fileText.replace(matcher.group(1) + matcher.group(2), matcher.group(1) + params['monitorjobfw.directory.instances'])
+		}
+		configFile.write(newFileText)
+
+		//write mongo host config to file
         configFile = new File("etc/monitorjobfw.cfg")
         fileText = configFile.text 
         macherPattern = "(monitorjobfw.mongodb.host=)((?:(?!\\n).)*)"

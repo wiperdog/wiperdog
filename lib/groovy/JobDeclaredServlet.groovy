@@ -11,9 +11,10 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 
 public class JobDeclared extends HttpServlet {
-	def properties = MonitorJobConfigLoader.getProperties()
-	static final String JOB_DIR = "var/job/"
+	static final String JOB_DIR = MonitorJobConfigLoader.getProperties().get(ResourceConstants.JOB_DIRECTORY)
 	static final String HOMEPATH = System.getProperty("felix.home")
+	static final String INST_DIR = MonitorJobConfigLoader.getProperties().get(ResourceConstants.JOBINST_DIRECTORY)
+	
 	static final String PARAMFILE = "var/conf/default.params"
 	static final List listKey = ["JOB", "GROUPKEY", "QUERY", "QUERY_VARIABLE", "DBEXEC", "DBEXEC_VARIABLE", "COMMAND", "FORMAT", "FETCHACTION", "ACCUMULATE", "FINALLY", "KEYEXPR", "KEYEXPR._root", "KEYEXPR._sequence", "KEYEXPR._unit", "KEYEXPR._chart", "KEYEXPR._description", "SENDTYPE", "RESOURCEID", "MONITORINGTYPE", "DBTYPE", "DEST", "HOSTID", "SID"]
 	static final String CHARSET = 'utf-8'
@@ -27,7 +28,7 @@ public class JobDeclared extends HttpServlet {
 		def builder
 		def message
 		errorMsg = ""
-		def  job_dir = new File(properties.get(ResourceConstants.JOB_DIRECTORY))
+		def job_dir = new File(JOB_DIR)		
 		def listDBType = ['MySQL','SQL_Server','Postgres']
 		try{
 			def strMorType = req.getParameter("morType")
@@ -92,7 +93,7 @@ public class JobDeclared extends HttpServlet {
 			}
 		} catch(Exception ex){
 			errorMsg = "Error when get Job file: \n"
-			errorMsg+= ex;
+			errorMsg+= ex.getStackTrace();
 			message = [status:"failed", message:errorMsg]
 			builder = new JsonBuilder(message)
 			out.print(builder.toString())
@@ -117,8 +118,8 @@ public class JobDeclared extends HttpServlet {
 	      	// command = Read -> Read job's file
 	      	if(object.COMMAND == "Read"){
 				def jobFileName = object.job
-				def jobPath = JOB_DIR + jobFileName
-				def jobFile = new File(HOMEPATH, jobPath + ".job")
+				def jobPath = JOB_DIR + "/" + jobFileName
+				def jobFile = new File(jobPath + ".job")
 
 				// resultRet returning result [Job:~~, instances:~~, params:~~]
 				def resultRet = [:]
@@ -126,8 +127,8 @@ public class JobDeclared extends HttpServlet {
 				def stringOfJob = getJobScript(jobFile)
 				def realJobName = stringOfJob.JOB
 				def filePath = JOB_DIR + realJobName
-				def instanceFile = new File(HOMEPATH, filePath + ".instances")
-				def paramFile = new File(HOMEPATH, filePath + ".params")
+				def instanceFile = new File(filePath + ".instances")
+				def paramFile = new File(filePath + ".params")
 				// Get instance file's script in Object type(Map)
 				def instanceResult = getJobInstanceScript(instanceFile)
 				// Get param file's script in Object type(Map)
@@ -174,12 +175,12 @@ public class JobDeclared extends HttpServlet {
 			if(jobData.jobFileName != null){
 				String s = jobData.jobFileName
 				if (jobData.jobFileName ==~ ".*\\.job") {
-					fileName = JOB_DIR + "${jobData.jobFileName}"
+					fileName = JOB_DIR + "/${jobData.jobFileName}"
 				} else {
-					fileName = JOB_DIR + "${jobData.jobFileName}.job"
+					fileName = JOB_DIR + "/${jobData.jobFileName}.job"
 				}
 			}else{
-				fileName = JOB_DIR + "${jobData.jobName}.job"
+				fileName = JOB_DIR + "/${jobData.jobName}.job"
 			}
 
 			// Process Comment
@@ -326,7 +327,7 @@ public class JobDeclared extends HttpServlet {
 			}
 
 			// Set Job's String into file
-			writeToFile(HOMEPATH, fileName, jobStr)
+			writeToFile(fileName, jobStr)
 		}else{
 			println "Job's name is required!"
 			return false
@@ -367,9 +368,9 @@ public class JobDeclared extends HttpServlet {
 				instanceStr = "[\n" + instanceStr + "\n]"
 				instanceStr= regularExpressionValidate(instanceStr)
 
-				writeToFile(HOMEPATH, JOB_DIR + "${jobData.jobName}.instances", instanceStr)
+				writeToFile(INST_DIR + "/${jobData.jobName}.instances", instanceStr)
 			}else{
-				File instFile = new File(HOMEPATH, JOB_DIR + "${jobData.jobName}.instances")
+				File instFile = new File(INST_DIR + "/${jobData.jobName}.instances")
 				if(instFile.exists()){
 					return instFile.delete()
 				}
@@ -395,9 +396,9 @@ public class JobDeclared extends HttpServlet {
 				}
 				paramStr = "[" + paramStr + "]"
 				paramStr = regularExpressionValidate(paramStr)
-				writeToFile(HOMEPATH, JOB_DIR + "${jobData.jobName}.params", paramStr)
+				writeToFile(JOB_DIR + "/${jobData.jobName}.params", paramStr)
 			}else{
-				File paramFile = new File(HOMEPATH, JOB_DIR + "${jobData.jobName}.params")
+				File paramFile = new File(JOB_DIR + "$/{jobData.jobName}.params")
 				if(paramFile.exists()){
 					return paramFile.delete()
 				}
@@ -659,8 +660,8 @@ public class JobDeclared extends HttpServlet {
 	 * @param paramFile
 	 * @return
 	 */
-	def writeToFile(filePath, fileName, data) {
-		def dataFile = new File(filePath, fileName);
+	def writeToFile(fileName, data) {
+		def dataFile = new File(fileName);
 		dataFile.write(data, CHARSET)
 	}
 }

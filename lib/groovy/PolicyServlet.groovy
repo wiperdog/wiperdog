@@ -12,11 +12,8 @@ import com.gmongo.GMongo
 import com.mongodb.util.JSON
 	
 class ServletPolicy extends HttpServlet{
-	def properties = MonitorJobConfigLoader.getProperties()
-
-	static final String JOB_DIR = "var/job/"
-	static final String POLICY_DIR = "var/job/policy/"
-	static final String HOMEPATH = System.getProperty("felix.home")
+	static final String JOB_DIR = MonitorJobConfigLoader.getProperties().get(ResourceConstants.JOB_DIRECTORY)
+	static final String POLICY_DIR = MonitorJobConfigLoader.getProperties().get(ResourceConstants.JOB_DIRECTORY) + "/policy"
 	
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		resp.setContentType("json")
@@ -116,7 +113,7 @@ class ServletPolicy extends HttpServlet{
 		def pattern = Pattern.compile(macherPattern, Pattern.DOTALL)
 
 		def filePath = POLICY_DIR + filename
-		File policyFile = new File(HOMEPATH, filePath + ".policy")
+		File policyFile = new File(filePath + ".policy")
 		if(policyFile.isFile()) {
 			String policyStr = policyFile.getText()
 			def matcher = pattern.matcher(policyStr)
@@ -146,8 +143,8 @@ class ServletPolicy extends HttpServlet{
 	
 	def readFromFileSubtyped(filename){	
 		println "Begin load from file $filename with subtyped" 
-		def filePath = POLICY_DIR + filename
-		File policyFile = new File(HOMEPATH, filePath + ".policy")
+		def filePath = POLICY_DIR +"/"+ filename
+		File policyFile = new File(filePath + ".policy")
 		if(policyFile.isFile()) {
 			String policyStr = policyFile.getText()
 			String macherPattern = "(if\\(key == \")((?:(?!(\")).)*)(\"\\) \\{)((?:(?!(if\\(key == \")).)*)(\\})"
@@ -193,7 +190,7 @@ class ServletPolicy extends HttpServlet{
 
 	def readFileParam(jobname){
 		def params
-		def params_file = new File(HOMEPATH, POLICY_DIR + jobname + ".params")
+		def params_file = new File(POLICY_DIR +"/"+ jobname + ".params")
 		if(params_file.exists()){
 			def json = params_file.getText()
 		    def slurper = new JsonSlurper()
@@ -204,8 +201,8 @@ class ServletPolicy extends HttpServlet{
 	
 	// WRITE DATA TO POLICY FILE
 	def write2File(filename, data){
-		def filePath = POLICY_DIR + filename
-		File policyFile = new File(HOMEPATH, filePath)
+		def filePath = POLICY_DIR +"/" + filename
+		File policyFile = new File(filePath + ".policy")
 		if(data != "") {
 			try {
 				policyFile.setText(data)

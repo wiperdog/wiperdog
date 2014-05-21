@@ -21,7 +21,11 @@ class ResourceConstants{
 	public static final String DEFAULT_PARAMETERS_DIRECTORY= "monitorjobfw.directory.defaultparameters"
 	public static final String MONITORJOBDATA_DIRECTORY= "monitorjobfw.directory.monitorjobdata"
 	public static final String LOG_DIRECTORY = "monitorjobfw.directory.log"
-	
+	public static final String TRIGGER_DIRECTORY= "monitorjobfw.directory.trigger"
+	public static final String JOBCLS_DIRECTORY= "monitorjobfw.directory.jobcls"
+	public static final String JOBINST_DIRECTORY= "monitorjobfw.directory.instances"
+	public static final String POLICY_DIRECTORY= "monitorjobfw.directory.instances"
+
 	/** EncryptedDBConnectionSourceImpl **/
 	public static final String DEF_ORACLE_DRIVER = "oracle.jdbc.driver.OracleDriver"
 	public static final String DEF_MYSQL_DRIVER = "com.mysql.jdbc.Driver";
