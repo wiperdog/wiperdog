@@ -219,10 +219,9 @@ class JobDsl implements JobDSLService {
 				if (trg != null) {
 					def jobname = trg[ResourceConstants.DEF_TRIGGER_JOB]
 					defaultSchedule = trg[ResourceConstants.DEF_TRIGGER_SCHEDULE]
-					if (jobname != null && jobname != "" && defaultSchedule != null && defaultSchedule != "") {
 						mapJobDefaultSchedule[jobname] = defaultSchedule
 						try {
-							if (jobname != null && defaultSchedule != null) {
+							if (jobname != null && jobname != "" && defaultSchedule != null && defaultSchedule != "") {
 								//def job = jobfacade.getJob(jobname)
 								/*
 								if (job == null) {
@@ -293,13 +292,12 @@ class JobDsl implements JobDSLService {
 										}
 									}
 								}
+							} else {
+								logger.info("[" + trgfile.getName() + "]: FILE CONTENT IS INCORRECT !!!")
 							}
 						} catch (Exception ex) {
 							logger.info("[" + trgfile.getName() + "]: " + "[" + ex.toString() + "]")
 						}
-					} else {
-						logger.info("[" + trgfile.getName() + "]: FILE CONTENT IS INCORRECT !!!")
-					}
 				}
 			}
 		} catch(MultipleCompilationErrorsException e) {
@@ -341,7 +339,7 @@ class JobDsl implements JobDSLService {
 				mapInstances['params'] = it.value.params
 				listInstances.add(mapInstances)
 			}
-			
+
 			// Add list instances to map mapJobListInstances
 			mapJobListInstances[jobName] = listInstances
 			
