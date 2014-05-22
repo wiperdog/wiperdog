@@ -152,13 +152,7 @@ class JobDsl implements JobDSLService {
 	public boolean processCls(File clsfile) {
 		try{
 			clsfile.eachLine { aline -> 
-				def clsdef = [:]
-				try {
-					clsdef = shell.evaluate( "[" + aline + "]")	
-				} catch(Exception expEvaluate) {
-					logger.info("[" + clsfile.getName() + "]: " + expEvaluate)
-				}
-				def clsdef = shell.evaluate( "[" + aline + "]")
+				def clsdef = shell.evaluate( "[" + aline + "]")	
 				def clsname = clsdef[ResourceConstants.DEF_CLS_NAME]
 				def concurrency = clsdef[ResourceConstants.DEF_CLS_CONCURRENCY]
 				def maxrun = clsdef[ResourceConstants.DEF_CLS_MAXRUN]
@@ -221,13 +215,8 @@ class JobDsl implements JobDSLService {
 	public boolean processTrigger(File trgfile) {
 		try {
 			trgfile.eachLine { aline -> 
-				def trg = [:]
-				try {
-					trg = shell.evaluate( "[" + aline + "]")	
-				} catch(Exception expEvaluate) {
-					logger.info("[" + trgfile.getName() + "]: " + expEvaluate)
-				}
-				if (trg != [:]) {
+				def trg = shell.evaluate( "[" + aline + "]")	
+				if (trg != null) {
 					def jobname = trg[ResourceConstants.DEF_TRIGGER_JOB]
 					defaultSchedule = trg[ResourceConstants.DEF_TRIGGER_SCHEDULE]
 					if (jobname != null && jobname != "" && defaultSchedule != null && defaultSchedule != "") {
@@ -334,12 +323,7 @@ class JobDsl implements JobDSLService {
 			def lstRemoveTrigger = []
 			
 			// Evaluate file .instances
-			def instEval = []
-			try {
-				instEval = shell.evaluate(instfile)
-			} catch(Exception expEvaluate) {
-				logger.info("[" + instfile.getName() + "]: " + expEvaluate)
-			}
+			def instEval = shell.evaluate(instfile)
 			def jobName = instfile.getName().substring(0, instfile.getName().indexOf(".instances"))
 			/*def jobFileName = jobName + ".job"
 			def jobfile = new File(System.getProperty("felix.home") + "/var/job/" + jobFileName)*/
@@ -347,18 +331,17 @@ class JobDsl implements JobDSLService {
 			def textParsed = ""
 			
 			// Process to get list instances of job
-			if (instEval != []) {
-				instEval.each {
-					def mapInstances = [:]
-					def instancesName
-					def schedule
-					def parmas
-					mapInstances['instancesName'] = it.key
-					mapInstances['schedule'] = it.value.schedule
-					mapInstances['params'] = it.value.params
-					listInstances.add(mapInstances)
-				}
+			instEval.each {
+				def mapInstances = [:]
+				def instancesName
+				def schedule
+				def parmas
+				mapInstances['instancesName'] = it.key
+				mapInstances['schedule'] = it.value.schedule
+				mapInstances['params'] = it.value.params
+				listInstances.add(mapInstances)
 			}
+			
 			// Add list instances to map mapJobListInstances
 			mapJobListInstances[jobName] = listInstances
 			
