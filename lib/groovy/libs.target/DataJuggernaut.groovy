@@ -76,14 +76,15 @@ class DataJuggernaut{
 	}
 	
 	def getParamFile(jobName, istIid){
-		File policyFile
-		// Get policy file of instance
-		if(jobName != null && jobName != '' && istIid != null && istIid != ''){
-			policyFile = new File("${policyPath}/${jobName}.${istIid}.params")
+		File paramsFile = new File("${policyPath}/${jobName}.${istIid}.params")
+		
+		// If params file of instance is not exists then get the common policy file
+		if(!paramsFile.exists()){
+			paramsFile = new File("${policyPath}/${jobName}.params")
+			if(!paramsFile.exists()){
+				paramsFile = null
+			}
 		}
-		if(jobName != null && jobName != ''){
-			policyFile = new File("${policyPath}/${jobName}.params")
-		}
-		return policyFile
+		return paramsFile
 	}
 }
