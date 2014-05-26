@@ -398,7 +398,7 @@ public class JobDeclared extends HttpServlet {
 				paramStr = regularExpressionValidate(paramStr)
 				writeToFile(JOB_DIR + "/${jobData.jobName}.params", paramStr)
 			}else{
-				File paramFile = new File(JOB_DIR + "$/{jobData.jobName}.params")
+				File paramFile = new File(JOB_DIR + "/${jobData.jobName}.params")
 				if(paramFile.exists()){
 					return paramFile.delete()
 				}
