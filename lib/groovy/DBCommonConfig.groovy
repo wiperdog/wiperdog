@@ -50,7 +50,6 @@ class DBCommonConfigServlet extends HttpServlet{
 			def strDBType = req.getParameter("dbtype")
 			def strJobFileName = req.getParameter("jobName")
             if (strDBType != null && strDBType != ""){
-				def  job_dir = new File(properties.get(ResourceConstants.JOB_DIRECTORY))
 				if(job_dir.isDirectory()){
 					job_dir.listFiles().each{
 						def fileName = it.getName()
