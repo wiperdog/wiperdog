@@ -47,6 +47,7 @@ REM set JDK server jvm.dll path
 :SET_JDK_SERVER_DLL
 if not exist "%JAVA_HOME%"\jre\bin\server GOTO NOTFOUND_JVM
 SET JVM_DLL=%JAVA_HOME%\jre\bin\server\jvm.dll
+SET JVM_EXT_LIB=%JAVA_HOME%\jre\lib\ext
 GOTO START_MAIN_APP
 
 :NOTFOUND_JVM
@@ -60,11 +61,13 @@ goto end
 :SET_JRE_CLIENT_DLL
 REM set JRE jvm.dll path
 SET JVM_DLL=%JAVA_HOME%\bin\client\jvm.dll
+SET JVM_EXT_LIB=%JAVA_HOME%\lib\ext
 GOTO START_MAIN_APP
 
 :SET_JRE_SERVER_DLL
 REM set JRE jvm.dll path
 SET JVM_DLL=%JAVA_HOME%\bin\server\jvm.dll
+SET JVM_EXT_LIB=%JAVA_HOME%\lib\ext
 GOTO START_MAIN_APP
 
 :START_MAIN_APP
@@ -80,7 +83,7 @@ REM below for using JRE
 -Dfelix.system.properties="file:%WIPERDOG_HOME%\etc\system.properties" ^
 -Djava.util.logging.config.file="%WIPERDOG_HOME%\etc\java.util.logging.properties"    ^
 -Dlog4j.ignoreTCL=true ^
--Djava.ext.dirs="%WIPERDOG_HOME%"\lib\java\ext    ^
+-Djava.ext.dirs="%WIPERDOG_HOME%\lib\java\ext;%JVM_EXT_LIB%" ^
 -Dbin_home="%WIPERDOG_HOME%"\bin\ ^
 -Dprogram.name="" ^
 -Dgroovy.home="%WIPERDOG_HOME%" ^
