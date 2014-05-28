@@ -99,6 +99,25 @@ execCommand() {
 ##----------------------------------------------------------------------------##
 ## start: main()
 
+	FLAG_FIND="FALSE"
+	while [ "$1" != "" ]
+	do
+		if [ "$1" = "-f" ] ;then
+			FLAG_FIND="TRUE"
+		else
+			if [ "$FLAG_FIND" = "TRUE" ] ;then
+				PATH_CSV="$1"
+			else
+				FLAG_FIND="FLASE"
+			fi
+		fi
+		shift
+	done
+
+	if [ "$PATH_CSV" != "" ] ;then
+		LISTBUNDLE="$PATH_CSV"
+	fi
+
 	createPom
 	if [ $? -eq 0 ] ; then
 		echo "execute mvn dependency:go-offline....."
