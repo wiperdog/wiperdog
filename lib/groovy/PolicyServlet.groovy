@@ -112,7 +112,7 @@ class ServletPolicy extends HttpServlet{
 		def macherPattern = "((if\\()((?:(?!if).)*))(\\n)"
 		def pattern = Pattern.compile(macherPattern, Pattern.DOTALL)
 
-		def filePath = POLICY_DIR + filename
+		def filePath = POLICY_DIR  + "/" + filename
 		File policyFile = new File(filePath + ".policy")
 		if(policyFile.isFile()) {
 			String policyStr = policyFile.getText()
@@ -202,8 +202,8 @@ class ServletPolicy extends HttpServlet{
 	// WRITE DATA TO POLICY FILE
 	def write2File(filename, data){
 		def filePath = POLICY_DIR +"/" + filename
-		File policyFile = new File(filePath + ".policy")
-		if(data != "") {
+		File policyFile = new File(filePath)
+		if((data != "") && (data != "{}")) {
 			try {
 				policyFile.setText(data)
 				return true
@@ -212,12 +212,16 @@ class ServletPolicy extends HttpServlet{
 				return false
 			}
 		} else {
-			if(policyFile.isFile()) {
-				policyFile.delete()
-				return true
-			} else {
-				return false
-			}
+			if(policyFile.exists()) {
+				try {
+					policyFile.delete()
+					return true
+				} catch(Exception ex) {
+					println "ERROR WRITE2FILE: " + ex
+					return false
+				}
+			} 
+			return true
 		}
 	}
 
