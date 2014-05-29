@@ -85,20 +85,24 @@ public class TestJob extends HttpServlet {
 													tmpKey = k + "." + c
 													output[tmpKey].add(it)
 													isOthersJobInGroup = false
+													//Set to not add in others group
+													isOthersJob = false
 												}
 											}
 											if (isOthersJobInGroup) {
 												tmpKey = k + ".Others"
 												output[tmpKey].add(it)
+												//Set to not add in others group
+												isOthersJob = false
 											}
 										}
 									} else {
 										if ((tmpArray.size() == 3) && (output[k] instanceof List)) {
 											output[k].add(it)
+											//Set to not add in others group
+											isOthersJob = false
 										}
-									}							
-									//Set to not add in others group
-									isOthersJob = false
+									}
 								}
 							}
 						}
