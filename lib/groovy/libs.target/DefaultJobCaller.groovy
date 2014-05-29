@@ -147,29 +147,34 @@ class DefaultJobCaller {
 		List resultData = null
 		def binding = instanceJob.getBinding()
 				
-		def conInt = new ConnectionInit()
-		synchronized (mapDBConnections) {
-			def db = conInt.getDbConnection(mapDBConnections, iDBConnectionSource, binding, dbInfo)
-			
-			if (db != null) {
-				try {
-					//Get data
-					if (strQueryVariable == null) {
-						resultData = db.rows(queryString)
-					} else {
-						resultData = db.rows(queryString, strQueryVariable)
-					}
-				} catch (SQLException e) {
-					logger.info (MessageFormat.format(mapMessage['ERR002'], "'" + queryString + "'", e.getErrorCode(), e.getMessage()))
-					isJobFinishedSuccessfully = false
-					return null
+		def params = binding.getVariable("parameters")
+		def datadir_params = params.datadirectory
+		def dbversion_params = params.dbmsversion
+		def programdir_params = params.programdirectory
+		def logdir_params = params.dblogdir
+		
+		iDBConnectionSource.newSqlInstance(dbInfo, datadir_params, dbversion_params, programdir_params, logdir_params)
+		def db = iDBConnectionSource.getConnection()
+		
+		if (db != null) {
+			try {
+				//Get data
+				if (strQueryVariable == null) {
+					resultData = db.rows(queryString)
+				} else {
+					resultData = db.rows(queryString, strQueryVariable)
 				}
-			
-			} else {
-				logger.info('after of 20 times of connections, connect to database falsed.')
+			} catch (SQLException e) {
+				logger.info (MessageFormat.format(mapMessage['ERR002'], "'" + queryString + "'", e.getErrorCode(), e.getMessage()))
 				isJobFinishedSuccessfully = false
+				return null
 			}
+		
+		} else {
+			logger.info('Cannot connect to database')
+			isJobFinishedSuccessfully = false
 		}
+		
 		return resultData
 	}
 	
@@ -177,31 +182,36 @@ class DefaultJobCaller {
 		def resultData = [:]
 		def binding = instanceJob.getBinding()
 				
-		def conInt = new ConnectionInit()
-		synchronized (mapDBConnections) {
-			def db = conInt.getDbConnection(mapDBConnections, iDBConnectionSource, binding, dbInfo)
-			
-			if (db != null) {
-				try {
-					//Get data
-					if (strQueryVariable == null) {
-						db.execute(queryString)
-					} else {
-						db.execute(queryString, strQueryVariable)
-					}
-					resultData["Result"] = "SUCCESS"
-				} catch (SQLException e) {
-					logger.info (MessageFormat.format(mapMessage['ERR002'], "'" + queryString + "'", e.getErrorCode(), e.getMessage()))
-					isJobFinishedSuccessfully = false
-					resultData["Result"] = "FAIL"
+		def params = binding.getVariable("parameters")
+		def datadir_params = params.datadirectory
+		def dbversion_params = params.dbmsversion
+		def programdir_params = params.programdirectory
+		def logdir_params = params.dblogdir
+		
+		iDBConnectionSource.newSqlInstance(dbInfo, datadir_params, dbversion_params, programdir_params, logdir_params)
+		def db = iDBConnectionSource.getConnection()
+		
+		if (db != null) {
+			try {
+				//Get data
+				if (strQueryVariable == null) {
+					db.execute(queryString)
+				} else {
+					db.execute(queryString, strQueryVariable)
 				}
-			
-			} else {
-				logger.info('after of 20 times of connections, connect to database falsed.')
+				resultData["Result"] = "SUCCESS"
+			} catch (SQLException e) {
+				logger.info (MessageFormat.format(mapMessage['ERR002'], "'" + queryString + "'", e.getErrorCode(), e.getMessage()))
 				isJobFinishedSuccessfully = false
 				resultData["Result"] = "FAIL"
 			}
+		
+		} else {
+			logger.info('after of 20 times of connections, connect to database falsed.')
+			isJobFinishedSuccessfully = false
+			resultData["Result"] = "FAIL"
 		}
+		
 		return resultData
 	}
 	/**
@@ -493,37 +503,55 @@ class DefaultJobCaller {
 	def runFetchAction (fetchActionString, dbInfo) {
 		def binding = instanceJob.getBinding()
 		def resultData = null
-		synchronized (mapDBConnections) {
-			//If has data for connect, create connection
-			if((dbInfo != null) &&(dbInfo.dbconnstr != null) && (dbInfo.strDbType != null) && (dbInfo.user != null)) {
-				def conInt = new ConnectionInit()
-				def db = conInt.getDbConnection(mapDBConnections, iDBConnectionSource, binding, dbInfo)
-				if (db == null) {
-					logger.info(this.fileName + ': After of 20 times of connections, connect to database falsed.')
-				}
-				binding.setVariable('sql', db)
+		
+		def pluginDBSource
+		// ConnectionInit & EncryptedDBConnectionSource is for normal connection (MySQL, MSSQL, Postgres, ORACLE)
+		// Other connection like MongoDB, MariaDB,... it needs a mechanism to load PluginDBConnectionSource
+		def dbTypeStr = dbInfo.strDbType
+		
+		// PluginDBConnectionSource
+		// If there is no implementation of specific DBConnectionSource then use
+		// the common DBConnectionSource : EncryptedDBConnectionSource
+		try{
+			def dbsourceClassNm = dbTypeStr.replaceAll('@','').toUpperCase() + "DBConnectionSource"
+			pluginDBSource = this.class.getClassLoader().loadClass(dbsourceClassNm).newInstance()
+		}catch(ClassNotFoundException clnfEx){
+			pluginDBSource = iDBConnectionSource //new EncryptedDBConnectionSourceImpl() 
+		}
+		
+		def params = binding.getVariable("parameters")
+		def datadir_params = params.datadirectory
+		def dbversion_params = params.dbmsversion
+		def programdir_params = params.programdirectory
+		def logdir_params = params.dblogdir
+		pluginDBSource.newSqlInstance(dbInfo, datadir_params, dbversion_params, programdir_params,logdir_params)
+		pluginDBSource.getBinding().each{key, value->
+			binding.setVariable(key, value)
+		}
+		
+		
+		//Run FetchAction
+		try {
+			resultData = fetchActionString.call()
+			if(pluginDBSource != null){
+				pluginDBSource.closeConnection()
 			}
-			
-			//Run FetchAction
-			try {
-				resultData = fetchActionString.call()
-			} catch (SQLException e) {
-				logger.info (MessageFormat.format(mapMessage['ERR003'], e.getErrorCode(), e.getMessage()))
+		} catch (SQLException e) {
+			logger.info (MessageFormat.format(mapMessage['ERR003'], e.getErrorCode(), e.getMessage()))
+			isJobFinishedSuccessfully = false
+		} catch (Exception e) {
+			String stackTrace = org.apache.commons.lang.exception.ExceptionUtils.getFullStackTrace(e)
+			logger.info (MessageFormat.format(mapMessage['ERR008'],"FETCHACTION",stackTrace))
+			if(!(e instanceof JobControlException)){
 				isJobFinishedSuccessfully = false
-			} catch (Exception e) {
-				String stackTrace = org.apache.commons.lang.exception.ExceptionUtils.getFullStackTrace(e)
-				logger.info (MessageFormat.format(mapMessage['ERR008'],"FETCHACTION",stackTrace))
-				if(!(e instanceof JobControlException)){
-					isJobFinishedSuccessfully = false
-				}else{
-					throw e
-				}
-			} catch (AssertionError ae) {
-				String error_assertion = ae.getMessage()
-				String line_number_error = ae.getStackTrace()[2].getLineNumber()
-				logger.info(MessageFormat.format(mapMessage['ERR009'],this.fileName,line_number_error,error_assertion))	
-				isJobFinishedSuccessfully = false
+			}else{
+				throw e
 			}
+		} catch (AssertionError ae) {
+			String error_assertion = ae.getMessage()
+			String line_number_error = ae.getStackTrace()[2].getLineNumber()
+			logger.info(MessageFormat.format(mapMessage['ERR009'],this.fileName,line_number_error,error_assertion))	
+			isJobFinishedSuccessfully = false
 		}
 		return resultData
 	}

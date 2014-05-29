@@ -4,21 +4,17 @@ import javax.crypto.*;
 import javax.crypto.spec.*;
 import java.io.*;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
 
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException
 import java.text.MessageFormat
 	
-public class EncryptedDBConnectionSourceImpl implements IDBConnectionSource{
+public class EncryptedDBConnectionSourceImpl extends IDBConnectionSource{
+	def sql = null
 	
-	def logger = Logger.getLogger("org.wiperdog.scriptsupport.groovyrunner")	
-	
-	def properties = MonitorJobConfigLoader.getProperties()		
-	
-	def messageFile = new File(properties.get(ResourceConstants.MESSAGE_FILE_DIRECTORY) + "/message.properties")
-	
-	def mapMessage = [:]
+	def EncryptedDBConnectionSourceImpl(){
+		super()
+	}
 	
 	/**
 	* Get new instances sql
@@ -29,8 +25,7 @@ public class EncryptedDBConnectionSourceImpl implements IDBConnectionSource{
 	* @param logdir_params
 	* @return sql
 	*/
-	public Sql newSqlInstance(dbInfo, datadir_params, dbversion_params, programdir_params,logdir_params){
-		def sql = null
+	def newSqlInstance(dbInfo, datadir_params, dbversion_params, programdir_params,logdir_params){
 		def strPassword = null
 		
 		def connstr = dbInfo.dbconnstr
@@ -38,26 +33,16 @@ public class EncryptedDBConnectionSourceImpl implements IDBConnectionSource{
 		def dbtype = dbInfo.strDbType
 		def strDriver = dbInfo.strDbTypeDriver
 		
-		messageFile.each {
-			def toArray = it.split(" = ")
-			mapMessage[toArray[0]] = toArray[1]
-		}
 		// Get password
 		strPassword = getPassword(dbInfo)
-		// Get decryptedPassword
-		def decryptedPassword = ""
-		try{
-			if ((strPassword != null) && (strPassword != "")) {
-				decryptedPassword = CommonUltis.decrypt(strPassword)
-			}
-		}catch (Exception ex){
-			logger.info (mapMessage['ERR007'])
-			return null
-		}
+		
 		// Get sql
-		try{
-			sql = Sql.newInstance(connstr, dbuser, decryptedPassword, strDriver)
-			Sql.metaClass.invokeMethod = {name, args->
+		sql = tryConnect(dbtype, connstr, dbuser, strPassword, strDriver, 20)
+		
+		// If we can get connection to the database, we can mixin some properties 
+		// for more detail information of this connection
+		if(sql != null){
+			sql.metaClass.invokeMethod = {name, args->
 				if("rows".equals(name) || "execute".equals(name) || "eachRow".equals(name) || "firstRow".equals(name)){
 					for(int carg = 0; carg < args.length; carg++){
 						if(args[carg] instanceof String){
@@ -81,10 +66,77 @@ public class EncryptedDBConnectionSourceImpl implements IDBConnectionSource{
 			if (logdir_params != null) {
 				sql.logdirectory = getIst_logdirectory(dbtype,sql,logdir_params)
 			}
-		}catch (SQLException ex) {
-			logger.info (MessageFormat.format(mapMessage['ERR001'], "'" + connstr, dbuser, replacePasswdString(decryptedPassword) + "'"))
+		} else {
+			logger.info ("After 20 times try to connect with " + connstr + " " + dbuser + "/" + replacePasswdString(strPassword) + ". Cannot connect!")
+		}
+	}
+	
+	/**
+	 * Trying to connect to database in a numberOfTime
+	 * sleep 500ms between each attemp
+	 * 
+	 */ 
+	def tryConnect(dbtype, connstr, dbuser, strPassword, strDriver, numberOfTime){
+		def sql
+		synchronized (listDBConnections) {
+			def listRemove = []
+			listDBConnections.each{conn->
+				if(conn.dbtype == dbtype && conn.user == dbuser && conn.connstr == connstr && conn.driver == strDriver){
+					if(checkValidDbConnection(conn.sql, dbtype)){
+						sql = conn.sql
+					}else{
+						listRemove.add(conn)
+					}
+				}
+			}
+			listDBConnections.removeAll(listRemove)
+			
+			if(sql == null){
+				for(int i = 0; i < numberOfTime; i++){
+					try{
+						sql = Sql.newInstance(connstr, dbuser, strPassword, strDriver)
+						if(sql != null){
+							def conn = ["sql" : sql, "user" : dbuser, "connstr" : connstr, "driver" : strDriver, "dbtype" : dbtype]
+							listDBConnections.add(conn)
+							break;
+						}
+					}catch(SQLException ex){
+						logger.info (MessageFormat.format(mapMessage['ERR001'], "'" + connstr, dbuser, replacePasswdString(strPassword) + "'"))
+						sleep(500)
+					}
+				}
+			}
 		}
 		return sql
+	}
+	
+	/**
+	 * Return map for binding into job
+	 */
+	def getBinding(){
+		def conn = getConnection()
+		return [sql:conn]
+	}
+	
+	/**
+	 * Check if a database connection is valid 
+	 * @param db database instance
+	 * @param strDbType Type of Database (POSTGRES, MYSQL, SQLS, ORACLE)
+	 * @return false if not valid and true for vice versa
+	 */
+	public boolean checkValidDbConnection(db, strDbType){
+		def connectionIsValid = true
+		if (strDbType == ResourceConstants.POSTGRES) {
+			try{
+				db.rows('SELECT 1')
+			} catch(SQLException e){
+				connectionIsValid = false
+			}
+		} else {
+			connectionIsValid = db.connection.isValid(0)
+		}
+		
+		return connectionIsValid;
 	}
 
 	/**
@@ -113,69 +165,6 @@ public class EncryptedDBConnectionSourceImpl implements IDBConnectionSource{
 		return driverString
 	}
 
-	/**
-	* Get password
-	* @param mapDbInfo connect DB information
-	* @return passwordString
-	*/
-	public String getPassword(mapDbInfo) {
-		def pwdFile = null
-		def map=[:]
-		def tempArray = [:]
-		def passwordString = null
-		try{
-			pwdFile = getPwdFile(mapDbInfo)
-			if (pwdFile != null) {
-				pwdFile.eachLine {
-						tempArray = it.split(":")
-						map[tempArray[0]] = tempArray[1].trim()
-				}
-				map.each {it->
-					if (it.key == mapDbInfo.user) {
-						passwordString = it.value
-					}
-				}
-			}
-			if(passwordString == null) {
-				logger.info (mapMessage['ERR007'])
-			}
-		}catch (FileNotFoundException e) {
-			logger.error(e.toString())
-			return null
-		} catch(Exception e) {
-			logger.debug(e.toString())
-			return null
-		}
-		return passwordString
-	}
-
-	/**
-	* If DB user haven't set, get default user
-	* @param mapDbInfo connect DB information
-	* @return strUserName
-	*/
-	public String getDefaultUser(mapDbInfo)	{
-		def strUserName = null
-		def pwdFile = null
-		def array=[:]
-		def map=[:]
-		def tempArray = [:]
-		try{
-			pwdFile = getPwdFile(mapDbInfo)
-			if (pwdFile != null) {
-				pwdFile.eachLine {
-						tempArray = it.split(":")
-						map[tempArray[0]] = tempArray[1].trim()
-				}
-				strUserName = map[ResourceConstants.DEFAULTUSER]
-			}
-		}catch (FileNotFoundException e) {
-			logger.error(e.toString())
-		} catch(Exception e) {
-			logger.debug(e.toString())
-		}
-		return strUserName
-	}
 
 	/**
 	* Save password
@@ -184,7 +173,7 @@ public class EncryptedDBConnectionSourceImpl implements IDBConnectionSource{
 	* @param dbuser
 	* @param passwd
 	*/
-	public void savePassword(dbtype, instanceId, dbuser, passwd){
+	def savePassword(dbtype, instanceId, dbuser, passwd){
 	}
 
 	/**
@@ -205,7 +194,7 @@ public class EncryptedDBConnectionSourceImpl implements IDBConnectionSource{
 	* @param appendData
 	* @return strParams
 	*/
-	private String getParamsData(defaultData,sqlConnectionData,sqlData,appendData) {
+	def getParamsData(defaultData,sqlConnectionData,sqlData,appendData) {
 		def strParams = ""
 		def params = []
 		if ((defaultData != null) && (defaultData != "")) {
@@ -231,7 +220,7 @@ public class EncryptedDBConnectionSourceImpl implements IDBConnectionSource{
 	* @param listParams
 	* @return istParmas
 	*/
-	private String getIst_params(dbtype,sqlConnection,listParams) {
+	def getIst_params(dbtype,sqlConnection,listParams) {
 		def istParmas = null
 		def defaultData
 		def sqlData
@@ -259,93 +248,14 @@ public class EncryptedDBConnectionSourceImpl implements IDBConnectionSource{
 		}
 		return istParmas
 	}
-
-	/**
-	* Get DBMS data directory
-	* @param dbtype
-	* @param sqlConnection
-	* @param datadir_params
-	* @return datadirectory
-	*/
-	public String getIst_datadirectory(dbtype,sqlConnection,datadir_params){
-		def datadirectory = null
-		try{
-			datadirectory = getIst_params(dbtype,sqlConnection,datadir_params)
-		} catch(Exception ex) {
-			logger.info (MessageFormat.format("Error when get data directory : " + ex))
-		}
-		return datadirectory
-	}
-
-	/**
-	* Get DBMS db version
-	* @param dbtype
-	* @param sqlConnection
-	* @param dbversion_params
-	* @return dbmsversion
-	*/
-	public String getIst_dbmsversion(dbtype,sqlConnection,dbversion_params){
-		def dbmsversion = null
-		try{
-			dbmsversion = getIst_params(dbtype,sqlConnection,dbversion_params)
-		} catch (Exception ex) {
-			logger.info (MessageFormat.format("Error when get dbms version : " + ex))
-		}
-		return dbmsversion
-	}
-
-	/**
-	* Get DBMS program directory
-	* @param dbtype
-	* @param sqlConnection
-	* @param programdir_params
-	* @return programdirectory
-	*/
-	public String getIst_programdirectory(dbtype,sqlConnection,programdir_params){
-		def programdirectory = null
-		try{
-			programdirectory = getIst_params(dbtype,sqlConnection,programdir_params)
-			return programdirectory
-		} catch (Exception ex) {
-			logger.info (MessageFormat.format("Error when get program directory : " + ex))
-		}
-		return programdirectory
-	}
-
-	/**
-	* Get DBMS log directory
-	* @param dbtype
-	* @param sqlConnection
-	* @param logdir_params
-	* @return logdirectory
-	*/
-	public String getIst_logdirectory(dbtype,sqlConnection,logdir_params){
-		def logdirectory = null
-		try{
-			logdirectory = getIst_params(dbtype,sqlConnection,logdir_params)
-		} catch (Exception ex) {
-			logger.info (MessageFormat.format("Error when get log directory : " + ex))
-		}
-		return logdirectory
+	
+	def closeConnection(){
+		// Nothing to do here
+		// This DBConnectionSource has a special mechanism to manage connections
 	}
 	
-	/**
-	* Get pwdFile
-	* @param mapDbInfo connect DB information
-	* @return pwdFileOutput password file
-	*/
-	public File getPwdFile(mapDbInfo) {
-		def pwdFileName = CommonUltis.getPasswdFileName(mapDbInfo.strDbType, mapDbInfo.dbHostId, mapDbInfo.dbSid)
-		File pwdFileOutput = new File(properties.get(ResourceConstants.DBPASSWORD_FILE_DIRECTORY) + "/" + pwdFileName)
-		return pwdFileOutput
+	def getConnection(){
+		return sql
 	}
 }
 
-// 2013-04-15 Luvina Insert Start
-public class DBMSInfo {
-	def datadirectory = ""
-	def programdirectory = ""
-	def dbmsversion = ""
-	def logdirectory = ""
-}
-// 2013-04-15 Luvina Insert End
