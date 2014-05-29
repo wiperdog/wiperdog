@@ -35,49 +35,70 @@ public class ImportInstance extends HttpServlet {
 							list_job.add(fileName)
 						}
 					}
-				}
+				}			
 				def root = [
-					"MySQL",
-					"SQL_Server",
-					"Postgres"
+					"MySQL": ["Database_Area":[],"Database_Statistic":[],"Database_Structure":[],"FaultManagement":[],"Performance":[],"Proactive_Check":[],"Others":[]],
+					"SQL_Server":["Database_Area":[],"Database_Statistic":[],"Database_Structure":[],"FaultManagement":[],"Performance":[],"Proactive_Check":[],"Others":[]],
+					"Postgres":["Database_Area":[],"Database_Statistic":[],"Database_Structure":[],"FaultManagement":[],"Performance":[],"Proactive_Check":[],"Others":[]],
+					"OS":[],
+					"Others":[]
 				]
-				def child = [
-					"Database_Area",
-					"Database_Statistic",
-					"Database_Structure",
-					"FaultManagement",
-					"Performance",
-					"Proactive_Check",
-					"Others"
-				]
-
+				
+				//Initial
 				def output = [:]
-				root.each{ r->
-					output[r]=[:]
-					child.each{ c->
-						output[r][c] = []
-					}
-				}
-
-				def tmpOther = []
-				list_job.each {
-					def tmpArray = it.split("\\.")
-					if (tmpArray.size() == 4) {
-						if (root.contains(tmpArray[0])) {
-							if (child.contains(tmpArray[1])) {
-								output[tmpArray[0]][tmpArray[1]].add(it)
-							} else {
-								output[tmpArray[0]]["Others"].add(it)
-							}
-						} else {
-							tmpOther.add(it)
+				def tmpKey = ""
+				root.each{k,v->
+					if (!v.isEmpty()) {
+						output[k]=[:]
+						v.each{c, valuec->
+							tmpKey = k + "." + c
+							output[tmpKey] = []
 						}
 					} else {
-						tmpOther.add(it)
+						output[k] = []
 					}
 				}
-				output["Other"] = tmpOther
-				respMessage["data"] = output
+				
+				//Bind job name to create tree menu
+				def isOthersJob
+				def isOthersJobInGroup
+				list_job.each {
+					isOthersJob = true
+					def tmpArray = it.split("\\.")
+					if (tmpArray.size() >= 2) {
+						root.each{k,v->
+							if (tmpArray[0] == k) {
+								if (!v.isEmpty()) {
+									if (tmpArray.size() >= 3) {
+										isOthersJobInGroup = true
+										v.each{c, valuec->
+											if (tmpArray[1] == c) {
+												tmpKey = k + "." + c
+												output[tmpKey].add(it)
+												isOthersJobInGroup = false
+											}
+										}
+										if (isOthersJobInGroup) {
+											tmpKey = k + ".Others"
+											output[tmpKey].add(it)
+										}
+									}
+								} else {
+									if ((tmpArray.size() == 3) && (output[k] instanceof List)) {
+										output[k].add(it)
+									}
+								}							
+								//Set to not add in others group
+								isOthersJob = false
+							}
+						}
+					}
+					if (isOthersJob) {
+						output["Others"].add(it)
+					}
+				}
+				def treeItem = getMenuItemsStr(root, output)
+				respMessage["data"] = treeItem
 				respMessage["status"] = "success"
 			} else {
 				if(action == "getInstance"){
@@ -118,7 +139,6 @@ public class ImportInstance extends HttpServlet {
 			def resultRun	= ""
 			def contentText = req.getInputStream().getText()
 			def jobFileName = req.getParameter("jobFileName")
-			println jobFileName
 			def slurper = new JsonSlurper()
 			def object = slurper.parseText(contentText)
 			def csvFile
@@ -181,8 +201,57 @@ public class ImportInstance extends HttpServlet {
 		builder = new JsonBuilder(respMessage)
 		out.print(builder.toString())
 	}
+	
+	/**
+	 * Recursively function, used for gen tree menu data 
+	 * Input treeItem: root tree map of menu (not leaf)
+	 *       mapCollection: Map of collections, Item of map has key is a job group and value is list job which is applied for that group
+	 *       parentList: used for recursively to canculate key if data if leaf
+	 * Output: If data is leaf, create key of group data, get list of job which is applied for group from mapCollection and create menu Item
+	 *         If data isn't leaf, create node and call recursively function with sub data
+	 **/
+	def getMenuItemsStr(treeItem, mapCollection, parentList = []) {     
+	     def ul_open = false
+	     def result = ""
+	     def parentStr = ""
+	     def parentLstforChild = []
+
+	     //If data isn't leaf, create node and call recursively function with sub data
+	     if (treeItem instanceof Map) {
+	         result += "<ul id='treemenu2' class='treeview'>"
+	         treeItem.each{itemKey, itemVal -> 
+	             parentList.each{parentListItem->
+	                 parentLstforChild.add(parentListItem)
+	             }
+	             parentLstforChild.add(itemKey)
+		     result += "<li>"+ itemKey
+	             result += getMenuItemsStr(itemVal, mapCollection, parentLstforChild)
+	             result +="</li>"
+	             parentLstforChild = []
+	         }
+	         result += "</ul>"
+	     }
+	     
+	     //If data is leaf, create key of group data, get list of job which is applied for group from mapCollection and create menu Item
+	     if (treeItem instanceof List) {
+	         result += "<ul>"
+	         parentList.each{parentItem -> 
+	              if (parentStr != ""){
+	                  parentStr += "."
+	              }
+	              parentStr += parentItem
+	         }
+	         if (mapCollection[parentStr] != null) {
+	             mapCollection[parentStr].each {item->
+	                 result += "<li><a>" + item +"</a></li>"
+	             }
+	         }
+	         result += "</ul>"
+	     }
+	     return result
+	}
+	
 	def writeDataToCSVFile(data, fileNameCSV) {
-		println data
 		def tmpMap
 		def tmpListData = []
 
