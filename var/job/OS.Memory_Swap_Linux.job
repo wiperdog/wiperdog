@@ -1,3 +1,19 @@
+/**
+ * Monitoring used memory by OS.<br/>
+ * <p>
+ * Display amount of free and used memory in the system.<br/>
+ * </p>
+ * @targetVersion Ubuntu 12.04
+ * @return get information of free and used physical and swap memory in the system.
+ * @returnParam TypeName The name as Mem/Swap/buffers-cache.
+ * @returnParam UsedMemoryKB The memory in use by each TypeName.
+ * @returnParam UsedMemoryPct The percentage of memory in use by each TypeName.
+ * @returnParam TotalMemorySizeKB The total memory in use by each TypeName.
+ * @returnParam FreeMemoryKB The memory not in use by each TypeName
+ * @returnParam SharedMemoryKB The memory usage for shared.
+ * @returnParam BuffersKB The memory usage for buffers.
+ * @returnParam CachedKB The memory usage for cache.
+ */
 JOB = [name:"OS.Memory_Swap_Linux"]
 FETCHACTION = {
  def command = "free"
@@ -55,4 +71,4 @@ SENDTYPE = "Store"
 RESOURCEID = "Linux/MemoryUsage"
 DEST = parameters.dest
 OSINFO = parameters.osinfo
-MONITORINGTYPE = 'OS'
+MONITORINGTYPE = '@OS'

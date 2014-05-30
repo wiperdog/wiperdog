@@ -1,3 +1,15 @@
+/**
+ * Monitoring used memory by OS.<br/>
+ * <p>
+ * Display amount of free and used memory in the system.<br/>
+ * </p>
+ * @targetVersion Windows Xp Professional, Version 2002, Service Pack 3
+ * @return get information of memory in use by OS.
+ * @returnParam FreeMemoryKB The memory not in use by OS.
+ * @returnParam TotalMemorySizeKB The total memory in use by OS.
+ * @returnParam UsedMemoryKB The memory in use by OS.
+ * @returnParam UsedMemoryPct The percentage of memory in use by OS.
+ */
 JOB = [name:"OS.Memory_Usage_Windows"]
 FETCHACTION = {
 	def cmdGetPhysMem= [type:"wmic",commandStr:"OS GET FreePhysicalMemory,TotalVisibleMemorySize /format:csv"]
@@ -56,6 +68,6 @@ KEYEXPR._chart = [
 ]
 DEST = parameters.dest
 OSINFO = parameters.osinfo
-MONITORINGTYPE = 'OS'
+MONITORINGTYPE = '@OS'
 RESOURCEID = "Windows/Memory"
 SENDTYPE = "Store"

@@ -1,3 +1,9 @@
+/**
+ * Monitoring CPU statistics.<br/>
+ * @targetVersion Windows Xp Professional, Version 2002, Service Pack 3
+ * @return get informations on the use of cpu.
+ * @returnParam LoadPct The percentage of the cpu have been loaded.
+ */
 JOB = [name:"OS.CPU_Windows"]
 
 FETCHACTION = {
@@ -35,4 +41,4 @@ SENDTYPE = "Store"
 RESOURCEID = "Windows/CPU"
 DEST = parameters.dest
 OSINFO = parameters.osinfo
-MONITORINGTYPE = 'OS'
+MONITORINGTYPE = '@OS'

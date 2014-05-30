@@ -1,3 +1,16 @@
+/**
+ * Monitoring I/O of network.<br/>
+ * <p>
+ * Display status of the currently active interfaces.<br/>
+ * </p>
+ * @targetVersion Windows Xp Professional, Version 2002, Service Pack 3
+ * @return get information for network in use.
+ * @returnParam NetworkCardName The name of the interface.
+ * @returnParam PacketsReceivedPersec The number of packets have been received.
+ * @returnParam PacketsSentPersec The number of packets have been sent.
+ * @returnParam BytesReceivedPersec The total amount of data have been received.
+ * @returnParam BytesSentPersec The total amount of data have been sent.
+ */
 JOB = [name:"OS.Network_IO_Windows"]
 FETCHACTION = {
    def command = [type:"wmic",commandStr:"path Win32_PerfRawData_Tcpip_NetworkInterface Get Name,PacketsReceivedPerSec,PacketsSentPerSec,BytesReceivedPersec,BytesSentPersec /format:csv"]
@@ -62,4 +75,4 @@ SENDTYPE = "Store"
 RESOURCEID = "Windows/NetworkIO"
 DEST = parameters.dest
 OSINFO = parameters.osinfo
-MONITORINGTYPE = 'OS'
+MONITORINGTYPE = '@OS'

@@ -1,3 +1,22 @@
+/**
+ * Monitoring statistics of processes.<br/>
+ * <p>
+ * Display processes running on the system and other vital system information.<br/>
+ * </p>
+ * @targetVersion Ubuntu 12.04
+ * @return get information for each process in use.
+ * @returnParam ProcessId The unique ID of the process.
+ * @returnParam UserName Username which the process is running under.
+ * @returnParam PriorityInt The Priority for the process.
+ * @returnParam NicePriorityInt The nice value modifies the priority of the process.
+ * @returnParam TotalVirtualMemUsedKB Total amount of virtual memory used by the process.
+ * @returnParam ResidentTaskSizeKB Resident size (kb) - Non-swapped physical memory which the process has used.
+ * @returnParam TotalSharedMemUsedKB Shared memory size (kb) - Amount of shared memory which the process has used.
+ * @returnParam CpuUsedPct Percentage of CPU time the process was using at the time top last updated.
+ * @returnParam MemUsedPct Percentage of memory (RAM) the process was using at the time top last updated.
+ * @returnParam CpuUsedTimeLong Cumulative CPU time which the process and children of the process have used.
+ * @returnParam CommandStr Name of the process or the path to the command used to start the process.
+ */
 JOB = [name:"OS.Process_Linux"]
 
 FETCHACTION = {
@@ -48,7 +67,7 @@ FETCHACTION = {
 				}
 				tmpDataDev["PriorityInt"] = tmpData
 			}
-			//get the ìNICEÅEvalue of the process
+			//get the ÔøΩNICEÔøΩEvalue of the process
 			if(tmpHeaderDev[k] == "NI"){
 				tmpDataDev["NicePriorityInt"] = Integer.parseInt(tmpData)
 			}
@@ -142,4 +161,4 @@ SENDTYPE = "Store"
 RESOURCEID = "Linux/Process"
 DEST = parameters.dest
 OSINFO = parameters.osinfo
-MONITORINGTYPE = 'OS'
+MONITORINGTYPE = '@OS'

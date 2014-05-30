@@ -1,3 +1,13 @@
+/**
+ * Monitoring statistics of page file.<br/>
+ * @targetVersion Windows Xp Professional, Version 2002, Service Pack 3
+ * @return get information for each pagefile in use.
+ * @returnParam PagefileLocName The location to pagefile.
+ * @returnParam TotalPagefileSizeKB The total amount of page file.
+ * @returnParam CurrentUsageKB The number of page file usage.
+ * @returnParam FreePagefileKB The number of page file free.
+ * @returnParam UsedPct The percentage of page file used.
+ */
 JOB = [name:"OS.Pagefiles_Usage_Windows"]
 FETCHACTION = {
 	def cmdGetPagefile= [type:"wmic",commandStr:"PAGEFILE GET Name,CurrentUsage,AllocatedBasesize /format:csv"]
@@ -56,6 +66,6 @@ KEYEXPR._chart = [
 ]
 DEST = parameters.dest
 OSINFO = parameters.osinfo
-MONITORINGTYPE = 'OS'
+MONITORINGTYPE = '@OS'
 RESOURCEID = "Windows/PageFilesUsage"
 SENDTYPE = "Store"
