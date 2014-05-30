@@ -324,7 +324,7 @@ class DefaultJobCaller {
 			//Get Monitoring type of job
 			strMorType = getVarFromBinding(binding, ResourceConstants.MONITORINGTYPE)
 			def osInfo = null
-			if(strMorType.equals("OS")){
+			if(strMorType.equals(ResourceConstants.MONITORINGTYPE_OS)){
 				//Get OSINFO
 				osInfo = getVarFromBinding(binding, ResourceConstants.OSINFO)
 				//Set process runner for os monitoring job
@@ -505,30 +505,31 @@ class DefaultJobCaller {
 		def resultData = null
 		
 		def pluginDBSource
-		// ConnectionInit & EncryptedDBConnectionSource is for normal connection (MySQL, MSSQL, Postgres, ORACLE)
-		// Other connection like MongoDB, MariaDB,... it needs a mechanism to load PluginDBConnectionSource
-		def dbTypeStr = dbInfo.strDbType
-		
-		// PluginDBConnectionSource
-		// If there is no implementation of specific DBConnectionSource then use
-		// the common DBConnectionSource : EncryptedDBConnectionSource
-		try{
-			def dbsourceClassNm = dbTypeStr.replaceAll('@','').toUpperCase() + "DBConnectionSource"
-			pluginDBSource = this.class.getClassLoader().loadClass(dbsourceClassNm).newInstance()
-		}catch(ClassNotFoundException clnfEx){
-			pluginDBSource = iDBConnectionSource //new EncryptedDBConnectionSourceImpl() 
+		if (dbInfo !=null) {
+			// ConnectionInit & EncryptedDBConnectionSource is for normal connection (MySQL, MSSQL, Postgres, ORACLE)
+			// Other connection like MongoDB, MariaDB,... it needs a mechanism to load PluginDBConnectionSource
+			def dbTypeStr = dbInfo.strDbType
+			
+			// PluginDBConnectionSource
+			// If there is no implementation of specific DBConnectionSource then use
+			// the common DBConnectionSource : EncryptedDBConnectionSource
+			try{
+				def dbsourceClassNm = dbTypeStr.replaceAll('@','').toUpperCase() + "DBConnectionSource"
+				pluginDBSource = this.class.getClassLoader().loadClass(dbsourceClassNm).newInstance()
+			}catch(ClassNotFoundException clnfEx){
+				pluginDBSource = iDBConnectionSource //new EncryptedDBConnectionSourceImpl() 
+			}
+			
+			def params = binding.getVariable("parameters")
+			def datadir_params = params.datadirectory
+			def dbversion_params = params.dbmsversion
+			def programdir_params = params.programdirectory
+			def logdir_params = params.dblogdir
+			pluginDBSource.newSqlInstance(dbInfo, datadir_params, dbversion_params, programdir_params,logdir_params)
+			pluginDBSource.getBinding().each{key, value->
+				binding.setVariable(key, value)
+			}
 		}
-		
-		def params = binding.getVariable("parameters")
-		def datadir_params = params.datadirectory
-		def dbversion_params = params.dbmsversion
-		def programdir_params = params.programdirectory
-		def logdir_params = params.dblogdir
-		pluginDBSource.newSqlInstance(dbInfo, datadir_params, dbversion_params, programdir_params,logdir_params)
-		pluginDBSource.getBinding().each{key, value->
-			binding.setVariable(key, value)
-		}
-		
 		
 		//Run FetchAction
 		try {

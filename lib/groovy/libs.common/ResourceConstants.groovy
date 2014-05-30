@@ -59,6 +59,7 @@ class ResourceConstants{
 	public static final String DEF_ACCUMULATE = "ACCUMULATE"	
 	public static final String DEF_GROUPKEY = "GROUPKEY"	
 	public static final String MONITORINGTYPE="MONITORINGTYPE"
+	public static final String MONITORINGTYPE_OS="@OS"
 	public static final String KEYEXPR = "KEYEXPR"
 	public static final String SENDTYPE = "SENDTYPE"
 	public static final String RESOURCEID = "RESOURCEID"
