@@ -23,12 +23,12 @@ cd "$PREFIX/bin"
 function helper() {
 	echo ">>>>> INCORRECT FORMAT !!! <<<<<"
 	echo "Correct format of command: "
-	echo "    - defaultedit dbinfo"
-	echo "    - defaultedit dest"
-	echo "    - defaultedit datadirectory"
-	echo "    - defaultedit programdirectory"
-	echo "    - defaultedit dbmsversion"
-	echo "    - defaultedit dblogdir"
+	echo "    - gendefaultparam dbinfo"
+	echo "    - gendefaultparam dest"
+	echo "    - gendefaultparam datadirectory"
+	echo "    - gendefaultparam programdirectory"
+	echo "    - gendefaultparam dbmsversion"
+	echo "    - gendefaultparam dblogdir"
 	exit
 }
 
