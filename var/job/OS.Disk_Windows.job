@@ -1,3 +1,16 @@
+/**
+ * Monitoring disk space usage.<br/>
+ * <p>
+ * Display properties of the disk on the system.<br/>
+ * </p>
+ * @targetVersion Windows Xp Professional, Version 2002, Service Pack 3
+ * @return get amount of disk space available on the system.
+ * @returnParam DiskName The name of the disk in system.
+ * @returnParam TotalSpaceInt The size of the disk drive.
+ * @returnParam AvaiableSpaceInt Space, in bytes, available on the logical disk.
+ * @returnParam UsedSpaceInt The size of the disk drive in used.
+ * @returnParam UsedPct The percentage of the disk drive in used.
+ */
 JOB = [name:"OS.Disk_Windows"]
 
 FETCHACTION = {
@@ -84,4 +97,4 @@ SENDTYPE = "Store"
 RESOURCEID = "Windows/DiskSpace"
 DEST = parameters.dest
 OSINFO = parameters.osinfo
-MONITORINGTYPE = 'OS'
+MONITORINGTYPE = '@OS'

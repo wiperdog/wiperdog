@@ -1,3 +1,15 @@
+/**
+ * Monitoring properties of system.<br/>
+ * @targetVersion Windows Xp Professional, Version 2002, Service Pack 3
+ * @return get properties of OS.
+ * @returnParam OSName The name of the OS.
+ * @returnParam HostName The host name of the OS.
+ * @returnParam InstallDate The date time of the OS installed.
+ * @returnParam NumberOfUsersCnt The total amount of user in the OS.
+ * @returnParam ServicePackVersionID The id of the service pack major version.
+ * @returnParam VersionID The id version of the OS.
+ * @returnParam WindowsDirName The path to Windows folder of the OS.
+ */
 JOB = [name:"OS.OS_Information_Windows"]
 
 FETCHACTION = {
@@ -65,5 +77,5 @@ FETCHACTION = {
 SENDTYPE = "Store"
 DEST = parameters.dest
 OSINFO = parameters.osinfo
-MONITORINGTYPE = 'OS'
+MONITORINGTYPE = '@OS'
 RESOURCEID = "Windows/OSInfo"

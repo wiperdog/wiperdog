@@ -1,3 +1,17 @@
+/**
+ * Monitoring statistics of processes.<br/>
+ * <p>
+ * Display processes running on the system.<br/>
+ * </p>
+ * @targetVersion Windows Xp Professional, Version 2002, Service Pack 3
+ * @return get information for each process in use.
+ * @returnParam ExecutalePathName The executable path to the process.
+ * @returnParam Name The name of the process.
+ * @returnParam PageFileUsageInt The total amount of page file usage by the process.
+ * @returnParam PriorityInt The priority of the process.
+ * @returnParam ProcessId The number id of the process.
+ * @returnParam WorkingSetSizeInt The size of the process for working.
+ */
 JOB = [name:"OS.Process_Windows"]
 
 FETCHACTION = {
@@ -86,4 +100,4 @@ SENDTYPE = "Store"
 RESOURCEID = "Windows/Process"
 DEST = parameters.dest
 OSINFO = parameters.osinfo
-MONITORINGTYPE = 'OS'
+MONITORINGTYPE = '@OS'

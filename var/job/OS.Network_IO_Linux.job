@@ -1,3 +1,17 @@
+/**
+ * Monitoring I/O of network.<br/>
+ * <p>
+ * Display status of the currently active interfaces.<br/>
+ * Need run job by user have full privileges or root.<br/>
+ * </p>
+ * @targetVersion Ubuntu 12.04
+ * @return get information for network in use.
+ * @returnParam NetworkCardName The name of the interface.
+ * @returnParam ReceivedPacketsCnt The number of packets have been received.
+ * @returnParam TransferedPacketsCnt The number of packets have been transmitted.
+ * @returnParam ReceivedBytes The total amount of data have been received.
+ * @returnParam TransferedBytes The total amount of data have been transmitted.
+ */
 JOB = [name:"OS.Network_IO_Linux"]
 FETCHACTION = {
 	def command = 'ifconfig'
@@ -81,4 +95,4 @@ SENDTYPE = "Store"
 RESOURCEID = "Linux/NetworkIO"
 DEST = parameters.dest
 OSINFO = parameters.osinfo
-MONITORINGTYPE = 'OS'
+MONITORINGTYPE = '@OS'

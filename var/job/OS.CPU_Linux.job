@@ -1,3 +1,22 @@
+/**
+ * Monitoring CPU statistics.<br/>
+ * <p>
+ * Global average activities  among  all processors are also reported.<br/>
+ * Need to install mpstat with command: sudo apt-get install mpstat.<br/>
+ * </p>
+ * @targetVersion Ubuntu 12.04
+ * @return get informations on the use of cpu.
+ * @returnParam UserLevelPct Show the percentage of CPU utilization that occurred while executing at the user level (application).
+ * @returnParam UserLevelWithNicePriPct Show the percentage of CPU utilization that occurred while executing at the user level with nice priority.
+ * @returnParam SystemLevelPct Show the percentage of CPU utilization that occurred while executing at the system level (kernel). Note that this does not include the time spent servicing interrupts or softirqs.
+ * @returnParam SystemWithIOPct Show the percentage of time that the CPU or CPUs were idle during which the system had an outstanding disk I/O request.
+ * @returnParam TimetoInterruptsPct Show the percentage of time spent by the CPU or CPUs to service interrupts.
+ * @returnParam TimetoSoftwareInterruptPct Show the percentage of time spent by the CPU or CPUs to service softirqs.
+ * @returnParam StealPct Show the percentage of time spent in involuntary wait by the virtual CPU or CPUs while the hypervisor was servicing another virtual processor.
+ * @returnParam IdlePct Show the percentage of time that the CPU or CPUs were idle and the system did not have an outstanding disk I/O request.
+ * @returnParam UsedPct The percentage of CPU used.
+ * @returnParam TotalInterruptsReceivedRateVal Show the total number of interrupts received per second by the CPU or CPUs.
+ */
 JOB = [name:"OS.CPU_Linux"]
 
 FETCHACTION = {
@@ -124,4 +143,4 @@ SENDTYPE = "Store"
 RESOURCEID = "Linux/CPU"
 DEST = parameters.dest
 OSINFO = parameters.osinfo
-MONITORINGTYPE = 'OS'
+MONITORINGTYPE = '@OS'

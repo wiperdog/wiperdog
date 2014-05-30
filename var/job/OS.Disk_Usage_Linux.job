@@ -1,3 +1,17 @@
+/**
+ * Monitoring filesystem disk space usage.<br/>
+ * <p>
+ * Display the amount of available disk space for filesystems on which the invoking user has appropriate read access.<br/>
+ * </p>
+ * @targetVersion Ubuntu 12.04
+ * @return get amount of disk space available on the filesystem containing each file name argument.
+ * @returnParam FileName The name of the file system.
+ * @returnParam SizeInt The total size of the file system in 512-bytes units.
+ * @returnParam UsedSizeInt The total amount of space allocated to existing files in the file system, in 512-byte units.
+ * @returnParam AvailableSizeInt The total amount of space available within the file system for the creation of new files by unprivileged users, in 512-byte units.
+ * @returnParam UsedPct The percentage of the normally avaiable space that is currently allocated to all files on the file system.
+ * @returnParam MountedOnName The directory below which the file system hierarchy appear.
+ */
 JOB = [name:"OS.Disk_Usage_Linux"]
 FETCHACTION = {
 	def cmdDiskInfo= "df"
@@ -60,4 +74,4 @@ SENDTYPE = "Store"
 RESOURCEID = "Linux/DiskUage"
 DEST = parameters.dest
 OSINFO = parameters.osinfo
-MONITORINGTYPE = 'OS'
+MONITORINGTYPE = '@OS'

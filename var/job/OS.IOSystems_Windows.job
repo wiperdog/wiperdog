@@ -1,3 +1,18 @@
+/**
+ * Monitoring system input/output.<br/>
+ * <p>
+ * Display the statistics for system.<br/>
+ * </p>
+ * @targetVersion Windows Xp Professional, Version 2002, Service Pack 3
+ * @return get status of disk in use.
+ * @returnParam DiskBytesVal Rate at which bytes are transferred to or from the disk during write or read operations.
+ * @returnParam DiskReadBytesVal Rate at which bytes are transferred from the disk during read operations.
+ * @returnParam DiskReadsVal Rate of read operations on the disk.
+ * @returnParam DiskTransfersVal Rate of read and write operations on the disk.
+ * @returnParam DiskWriteBytesVal Rate at which bytes are transferred to the disk during write operations.
+ * @returnParam DiskWritesVal Rate of write operations on the disk.
+ * @returnParam SplitIOVal Rate at which I/Os to the disk were split into multiple I/Os.
+ */
 JOB = [name:"OS.IOSystems_Windows"]
 
 FETCHACTION = {
@@ -57,7 +72,7 @@ FETCHACTION = {
 }
 
 KEYEXPR = ['_sequence':['DiskTransfersVal','DiskReadsVal','DiskWritesVal']]
-KEYEXPR._unit = ["DiskBytesVal":"byte/sec", "DiskReadBytesVal":"byte/sec", "DiskReadsVal":"byte/sec", "DiskTransfersPersec":"byte/sec", "DiskWriteBytesPersec":"byte/sec", "DiskWritesPersec":"byte/sec", "SplitIOPerSec":"byte/sec"]
+KEYEXPR._unit = ["DiskBytesVal":"byte/sec", "DiskReadBytesVal":"byte/sec", "DiskReadsVal":"byte/sec", "DiskTransfersVal":"byte/sec", "DiskWriteBytesVal":"byte/sec", "DiskWritesVal":"byte/sec", "SplitIOVal":"byte/sec"]
 KEYEXPR._chart = [
 	[
         "type": "line",
@@ -70,4 +85,4 @@ SENDTYPE = "Store"
 RESOURCEID = "Windows/IOSystems"
 DEST = parameters.dest
 OSINFO = parameters.osinfo
-MONITORINGTYPE = 'OS'
+MONITORINGTYPE = '@OS'

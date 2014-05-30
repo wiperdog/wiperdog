@@ -1,3 +1,13 @@
+/**
+ * Monitoring properties of system.<br/>
+ * @targetVersion Ubuntu 12.04
+ * @return get properties of OS.
+ * @returnParam OSName The name of the OS.
+ * @returnParam OSArchName The type of the OS as 64bit/32bit.
+ * @returnParam OSUserCnt The total amount of user in the OS.
+ * @returnParam OSHostName The host name of the OS.
+ * @returnParam OSInstallDate The date time of the OS installed.
+ */
 JOB = [name:"OS.OS_Information_Linux"]
 FETCHACTION = {
         def finalReturn = []
@@ -54,4 +64,4 @@ SENDTYPE = "Store"
 RESOURCEID = "Windows/OSInfomation"
 DEST = parameters.dest
 OSINFO = parameters.osinfo
-MONITORINGTYPE = 'OS'
+MONITORINGTYPE = '@OS'

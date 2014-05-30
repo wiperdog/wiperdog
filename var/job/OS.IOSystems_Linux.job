@@ -1,3 +1,17 @@
+/**
+ * Monitoring system input/output.<br/>
+ * <p>
+ * Display the statistics for all device that is configured.<br/>
+ * </p>
+ * @targetVersion Ubuntu 12.04
+ * @return get information of each device.
+ * @returnParam DeviceName The device (or partition) name.
+ * @returnParam NumberTransfersRateVal The number of transfers per second that were issued to the device.
+ * @returnParam NumberBlockReadRateVal The amount of data read from the drive expressed in a number of kilobytes per second.
+ * @returnParam NumberBlockWriteRateVal The amount of data written to the drive expressed in a number of kilobytes per second.
+ * @returnParam NumberBlocksReadInt The total number of kilobytes read.
+ * @returnParam NumberBlocksWriteInt The total number of kilobytes written.
+ */
 JOB = [name:"OS.IOSystems_Linux"]
 
 FETCHACTION = {
@@ -27,16 +41,16 @@ FETCHACTION = {
 			if(tmpHeaderDev[k] == "tps"){
 				tmpDataDev["NumberTransfersRateVal"] = data
 			}
-			if(tmpHeaderDev[k] == "Blk_read/s"){
+			if(tmpHeaderDev[k] == "kB_read/s"){
 				tmpDataDev["NumberBlockReadRateVal"] = data
 			}
-			if(tmpHeaderDev[k] == "Blk_wrtn/s"){
+			if(tmpHeaderDev[k] == "kB_wrtn/s"){
 				tmpDataDev["NumberBlockWriteRateVal"] = data
 			}
-			if(tmpHeaderDev[k] == "Blk_read"){
+			if(tmpHeaderDev[k] == "kB_read"){
 				tmpDataDev["NumberBlocksReadInt"] = data
 			}
-			if(tmpHeaderDev[k] == "Blk_wrtn"){
+			if(tmpHeaderDev[k] == "kB_wrtn"){
 				tmpDataDev["NumberBlocksWriteInt"] = data
 			}
 		}
@@ -60,4 +74,4 @@ SENDTYPE = "Store"
 RESOURCEID = "Linux/IOSystems"
 DEST = parameters.dest
 OSINFO = parameters.osinfo
-MONITORINGTYPE = 'OS'
+MONITORINGTYPE = '@OS'
