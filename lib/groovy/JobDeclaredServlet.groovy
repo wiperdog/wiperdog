@@ -16,7 +16,7 @@ public class JobDeclared extends HttpServlet {
 	static final String INST_DIR = MonitorJobConfigLoader.getProperties().get(ResourceConstants.JOBINST_DIRECTORY)
 	
 	static final String PARAMFILE = "var/conf/default.params"
-	static final List listKey = ["JOB", "GROUPKEY", "QUERY", "QUERY_VARIABLE", "DBEXEC", "DBEXEC_VARIABLE", "COMMAND", "FORMAT", "FETCHACTION", "ACCUMULATE", "FINALLY", "KEYEXPR", "KEYEXPR._root", "KEYEXPR._sequence", "KEYEXPR._unit", "KEYEXPR._chart", "KEYEXPR._description", "SENDTYPE", "RESOURCEID", "MONITORINGTYPE", "DBTYPE", "DEST", "HOSTID", "SID"]
+	static final List listKey = ["JOB", "GROUPKEY", "QUERY", "QUERY_VARIABLE", "DBEXEC", "DBEXEC_VARIABLE", "COMMAND", "FORMAT", "FETCHACTION", "ACCUMULATE", "FINALLY", "KEYEXPR", "KEYEXPR._root", "KEYEXPR._sequence", "KEYEXPR._unit", "KEYEXPR._chart", "KEYEXPR._description", "SENDTYPE", "RESOURCEID", "MONITORINGTYPE", "DBTYPE", "OSINFO", "DEST", "HOSTID", "SID"]
 	static final String CHARSET = 'utf-8'
 	def errorMsg = ""
 
@@ -29,43 +29,46 @@ public class JobDeclared extends HttpServlet {
 		def message
 		errorMsg = ""
 		def job_dir = new File(JOB_DIR)		
-		def listDBType = ['MySQL','SQL_Server','Postgres']
+		def listHeaderJob = ['MySQL', 'SQL_Server', 'Postgres', 'OS', 'SYS', 'NET']
 		try{
 			def strMorType = req.getParameter("morType")
-			if(strMorType != null && strMorType != ""){
-				if(strMorType == "Others"){
-					if(job_dir.isDirectory()){
-						def checkNotInDBType = { fileName , list ->
-							def check = false
-							list.find{
-								if(fileName.startsWith(it)){
-									check = true
-									return true
-								}
-							}
-							return check
-						}
-						job_dir.listFiles().each{
-							def fileName = it.getName()
-							if((fileName.endsWith('.job') && checkNotInDBType(fileName,listDBType) == false)) {
-									list_job.add(fileName.substring(0,fileName.indexOf('.job')))
-							}
-						}
-						def result = [:]
-						result['listJob'] = list_job
-						builder = new JsonBuilder(result)
-						out.println(builder.toPrettyString());
+			
+			def checkInOthersGroup = { fileName , list ->
+				def result = true
+				list.find{
+					if(fileName.startsWith(it)){
+						result = false
 						return
-					} else {
-						errorMsg = "Error when get Job file: Job directory not found!"
+					}
+				}
+				return result
+			}
+			
+			if(strMorType != null && strMorType != ""){
+				if(strMorType == "@DB"){
+					list_job = []
+				} else if (strMorType != "Others"){
+					def groupMonitoringType = strMorType.replace("@","")
+					job_dir.listFiles().each{
+						def fileName = it.getName()
+						if((fileName.endsWith('.job') && fileName.startsWith(groupMonitoringType))) {
+							list_job.add(fileName.substring(0,fileName.indexOf('.job')))
+						}
 					}
 				} else {
-						def result = [:]
-						result['listJob'] = []
-						builder = new JsonBuilder(result)
-						out.println(builder.toPrettyString());
-					return
+					job_dir.listFiles().each{
+						def fileName = it.getName()
+						if(fileName.endsWith('.job') && checkInOthersGroup(fileName,listHeaderJob)) {
+							list_job.add(fileName.substring(0,fileName.indexOf('.job')))
+						}
+					}
 				}
+				
+				def result = [:]
+				result['listJob'] = list_job
+				builder = new JsonBuilder(result)
+				out.println(builder.toPrettyString());
+				return
 			}
 			def strDBType = req.getParameter("dbtype")
             if (strDBType != null && strDBType != ""){
@@ -126,7 +129,7 @@ public class JobDeclared extends HttpServlet {
 				// Get job's script
 				def stringOfJob = getJobScript(jobFile)
 				def realJobName = stringOfJob.JOB
-				def filePath = JOB_DIR + realJobName
+				def filePath = JOB_DIR + "/" +  realJobName
 				def instanceFile = new File(filePath + ".instances")
 				def paramFile = new File(filePath + ".params")
 				// Get instance file's script in Object type(Map)
@@ -305,7 +308,8 @@ public class JobDeclared extends HttpServlet {
 			}
 
 			// process DBTYPE variable
-			if(jobData.dbType != null){
+			println jobData.dbType
+			if((jobData.dbType != null) && (jobData.dbType != "")){
 				def finalDBType = ""
 				if(jobData.dbType == "SQL_Server"){
 					finalDBType = "@MSSQL"
@@ -318,7 +322,16 @@ public class JobDeclared extends HttpServlet {
 				}
 				jobStr += "DBTYPE = \"" + finalDBType + "\"\n"
 			}
-
+			
+			// process OSINFO variable
+			if(jobData.osInfo != null && jobData.osInfo != ""){
+				jobStr += "OSINFO = " + jobData.osInfo + "\n"
+			}else{
+				if ((jobData.monitoringType != null) && (jobData.monitoringType == "@OS")) {
+				    jobStr += "OSINFO = parameters.osinfo\n"
+				}
+			}
+			
 			// process dest variable
 			if(jobData.dest != null && jobData.dest != ""){
 				jobStr += "DEST = " + jobData.dest + "\n"
