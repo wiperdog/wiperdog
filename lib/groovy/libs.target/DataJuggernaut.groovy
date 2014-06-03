@@ -21,7 +21,7 @@ class DataJuggernaut{
 			def policyObj = shell.evaluate(policyFile)
 			def binding = policyObj.getBinding()
 			
-			if(polParamFile.exists()){
+			if(polParamFile != null && polParamFile.exists()){
 				def slurper = new JsonSlurper()
 				def params = slurper.parseText(polParamFile.getText())
 				params.each{key, value->
