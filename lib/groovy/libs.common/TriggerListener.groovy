@@ -67,8 +67,7 @@ class TriggerListener implements Listener,ServiceTrackerCustomizer {
 	 * ServiceTrackerCustomizer.removedService
 	 */
 	public void removedService(ServiceReference reference, Object service)  {
-		if (service == jobfacade) {
-			jobfacade = null
+		if (service == jobdsl) {
 			jobdsl = null
 		}
 	}
