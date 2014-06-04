@@ -4,15 +4,10 @@
 //    stop -> start
 // すること。
 //
-import org.osgi.framework.BundleListener
-import org.osgi.framework.BundleEvent
-import org.osgi.framework.Bundle
+import org.osgi.util.tracker.ServiceTrackerCustomizer
+import org.osgi.util.tracker.ServiceTracker
+import org.osgi.framework.ServiceReference
 import org.codehaus.groovy.tools.RootLoader
-
-// The list of bundles to be waited for presense.
-// Groovy scripts have to wait for dependency presense in OSGi environment.
-// The bundle in this waitList must not be fragment bundle, because fragment bundle can't be ACTIVE.
-def waitList = [ "org.wiperdog.directorywatcher": false, "org.wiperdog.jobmanager":false ]
 
 /**
  * The body of bootup work
@@ -72,71 +67,55 @@ def doBootStep() {
 		 def restServiceLoader = rootloader.loadClass("RestServiceLoader").newInstance([ctx] as Object[] )
 }
 
-/**
- * At startup moment, it is not guaranteed the dependency bundles are already loaded.
- * So We have to wait for their presense.
- */
-try {
-	//
-	// Create bundle listener.
-	// 
-	def bundleListener = new BundleListener() {
-		public synchronized void bundleChanged(BundleEvent ev) {
-			if (ev.getType() != BundleEvent.STARTED) {
-				return
-			}
-			def b = ev.getBundle()
-			def symbolicName = b.getSymbolicName()
-			def bAll = true
-			waitList.each { name ->
-//				println name
-				if (name.key.equals(symbolicName)) {
-					name.value = true
-				}
-				if (!name.value) {
-					bAll = false
-				}
-			}
-			if (bAll) {
-				notifyAll()
-			}
-		}
+class MyCustomizer implements ServiceTrackerCustomizer {
+	def bundleStart
+
+	Object addingService(ServiceReference reference){
+		bundleStart = "true"
+		return null
 	}
 
-	//
-	// waiter thread waits for presense of all dependecy bundles, then call boot process.
-	//
+	void modifiedService(ServiceReference reference, Object service){
+	}
+
+	void removedService(ServiceReference reference, Object service){
+	}
+}
+
+try {
 	def waiter = new Runnable() {
 		def ctx
+		def startTime
+		def elapsedTime
+		def th_elapsedtime = 120000
+
 		public void run() {
-			synchronized(bundleListener) {
-				bundleListener.wait()
+			def myCustomizer = new MyCustomizer()
+			def className = "org.wiperdog.jobmanager.JobFacade"
+			def tracker = new ServiceTracker(ctx, className, myCustomizer)
+			tracker.open()
+
+			while ( myCustomizer.bundleStart != "true" ){
+				elapsedTime = System.currentTimeMillis() - startTime 
+				if ( elapsedTime > th_elapsedtime ) {
+					println "boot.groovy has been terminaed by elapsedtime over.(exceeded " + th_elapsedtime + " millisec)"
+					break
+				} 
+				try {
+					Thread.sleep(1000)
+				} catch (InterruptedException e) {}
 			}
-			ctx.removeBundleListener(bundleListener)
-			doBootStep()
+			tracker.close()
+			if( myCustomizer.bundleStart == "true" ) { 
+				doBootStep()
+			}
 		}
 	}
+
 	waiter.ctx = ctx
-
 	new Thread(waiter).start()
+	waiter.startTime = System.currentTimeMillis()
 
-	// 
-	// before registering bundle listener, we have to see what bundles are already present.
-	//
-	def installedBundles = ctx.getBundles()
-	installedBundles.each { bundle -> 
-		if (bundle.getState() == Bundle.ACTIVE) {
-			def symbolicName = bundle.getSymbolicName()
-			waitList.each { name ->
-				if (name.key.equals(symbolicName)) {
-					name.value = true
-				}
-			}
-		}
-	}
-	// register bundle listener
-	ctx.addBundleListener(bundleListener)
-
-} catch (Exception ex) {
-	println ex
+} catch (Exception e) {
+	println e
 }
