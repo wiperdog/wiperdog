@@ -88,7 +88,13 @@ public class ProcessGeneratePolicy {
 						listKey.remove("RECORD_SEQ")
 					}
 					listKey.each {
-						println "    - Field: " + it + ", Unit: " + dataRecord['KEYEXPR']['_unit'][it] + ", Data Sample: " + mapRecord[it]
+						if (dataRecord['KEYEXPR'] != null) {
+							if (dataRecord['KEYEXPR'].getClass().toString() == "com.mongodb.BasicDBObject" && dataRecord['KEYEXPR']['_unit'] != null) {
+								println "    - Field: " + it + ", Unit: " + dataRecord['KEYEXPR']['_unit'][it] + ", Data Sample: " + mapRecord[it]
+							} else {
+								println "    - Field: " + it + ", Data Sample: " + mapRecord[it]
+							}
+						}
 					}
 				} else {
 					println "No data in mongodb !!!"
@@ -104,7 +110,13 @@ public class ProcessGeneratePolicy {
 							listKey.remove("RECORD_SEQ")
 						}
 						listKey.each {
-							println "    - Group: " + key + ", Field: " + it + ", Unit: " + dataRecord['KEYEXPR']['_unit'][it] + ", Data Sample: " + dataForKey[it]
+							if (dataRecord['KEYEXPR'] != null) {
+								if (dataRecord['KEYEXPR'].getClass().toString() == "com.mongodb.BasicDBObject" && dataRecord['KEYEXPR']['_unit'] != null) {
+									println "    - Group: " + key + ", Field: " + it + ", Unit: " + dataRecord['KEYEXPR']['_unit'][it] + ", Data Sample: " + dataForKey[it]
+								} else {
+									println "    - Group: " + key + ", Field: " + it + ", Data Sample: " + dataForKey[it]
+								}
+							}
 						}
 					} else {
 						println "No data in mongodb !!!"
