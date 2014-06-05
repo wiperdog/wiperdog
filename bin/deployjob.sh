@@ -1,3 +1,4 @@
+#!/bin/bash
 #SET DEFAULT DIRECTORY
 self="$0"
 dir=`dirname "$self"`
