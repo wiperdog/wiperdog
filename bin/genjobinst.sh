@@ -1,4 +1,17 @@
 #!/bin/sh
-command -v groovy >/dev/null 2>&1 || { echo "Groovy not installed. Aborting." >&2; exit 1;}
-BASEDIR=$(dirname $0)
-groovy $BASEDIR/genjobinst.groovy
+#SET DEFAULT DIRECTORY
+self="$0"
+dir=`dirname "$self"`
+path=`pwd $0`
+if [ "$dir" == "." ]  
+then
+    export dirname=`pwd $0`
+else
+    export dirname=$path"/"$dir
+fi
+    export currentdir=`pwd`/
+
+# MOVE TO THE WIPERDOG HOME/BIN
+PREFIX=`cd "$dir/.." && pwd`
+cd "$PREFIX/bin"
+$PREFIX/bin/groovy $PREFIX/bin/genjobinst.groovy
