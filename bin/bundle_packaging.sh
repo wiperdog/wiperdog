@@ -1,3 +1,15 @@
+#!/bin/bash
+self="$0"
+dir=`dirname "$self"`
+path=`pwd $0`
+if [ "$dir" == "." ]
+then
+    export dirname=`pwd $0`
+else
+    export dirname=$path"/"$dir
+fi
+    export currentdir=`pwd`/
+
 if [ "$#" -ne 5 ]; then
 	echo "------------ERROR-----------------------"
     echo "  Illegal number of parameters"
@@ -5,7 +17,6 @@ if [ "$#" -ne 5 ]; then
 else
 	pom_tpl=""
 	command -v mvn >/dev/null 2>&1 || { echo "Maven not installed. Aborting." >&2; exit 1;}	
-	command -v groovy >/dev/null 2>&1 || { echo "Groovy not installed. Aborting." >&2; exit 1;}	
 	read -r -d '' pom_tpl <<Endfile
 	<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
@@ -45,6 +56,7 @@ else
   </build>
 </project>
 Endfile
-	groovy bundle_packaging.groovy $1 $2 $3 $4 $5 "$pom_tpl"
+	PREFIX=`cd "$dir/.." && pwd`
+	cd "$PREFIX/bin"
+	$PREFIX/bin/groovy $PREFIX/bin/bundle_packaging.groovy $1 $2 $3 $4 $5 "$pom_tpl"
 fi
-
