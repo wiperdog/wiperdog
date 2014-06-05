@@ -41,6 +41,10 @@ public class RestServiceLoader{
 		def jobInstallCtrler = new JobInstallController(context)
 		server.uri("/bundle/install", jobInstallCtrler).method(HttpMethod.POST)
 		server.uri("/bundle/{groupId}/{artifactId}/{version}", jobInstallCtrler).method(HttpMethod.GET)
+		def jobRunnerService = new JobRunOneShot(context)
+		server.uri("/runjob", jobRunnerService).method(HttpMethod.POST)
+		server.uri("/runjob/data", jobRunnerService).method(HttpMethod.PUT)
+
 	}
 
 }
