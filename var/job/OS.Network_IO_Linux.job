@@ -76,19 +76,65 @@ FETCHACTION = {
 	}
 	return resultData
 }
+ACCUMULATE = {
+	assert interval != null, "First time, we cannot return meaningful values"
+	if (prevOUTPUT != null) {
+    	OUTPUT.eachWithIndex { rec, index ->
+    		if (prevOUTPUT[index] != null) {
+	    		// Received Packet
+			   	if(prevOUTPUT[index]['ReceivedPacketsCnt'] == null || prevOUTPUT[index]['ReceivedPacketsCnt'] == "") {
+			   		rec['DiffReceivedPacketsVal'] = rec['ReceivedPacketsCnt']
+			   		rec['ReceivedPacketsPerSecPct'] = rec['ReceivedPacketsCnt'] / interval
+				} else {
+		       		rec['DiffReceivedPacketsVal'] = rec['ReceivedPacketsCnt'] - prevOUTPUT[index]['ReceivedPacketsCnt']
+		       		rec['ReceivedPacketsPerSecPct'] = rec['DiffReceivedPacketsVal'] / interval
+		       	}
+		       	// Transfered Packets
+		       	if(prevOUTPUT[index]['TransferedPacketsCnt'] == null || prevOUTPUT[index]['TransferedPacketsCnt'] == "") {
+			   		rec['DiffTransferedPacketsVal'] = rec['TransferedPacketsCnt']
+			   		rec['TransferedPacketsPerSecPct'] = rec['TransferedPacketsCnt'] / interval
+				} else {
+		       		rec['DiffTransferedPacketsVal'] = rec['TransferedPacketsCnt'] - prevOUTPUT[index]['TransferedPacketsCnt']
+		       		rec['TransferedPacketsPerSecPct'] = rec['DiffTransferedPacketsVal'] / interval
+		       	}
+		       	// Received Bytes
+		       	if(prevOUTPUT[index]['ReceivedBytes'] == null || prevOUTPUT[index]['ReceivedBytes'] == "") {
+			   		rec['DiffReceivedBytesVal'] = rec['ReceivedBytes']
+			   		rec['ReceivedBytesPerSecPct'] = rec['ReceivedBytes'] / interval
+				} else {
+		       		rec['DiffReceivedBytesVal'] = rec['ReceivedBytes'] - prevOUTPUT[index]['ReceivedBytes']
+		       		rec['ReceivedBytesPerSecPct'] = rec['DiffReceivedBytesVal'] / interval
+		       	}
+		       	// Transfered Bytes
+		       	if(prevOUTPUT[index]['TransferedBytes'] == null || prevOUTPUT[index]['TransferedBytes'] == "") {
+			   		rec['DiffTransferedBytesVal'] = rec['TransferedBytes']
+			   		rec['TransferedBytesPerSecPct'] = rec['TransferedBytes'] / interval
+				} else {
+		       		rec['DiffTransferedBytesVal'] = rec['TransferedBytes'] - prevOUTPUT[index]['TransferedBytes']
+		       		rec['TransferedBytesPerSecPct'] = rec['DiffTransferedBytesVal'] / interval
+		       	}
+			}
+    	}
+  	}
+}
 
 KEYEXPR = [_root:["NetworkCardName"] , _sequence:["ReceivedPacketsCnt","TransferedPacketsCnt"]]
-KEYEXPR._unit = ["ReceivedPacketsCnt" : "count", "TransferedPacketsCnt":"count", "ReceivedBytes":"byte", "TransferedBytes":"byte"]
+KEYEXPR._unit = [
+		"ReceivedPacketsCnt" : "count", "DiffReceivedPacketsVal": "count", "ReceivedPacketsPerSecPct": "count/sec",
+		"TransferedPacketsCnt":"count", "DiffTransferedPacketsVal": "count", "TransferedPacketsPerSecPct": "count/sec",
+		"ReceivedBytes":"byte", "DiffReceivedBytesVal": "count", "ReceivedBytesPerSecPct": "count/sec",
+		"TransferedBytes":"byte", "DiffTransferedBytesVal": "count", "TransferedBytesPerSecPct": "count/sec"
+	]
 KEYEXPR._chart = [
     [
         "type": "line",
-        "name": "Network I/O Windows - Packets transfering ",
-        "chart_columns": ["ReceivedPacketsCnt", "TransferedPacketsCnt"]
+        "name": "Network I/O Linux - Packets transfering ",
+        "chart_columns": ["DiffReceivedPacketsVal", "DiffTransferedPacketsVal"]
     ],
     [
         "type": "line",
-        "name": "Network I/O Windows - Bytes transfering ",
-        "chart_columns": ["ReceivedBytes", "TransferedBytes"]
+        "name": "Network I/O Linux - Bytes transfering ",
+        "chart_columns": ["DiffReceivedBytesVal", "DiffTransferedBytesVal"]
     ]
 ]
 SENDTYPE = "Store"

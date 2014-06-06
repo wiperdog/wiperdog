@@ -59,15 +59,48 @@ FETCHACTION = {
 	}
 	return resultData
 }
+ACCUMULATE = {
+	assert interval != null, "First time, we cannot return meaningful values"
+	if (prevOUTPUT != null) {
+    	OUTPUT.eachWithIndex { rec, index ->
+    		if (prevOUTPUT[index] != null) {
+	    		// Number Blocks Read
+			   	if(prevOUTPUT[index]['NumberBlocksReadInt'] == null || prevOUTPUT[index]['NumberBlocksReadInt'] == "") {
+			   		rec['DiffNumberBlocksReadVal'] = rec['NumberBlocksReadInt']
+			   		rec['NumberBlocksReadPerSecPct'] = rec['NumberBlocksReadInt'] / interval
+				} else {
+		       		rec['DiffNumberBlocksReadVal'] = rec['NumberBlocksReadInt'] - prevOUTPUT[index]['NumberBlocksReadInt']
+		       		rec['NumberBlocksReadPerSecPct'] = rec['DiffNumberBlocksReadVal'] / interval
+		       	}
+		       	// Number Blocks Write
+		       	if(prevOUTPUT[index]['NumberBlocksWriteInt'] == null || prevOUTPUT[index]['NumberBlocksWriteInt'] == "") {
+			   		rec['DiffNumberBlocksWriteVal'] = rec['NumberBlocksWriteInt']
+			   		rec['NumberBlocksWriteIntPerSecPct'] = rec['NumberBlocksWriteInt'] / interval
+				} else {
+		       		rec['DiffNumberBlocksWriteVal'] = rec['NumberBlocksWriteInt'] - prevOUTPUT[index]['NumberBlocksWriteInt']
+		       		rec['NumberBlocksWriteIntPerSecPct'] = rec['DiffNumberBlocksWriteVal'] / interval
+		       	}
+			}
+    	}
+  	}
+}
 
 KEYEXPR = ['_root':['DeviceName'], '_sequence':['NumberTransfersRateVal','NumberBlockReadRateVal','NumberBlockWriteRateVal']]
-KEYEXPR._unit = ["NumberTransfersRateVal":"count/sec", "NumberBlockReadRateVal":"count/sec", "NumberBlockWriteRateVal":"count/sec", "NumberBlocksReadInt":"count", "NumberBlocksWriteInt":"count"]
+KEYEXPR._unit = ["NumberTransfersRateVal":"count/sec", "NumberBlockReadRateVal":"count/sec", "NumberBlockWriteRateVal":"count/sec",
+	"NumberBlocksReadInt":"count", "DiffNumberBlocksReadVal": "count", "NumberBlocksReadPerSecPct": "count/sec",
+	"NumberBlocksWriteInt":"count", "DiffNumberBlocksWriteVal": "count", "NumberBlocksWriteIntPerSecPct": "count/sec"]
 KEYEXPR._chart = [
 	[
         "type": "line",
-        "name": "IO Systems",
+        "name": "Speed per seconds.",
         "chart_columns": ["NumberTransfersRateVal", "NumberBlockReadRateVal", "NumberBlockWriteRateVal"]
+    ],
+    [
+        "type": "area",
+        "name": "Number of read/write blocks",
+        "chart_columns": ["DiffNumberBlocksReadVal", "DiffNumberBlocksWriteVal"]
     ]
+
 ]
 
 SENDTYPE = "Store"
