@@ -315,12 +315,11 @@ public class TestJob extends HttpServlet {
 		String line = null;
 		def returnStr = ""
 		while ((line = rd.readLine()) != null) {
-			//result.append(line); 
 			returnStr+= line
 		}
 		inputStream.close()
 		return returnStr
-		//return returnStr.toString().replace("\"{","{").replace("}\"","}").replace("\\\\","\\").replace("\\n","\n").replace("\\\\n","\n").replace("\\","").replace("}\"","}")
+
 }
 
 }
