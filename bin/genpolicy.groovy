@@ -76,6 +76,7 @@ public class ProcessGeneratePolicy {
 		def listKey = []
 		def sampleRecord = dbConn[jobName].find().limit(1)
 		def mapRecord
+		def dataUnit
 		println "LIST KEY AND DATA SAMPLE OF COLLECTION: $jobName"
 		while(sampleRecord.hasNext()) {
 			def dataRecord = sampleRecord.next()
@@ -88,7 +89,11 @@ public class ProcessGeneratePolicy {
 						listKey.remove("RECORD_SEQ")
 					}
 					listKey.each {
-						println "    - Field: " + it + ", Unit: " + dataRecord['KEYEXPR']['_unit'][it] + ", Data Sample: " + mapRecord[it]
+						dataUnit = ""
+						if ((dataRecord['KEYEXPR'] != null) && (dataRecord['KEYEXPR']['_unit'] != null) && (dataRecord['KEYEXPR']['_unit'][it] != null)) {
+							dataUnit = dataRecord['KEYEXPR']['_unit'][it]
+						}
+						println "    - Field: " + it + ", Unit: " + dataUnit + ", Data Sample: " + mapRecord[it]
 					}
 				} else {
 					println "No data in mongodb !!!"
@@ -104,7 +109,11 @@ public class ProcessGeneratePolicy {
 							listKey.remove("RECORD_SEQ")
 						}
 						listKey.each {
-							println "    - Group: " + key + ", Field: " + it + ", Unit: " + dataRecord['KEYEXPR']['_unit'][it] + ", Data Sample: " + dataForKey[it]
+							dataUnit = ""
+							if ((dataRecord['KEYEXPR'] != null) && (dataRecord['KEYEXPR']['_unit'] != null) && (dataRecord['KEYEXPR']['_unit'][it] != null)) {
+								dataUnit = dataRecord['KEYEXPR']['_unit'][it]
+							}
+							println "    - Group: " + key + ", Field: " + it + ", Unit: " + dataUnit + ", Data Sample: " + dataForKey[it]
 						}
 					} else {
 						println "No data in mongodb !!!"

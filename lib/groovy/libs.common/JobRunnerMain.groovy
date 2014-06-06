@@ -1,120 +1,119 @@
-import org.wiperdog.jobmanager.internal.JobFacadeImpl
 import org.wiperdog.jobmanager.JobFacade
-import org.wiperdog.jobmanager.Constants;
-import org.wiperdog.jobmanager.JobClass;
-import org.wiperdog.jobmanager.JobResult;
 import org.osgi.framework.BundleContext
-import org.apache.felix.framework.util.Util;
-import org.osgi.framework.Constants;
-import org.osgi.framework.launch.Framework;
-import org.osgi.framework.launch.FrameworkFactory;
-import org.quartz.Scheduler;
-import org.quartz.SchedulerFactory;
-import org.quartz.Trigger;
-import org.quartz.impl.StdSchedulerFactory;
-import org.quartz.simpl.PropertySettingJobFactory;
 import org.quartz.JobDetail;
 import org.quartz.TriggerKey;
-
-public class JobRunnerMain{
+import org.osgi.framework.ServiceReference
+import org.osgi.util.tracker.ServiceTracker
+import org.osgi.util.tracker.ServiceTrackerCustomizer
+import groovy.json.JsonBuilder
+public class JobRunnerMain implements JobRunnerMainService{
 	GroovyShell shell;
 	def binding
-	SchedulerFactory sf;
-	Scheduler scheduler;
 	def context
 	JobFacade jobfacade
-	TriggerKey trgKey = null
-	
+	def jobdsl
+
 	public JobRunnerMain(shell, context){
 		this.shell = shell
 		binding = shell.getContext()
 		this.context = context
+		def trackerJF = new ServiceTracker(context, JobFacade.class.getName(),new JFServiceTracker())
+		trackerJF.open()
+		def trackerJobDsl = new ServiceTracker(context, JobDSLService.class.getName(), new JobDslServiceTracker())
+		trackerJobDsl.open()
 	}
 	
 	public void executeJob(String jobFileName, String trig){
 		try {
-			// Initialize jobfacade
-			sf = new StdSchedulerFactory();
-			scheduler = sf.getScheduler();
-			PropertySettingJobFactory jfactory = new PropertySettingJobFactory();
-			jfactory.setWarnIfPropertyNotFound(false);
-			scheduler.setJobFactory(jfactory);
-			scheduler.start();
-			jobfacade = new JobFacadeImpl(scheduler);
+			def jobName
+			def jobFile = new File(jobFileName) 
+			jobFile.getText().eachLine{ 
+				if(it.trim().replace(" ","").contains("JOB=")){
+					jobName = shell.evaluate(it.split("=")[1])["name"]
+				}
+			}
+			def dest = '[[http:"http://localhost:8089/runjob/data"]]'
 			
-			// Init JobDsl
-			Class jobDslClass = shell.getClassLoader().loadClass('JobDsl');
-			Object jobDsl_obj = jobDslClass.newInstance(shell, jobfacade, context)
-
-			Class jobLoaderClass = shell.getClassLoader().loadClass('JobLoader');
-			Object jobLoader_obj = jobLoaderClass.newInstance(context, shell)
-				jobLoader_obj.jobdsl = jobDsl_obj
-			// Process job file
-			// def jobFile = new File(binding.getVariable('felix_home') + "/" + jobFileName)
-
-			def jobFile = new File(jobFileName)
-			if(!jobFile.isAbsolute()){
-				jobFile = new File(binding.getVariable('felix_home') + "/" + jobFileName)
+			def jobText = jobFile.getText().replaceAll("\nDEST.*=.*","\nDEST=${dest}")
+			if(!jobText.contains("\nDEST")) {
+				jobText+="\nDEST=${dest}"
 			}
-			if( jobFile.exists() ) {
-	
-				jobLoader_obj.processFile(jobFile)
-				// Get job name and schedule job
-				def JOBvariable = null
-				jobFile.eachLine { 
-						if(it.trim().contains("JOB=") || it.trim().contains("JOB =")) {
-							JOBvariable = it
-							return ;
-						}
-				}
-				def jobParams = null
-				def jobName = null
-				if(JOBvariable != null){
-					jobParams = shell.evaluate(JOBvariable)
-					if(jobParams != null && jobParams['name'] != null){
-						jobName = jobParams['name']
-					}
-				}else{
-					def fileName = jobFile.getName()
-					jobName = fileName.substring(0, fileName.indexOf('.job'))
-				}
-				if(jobName != null){
-					Trigger trigger = null
-					if(trig != null){
-						if (trig ==~ /[^ ]+[ ]+[^ ]+[ ]+[^ ]+[ ]+[^ ]+[ ]+[^ ]+[ ]+[^ ]+/ ||
-							trig ==~ /[^ ]+[ ]+[^ ]+[ ]+[^ ]+[ ]+[^ ]+[ ]+[^ ]+[ ]+[^ ]+[ ]+[^ ]+/ ) {
-							// create trigger.
-							// created trigger will be registered automatically.
-							trigger = jobfacade.createTrigger(jobName, trig)
-						} else if (trig == "now" || trig == "NOW") {
-							// create trigger.
-							// created trigger will be registered automatically.
-							trigger = jobfacade.createTrigger(jobName, 0)
-						} else if (trig.endsWith('i')) {
-							long interval = Long.parseLong(trig.substring(0,trig.lastIndexOf('i')))*1000
-							trigger = jobfacade.createTrigger(jobName, 0, interval)
-						}else if (trig == 'delete'){
-							trigger = jobfacade.getTrigger(jobName)
-							jobfacade.unscheduleJob(trigger)							
-						}else {
-							long delay = Long.parseLong(trig)
-							trigger = jobfacade.createTrigger(jobName, delay)
-						}
-					}else{
-						trigger = jobfacade.createTrigger(jobName, 0)
-					}
-					if(trigger != null){
-						trgKey = trigger.getKey()
-						def job = jobfacade.getJob(jobName)
-						jobfacade.scheduleJob(job, trigger);
-					}
-				}
-			} else {
-				println "--------- File " + jobFile + " not found ! ---------" 
-				return
+			def tmpJobFile = new File(System.getProperty("felix.home") + File.separator + "tmp" + File.separator + jobFile.getName())
+			if(!tmpJobFile.exists()) {
+				tmpJobFile.createNewFile()
 			}
+			tmpJobFile.setText(jobText)
+			jobdsl.processJob(tmpJobFile)
+			def jobObject = jobfacade.getJob(jobName)
+			if(trig == null || trig == "" ) {
+				trig = "now"
+			} 
+			def trigger = jobdsl.processCreateTrigger(trig, jobName)
+			if(jobObject != null ) {
+				jobfacade.scheduleJob(jobObject,trigger)
+			}
+
 		} catch (Exception ex) {
-			println ex
+			ex.printStackTrace()
 		}
 	}
+
+	public void removeJob(String jobFileName){
+		try {
+			def jobName 
+			new File(jobFileName).getText().eachLine{ 
+				if(it.trim().replace(" ","").contains("JOB=")){
+					jobName = shell.evaluate(it.split("=")[1])["name"]
+					def jobRemove = jobfacade.getJob(jobName)
+					if(jobRemove != null) {
+						jobfacade.removeJob(jobRemove)
+					}
+				}
+			}
+		} catch (Exception ex) {
+			ex.printStackTrace()
+		}
+	}
+	class JFServiceTracker implements ServiceTrackerCustomizer {
+	public Object addingService(ServiceReference reference) {
+		def oservice = context.getService(reference);
+		if (oservice instanceof JobFacade) {
+			jobfacade = oservice
+		}
+		return oservice
+	}
+
+	/**
+	 * ServiceTrackerCustormizer.modifiedService
+	 */
+	public void modifiedService(ServiceReference reference, Object service) {
+	}
+
+	/**
+	 * ServiceTrackerCustomizer.removedService
+	 */
+	public void removedService(ServiceReference reference, Object service)  {
+
+	}
+}
+class JobDslServiceTracker implements ServiceTrackerCustomizer {
+	public Object addingService(ServiceReference reference) {
+		def oservice = context.getService(reference);
+		jobdsl = oservice
+		return oservice
+	}
+
+	/**
+	 * ServiceTrackerCustormizer.modifiedService
+	 */
+	public void modifiedService(ServiceReference reference, Object service) {
+	}
+
+	/**
+	 * ServiceTrackerCustomizer.removedService
+	 */
+	public void removedService(ServiceReference reference, Object service)  {
+	}
+}
+
 }
