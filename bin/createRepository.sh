@@ -1,23 +1,16 @@
 #!/bin/bash
+#
+#   <Usage>
+#
+#	./createRepository.sh [-l list file] [-o download directory]
+#
 
+# 引数にリストファイル[-l] が指定されないときのデフォルト値 
 LISTBUNDLE=`cd $(dirname $0);cd ..;pwd`"/etc/ListBundle.csv"
 POM="./pom.xml"
 
-## 出力先のローカルリポジトリを変更したい場合は指定する
-## REPOSITORY="/home/user/work"
-
-## for debug
-## PATH_LOG="createRepository_"`date +'%Y%m%d%H%M'`".log"
-
-
 ## /etc/ListBundle.csv からpom.xml を作成する
 createPom(){
-
-    # ListBundle.csv 存在チェック
-	if [ ! -e ${LISTBUNDLE} ] ; then
-		echo [$LISTBUNDLE] "not found."
-		return 1
-	fi
 
 	## ListBundle.csv から pom.xml を作成
 	echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" > $POM
@@ -83,14 +76,13 @@ createPom(){
 ## create Local Repository
 execCommand() {
 
-	## ダウンロード先を指定しない($M2_HOME/repository)
-	mvn dependency:go-offline
-
-	## ダウンロード先を指定する
-##	mvn dependency:go-offline -Dmaven.repo.local=${REPOSITORY}
-
-## for debug
-##	mvn dependency:go-offline -Dmaven.repo.local=${REPOSITORY} | tee -a $PATH_LOG
+	if [ "$REPOSITORY" != "" ] ;then
+		## ダウンロード先を指定する
+		mvn dependency:go-offline -Dmaven.repo.local=${REPOSITORY}
+	else
+		## ダウンロード先を指定しない($M2_HOME/repository)
+		mvn dependency:go-offline
+	fi
 
 	return 0
 }
@@ -99,17 +91,25 @@ execCommand() {
 ##----------------------------------------------------------------------------##
 ## start: main()
 
-	FLAG_FIND="FALSE"
+	LIST_FIND="FALSE"
+	OUT_FIND="FALSE"
+	REPOSITORY=""
+
 	while [ "$1" != "" ]
 	do
-		if [ "$1" = "-f" ] ;then
-			FLAG_FIND="TRUE"
+		if [ "$1" = "-l" ] ;then
+			LIST_FIND="TRUE"
+		elif [ "$1" = "-o" ] ;then
+			OUT_FIND="TRUE"
+		elif [ "$LIST_FIND" = "TRUE" ] ;then 
+			PATH_CSV="$1"
+			LIST_FIND="FALSE"
+		elif [ "$OUT_FIND" = "TRUE" ] ;then
+			REPOSITORY="$1"
+			OUT_FIND="FALSE"
 		else
-			if [ "$FLAG_FIND" = "TRUE" ] ;then
-				PATH_CSV="$1"
-			else
-				FLAG_FIND="FLASE"
-			fi
+			LIST_FIND="FLASE"
+			OUT_FIND="FLASE"
 		fi
 		shift
 	done
@@ -118,11 +118,23 @@ execCommand() {
 		LISTBUNDLE="$PATH_CSV"
 	fi
 
-	createPom
-	if [ $? -eq 0 ] ; then
-		echo "execute mvn dependency:go-offline....."
-		execCommand
+    	# ListBundle.csv 存在チェック
+	if [ ! -e ${LISTBUNDLE} ] ; then
+		echo [$LISTBUNDLE] " file not found."
+		exit 1
 	fi
+
+	# ローカルリポジトリ存在チェック 
+	if [ "$REPOSITORY" != "" ] ;then
+		if [ ! -d "$REPOSITORY" ] ;then
+			echo [$REPOSITORY] " directory not found."
+			exit 1
+		fi
+	fi
+
+	createPom
+	echo "execute mvn dependency:go-offline....."
+	execCommand
 
 ## end  : main()
 ##----------------------------------------------------------------------------##
