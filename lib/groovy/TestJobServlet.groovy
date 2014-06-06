@@ -9,6 +9,12 @@ import javax.servlet.http.HttpServletResponse
 import groovy.json.*
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity 
 
 public class TestJob extends HttpServlet {
 	static final String JOB_DIR = MonitorJobConfigLoader.getProperties().get(ResourceConstants.JOB_DIRECTORY)
@@ -124,7 +130,6 @@ public class TestJob extends HttpServlet {
 	void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		resp.setContentType("json")
 		resp.addHeader("Access-Control-Allow-Origin", "*")
-
 		PrintWriter out = resp.getWriter()
 		def respMessage = [:]
 		def resultRun	= ""
@@ -137,10 +142,10 @@ public class TestJob extends HttpServlet {
 			def jobContent = object['data']
 			def mapJob = getTestJobScript("")
 			def action = object['action']
-			def jobDirPath = ""
+			def jobDirPath = JOB_DIR
 			if(action == 'run') {
 				jobContent = getTestJobScript(object['data'])
-				jobDirPath = JOB_DIR +"/tmpTestJob/"
+				jobDirPath = JOB_DIR +"/tmpTestJob"
 			}
 			File jobDir = new File(jobDirPath)
 			if(!jobDir.exists()){
@@ -153,49 +158,44 @@ public class TestJob extends HttpServlet {
 			}
 			//Save to file
 			writeToFile(jobFile, jobContent)
-
 			if(action == 'run') {
-				def command = ""
-				if (System.properties['os.name'].toLowerCase().contains('windows')) {
-					command = 'cmd /c jobrunner -f ' + jobFile.toString()
+				String url = "http://localhost:8089/runjob"
+				HttpClient client = new DefaultHttpClient();
+				// initialze a new builder and give a default URL
+				def postBody = [job: jobFile.getCanonicalPath()]
+				def strBody = (new JsonBuilder(postBody)).toString()
+				HttpPost post = new HttpPost(url);
+				post.addHeader("accept", "application/json");
+				post.addHeader("Connection", "close");
+				post.addHeader("Access-Control-Allow-Origin", "*")
+				StringEntity se = new StringEntity(strBody); 
+				post.setEntity(se);
+				def response = client.execute(post);
+		        def responseData = getTextFromStream(response.getEntity().getContent())
+		        def objData = slurper.parseText(responseData)
+				if(objData != null && objData.data != null) {
+					respMessage = ["status":"success" , "jobData":objData.data,"log" : ""]
 				} else {
-					command = './jobrunner.sh -f ' + jobFile.toString()
+					if(objData != null && objData.log != null ) {
+						respMessage = ["status":"failed" , "jobData": "","log": objData.log]
+					} else {
+						respMessage = ["status":"failed" , "jobData": "","log": "Failed to run job - Unknown error"]
+					}
+					
 				}
-				Process p = command.execute();
-				InputStream is = p.getInputStream()
-				// Get encoding
-				def encoding = "SJIS"
-				InputStreamReader isr = new InputStreamReader(is, encoding)
-				BufferedReader reader = new BufferedReader(isr)
-				String resultData = ""
-				String line = reader.readLine();
-				while(line != null) {
-					resultData+= line + "\n"
-					line = reader.readLine()
-				}
-				//Create macher to get Job data
-				String macherPattern = "(\\n\\{\\n)(.*)(\\n\\}\\n)"
-				Pattern pattern = Pattern.compile(macherPattern, Pattern.DOTALL);
-				Matcher matcher = pattern.matcher(resultData);
-
-				String jobData = ""
-				while(matcher.find())
-				{
-					jobData = matcher.group(2)
-				}
-				respMessage = ["status":"success","jobData":jobData , "log": resultData]
+				
 				jobFile.delete()
 			} else {
-				respMessage = ["status":"success","jobData":"" , "log": ""]
+				respMessage = ["status":"success", "log": ""]
 			}
 		}
 		catch(Exception e) {
-			println e
+			e.printStackTrace()
 			respMessage = ["status":"failed","jobData":e , "log": ""]
 		}
 
 		def builder = new JsonBuilder(respMessage)
-		out.print(builder.toString())
+		out.print(builder.toPrettyString())
 	}
 	
 	/**
@@ -309,6 +309,19 @@ public class TestJob extends HttpServlet {
 	def writeToFile(dataFile, data) {
 		dataFile.write(data, CHARSET)
 	}
+	def getTextFromStream (InputStream inputStream ){
+		BufferedReader rd = new BufferedReader(new InputStreamReader(inputStream));
+		StringBuffer result = new StringBuffer();
+		String line = null;
+		def returnStr = ""
+		while ((line = rd.readLine()) != null) {
+			returnStr+= line
+		}
+		inputStream.close()
+		return returnStr
+
+	}
+
 }
 
 def testJobServlet

@@ -55,7 +55,8 @@ def doBootStep() {
 		def trgListener = rootloader.loadClass("TriggerListener").newInstance([ctx] as Object[] )
 		def instListener = rootloader.loadClass("JobInstanceListener").newInstance([ctx] as Object[] )
 		def jobClassListener = rootloader.loadClass("JobClassListener").newInstance([ctx] as Object[] )
-		
+		def jobRunnerMain = rootloader.loadClass("JobRunnerMain").newInstance([shell,ctx] as Object[] )
+		def jobRunnerMainService = rootloader.loadClass("JobRunnerMainService")
         // OSGi serviceに渡すproperty
         def props_jobsvc = new java.util.Hashtable(props);
         // 監視系ジョブ専用loaderをdirectory-watcherとして登録(未実装)
@@ -64,6 +65,7 @@ def doBootStep() {
 		 ctx.registerService(clsListener.getName(), trgListener, null)
 		 ctx.registerService(clsListener.getName(), instListener, null)
 		 ctx.registerService(clsListener.getName(), jobClassListener, null)		 
+		 ctx.registerService(jobRunnerMainService.getName(), jobRunnerMain, null)	
 		 def restServiceLoader = rootloader.loadClass("RestServiceLoader").newInstance([ctx] as Object[] )
 }
 
