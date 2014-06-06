@@ -320,7 +320,7 @@ public class TestJob extends HttpServlet {
 		inputStream.close()
 		return returnStr
 
-}
+	}
 
 }
 
