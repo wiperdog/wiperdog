@@ -25,7 +25,7 @@ class JobRunOneShot{
 		def listData = []
 		request.addHeader("Access-Control-Allow-Origin", "*")
 		response.addHeader("Access-Control-Allow-Origin", "*")
-		response.addHeader("Content-type", "application/json")
+		response.setContentType("application/json")
 		//Get list file from xwiki
 		def dataReq =  (new ChannelBufferInputStream(request.getBody())).getText()
 		def objectData = sluper.parseText(dataReq)
@@ -63,29 +63,42 @@ class JobRunOneShot{
 			currentTime = System.currentTimeMillis()
 			Thread.sleep(1000)
 		}
-		StringBuilder logStr = new StringBuilder()
+		def returnData = [:]
+
 		if(jobResult == null ) {
+			StringBuilder logStr = new StringBuilder()
 			//Get log message from wiperdog/log
 			def logFile = new File(System.getProperty("felix.home") + File.separator + "log" + File.separator + "wiperdog.log")
 			Pattern pattern = Pattern.compile("\\[\\d{4}\\/\\d{2}\\/\\d{2}\\s\\d{2}:\\d{2}:\\d{2}.\\d{3}\\]");
 			SimpleDateFormat sf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSS")
-			logFile.eachLine{ line->
+			def acceptLineNum 
+			logFile.eachLine{ line,line_num ->
 				Matcher matcher = pattern.matcher(line);
 				if (matcher.find()) {
 					def logTime = matcher[0].replace("[","").replace("]","")
 					def logTimeInMilis = sf.parse(logTime).getTime()
 					if( ( logTimeInMilis >= startRunJobTime ) &&  ( logTimeInMilis <= expirationTime ) ) {
+						acceptLineNum = line_num
 						logStr.append(line + "\n")
-					}					
+					} else {
+						if( logTimeInMilis > expirationTime ) {
+							acceptLineNum = null
+						}
+					}
+				} else {
+					if(acceptLineNum != null && line_num > acceptLineNum ) {
+						logStr.append(line + "\n")	
+					}
 				}
 			}
-			jobResult = "------LOG ERROR------: \n"
-			jobResult += logStr
+			returnData["log"] = logStr.toString()
+		} else {
+			returnData["data"] = jobResult
 		}
-		return jobResult
+		return returnData
 	}
+	//runjob/data
 	public String update(Request request, Response response){
-
 		request.addHeader("Access-Control-Allow-Origin", "*")
 		response.addHeader("Access-Control-Allow-Origin", "*")
 		def responseData = [:]
@@ -96,18 +109,10 @@ class JobRunOneShot{
 		return null
 	}
 
-	// get  /runjob/data
 	public Map<String,Object> read(Request request, Response response){
-		request.addHeader("Access-Control-Allow-Origin", "*")
-		response.addHeader("Access-Control-Allow-Origin", "*")
-		def responseData = [:]
-		def dataReq =  (new ChannelBufferInputStream(request.getBody())).getText()
-		def objectData = sluper.parseText(dataReq)
 		return objectData
 	}
 	public String delete(Request request, Response response){
-		println "delete"
-		return "delete_METHOD"
+		return null
 	}
-	
 }
