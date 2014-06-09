@@ -60,27 +60,29 @@ FETCHACTION = {
 	return resultData
 }
 ACCUMULATE = {
-	assert interval != null, "First time, we cannot return meaningful values"
-	if (prevOUTPUT != null) {
-    	OUTPUT.eachWithIndex { rec, index ->
-    		if (prevOUTPUT[index] != null) {
-	    		// Number Blocks Read
-			   	if(prevOUTPUT[index]['NumberBlocksReadInt'] == null || prevOUTPUT[index]['NumberBlocksReadInt'] == "") {
-			   		rec['DiffNumberBlocksReadVal'] = rec['NumberBlocksReadInt']
-			   		rec['NumberBlocksReadPerSecPct'] = rec['NumberBlocksReadInt'] / interval
-				} else {
-		       		rec['DiffNumberBlocksReadVal'] = rec['NumberBlocksReadInt'] - prevOUTPUT[index]['NumberBlocksReadInt']
-		       		rec['NumberBlocksReadPerSecPct'] = rec['DiffNumberBlocksReadVal'] / interval
-		       	}
-		       	// Number Blocks Write
-		       	if(prevOUTPUT[index]['NumberBlocksWriteInt'] == null || prevOUTPUT[index]['NumberBlocksWriteInt'] == "") {
-			   		rec['DiffNumberBlocksWriteVal'] = rec['NumberBlocksWriteInt']
-			   		rec['NumberBlocksWriteIntPerSecPct'] = rec['NumberBlocksWriteInt'] / interval
-				} else {
-		       		rec['DiffNumberBlocksWriteVal'] = rec['NumberBlocksWriteInt'] - prevOUTPUT[index]['NumberBlocksWriteInt']
-		       		rec['NumberBlocksWriteIntPerSecPct'] = rec['DiffNumberBlocksWriteVal'] / interval
-		       	}
-			}
+  	assert interval != null, "First time, we cannot return meaningful values"
+  	if(prevOUTPUT != null) {
+    	OUTPUT.each { rec ->
+	      	def checkExists = false
+	      	prevOUTPUT.each { prevREC ->
+	        	if (prevREC.DeviceName == rec.DeviceName) {
+	        		// Number Blocks Read
+	          		rec['DiffNumberBlocksReadVal'] = rec['NumberBlocksReadInt'] - prevREC['NumberBlocksReadInt']
+	          		rec['NumberBlocksReadPerSecPct'] = rec['DiffNumberBlocksReadVal'] / interval
+	          		// Number Blocks Write
+	          		rec['DiffNumberBlocksWriteVal'] = rec['NumberBlocksWriteInt'] - prevREC['NumberBlocksWriteInt']
+	          		rec['NumberBlocksWriteIntPerSecPct'] = rec['DiffNumberBlocksWriteVal'] / interval
+	          		checkExists = true
+	        	}
+	      	}
+	      	if(!checkExists) {
+	      		// Number Blocks Read
+          		rec['DiffNumberBlocksReadVal'] = rec['NumberBlocksReadInt']
+	          		rec['NumberBlocksReadPerSecPct'] = rec['DiffNumberBlocksReadVal'] / interval
+	        	// Number Blocks Write
+          		rec['DiffNumberBlocksWriteVal'] = rec['NumberBlocksWriteInt']
+          		rec['NumberBlocksWriteIntPerSecPct'] = rec['DiffNumberBlocksWriteVal'] / interval
+	      	}
     	}
   	}
 }
