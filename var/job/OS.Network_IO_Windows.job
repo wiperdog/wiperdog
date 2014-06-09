@@ -104,20 +104,20 @@ ACCUMULATE = {
 
 KEYEXPR = [_root:["NetworkCardName"] , _sequence:["PacketsReceivedCnt","BytesReceivedVal"]]
 KEYEXPR._unit = [
-    "PacketsReceivedCnt" : "count", "DiffPacketsReceivedVal": "count", "PacketsReceivedPerSecPct": "count/sec",
-    "PacketsSentCnt":"count", "DiffPacketsSentVal": "count", "PacketsSentPerSecPct": "count/sec",
-    "BytesReceivedCnt":"byte", "DiffBytesReceivedVal": "byte", "BytesReceivedPerSecPct": "byte/sec",
-    "BytesSentCnt":"byte", "DiffBytesSentVal": "byte", "BytesSentPerSecPct": "byte/sec"
+    "PacketsReceivedCnt" : "count", "DiffPacketsReceivedVal": "count/interval", "PacketsReceivedPerSecPct": "count/sec",
+    "PacketsSentCnt":"count", "DiffPacketsSentVal": "count/interval", "PacketsSentPerSecPct": "count/sec",
+    "BytesReceivedCnt":"byte", "DiffBytesReceivedVal": "byte/interval", "BytesReceivedPerSecPct": "byte/sec",
+    "BytesSentCnt":"byte", "DiffBytesSentVal": "byte/interval", "BytesSentPerSecPct": "byte/sec"
   ]
 KEYEXPR._chart = [
     [
         "type": "line",
-        "name": "Network I/O Windows - Packets transfering ",
+        "name": "Network I/O Windows - Packets transfering",
         "chart_columns": ["DiffPacketsReceivedVal", "DiffPacketsSentVal"]
     ],
     [
         "type": "line",
-        "name": "Network I/O Windows - Bytes transfering ",
+        "name": "Network I/O Windows - Bytes transfering",
         "chart_columns": ["DiffBytesReceivedVal", "DiffBytesSentVal"]
 
     ]

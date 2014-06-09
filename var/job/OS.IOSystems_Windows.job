@@ -137,23 +137,23 @@ ACCUMULATE = {
 
 KEYEXPR = ['_sequence':['DiskTransfersVal','DiskReadsVal','DiskWritesVal']]
 KEYEXPR._unit = [
-		"DiskBytesVal":"byte", "DiffDiskBytesVal": "byte", "DiskBytesPerSecPct": "byte/sec",
-		"DiskReadBytesVal":"byte", "DiffDiskReadBytesVal": "byte", "DiskReadBytesPerSecPct": "byte/sec",
-		"DiskReadsVal":"count", "DiffDiskReadsVal": "count", "DiskReadsPerSecPct": "count/sec",
-		"DiskTransfersVal":"count", "DiffDiskTransfersVal": "count", "DiskTransfersPerSecPct": "count/sec",
-		"DiskWriteBytesVal":"byte", "DiffDiskWriteBytesVal": "byte", "DiskWriteBytesPerSecPct": "byte/sec",
-		"DiskWritesVal":"count", "DiffDiskWritesVal": "count", "DiskWritesPerSecPct": "count/sec",
-		"SplitIOVal":"byte",  "DiffSplitIOVal": "byte", "SplitIOPerSecPct": "byte/sec"
+		"DiskBytesVal":"byte", "DiffDiskBytesVal": "byte/interval", "DiskBytesPerSecPct": "byte/sec",
+		"DiskReadBytesVal":"byte", "DiffDiskReadBytesVal": "byte/interval", "DiskReadBytesPerSecPct": "byte/sec",
+		"DiskReadsVal":"count", "DiffDiskReadsVal": "count/interval", "DiskReadsPerSecPct": "count/sec",
+		"DiskTransfersVal":"count", "DiffDiskTransfersVal": "count/interval", "DiskTransfersPerSecPct": "count/sec",
+		"DiskWriteBytesVal":"byte", "DiffDiskWriteBytesVal": "byte/interval", "DiskWriteBytesPerSecPct": "byte/sec",
+		"DiskWritesVal":"count", "DiffDiskWritesVal": "count/interval", "DiskWritesPerSecPct": "count/sec",
+		"SplitIOVal":"byte",  "DiffSplitIOVal": "byte/interval", "SplitIOPerSecPct": "byte/sec"
 	]
 KEYEXPR._chart = [
 	[
         "type": "line",
-        "name": "Data byte tranfer.",
+        "name": "Data byte tranfer",
         "chart_columns": ["DiffDiskBytesVal", "DiffDiskReadBytesVal", "DiffDiskWriteBytesVal", "DiffSplitIOVal"]
     ],
     [
         "type": "line",
-        "name": "Number of access times.",
+        "name": "Number of access times",
         "chart_columns": ["DiffDiskReadsVal", "DiffDiskTransfersVal", "DiffDiskWritesVal"]
     ]
 ]
