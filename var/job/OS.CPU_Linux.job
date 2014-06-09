@@ -128,15 +128,15 @@ KEYEXPR = ['_sequence':['NumberTransfersRateVal','NumberBlockReadRateVal','Numbe
 KEYEXPR._unit = ["UserLevelPct":"%", "UserLevelWithNicePriPct":"%", "SystemLevelPct":"%", "SystemWithIOPct":"%", "TimetoInterruptsPct":"%", "TimetoSoftwareInterruptPct":"%", "StealPct":"%", "IdlePct":"%", "UsedPct":"%", "TotalInterruptsReceivedRateVal":"count/sec"]
 KEYEXPR._chart = [
 	[
-        "type": "line",
-        "name": "Information Usage CPU",
-        "chart_columns": ["UsedPct", "IdlePct"]
-    ],
-    [
-        "type": "area",
-        "name": "Activities of CPU",
-        "chart_columns": ["UserLevelPct", "UserLevelWithNicePriPct", "SystemLevelPct", "SystemWithIOPct", "TimetoInterruptsPct", "TimetoSoftwareInterruptPct", "StealPct", "TotalInterruptsReceivedRateVal"]
-    ]
+		"type": "line",
+		"name": "Information Usage CPU",
+		"chart_columns": ["UsedPct", "IdlePct"]
+	],
+	[
+		"type": "area",
+		"name": "Activities of CPU",
+		"chart_columns": ["UserLevelPct", "UserLevelWithNicePriPct", "SystemLevelPct", "SystemWithIOPct", "TimetoInterruptsPct", "TimetoSoftwareInterruptPct", "StealPct", "TotalInterruptsReceivedRateVal"]
+	]
 ]
 
 SENDTYPE = "Store"

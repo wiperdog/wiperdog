@@ -116,22 +116,22 @@ ACCUMULATE = {
   	}
 }
 
-KEYEXPR = [_root:["NetworkCardName"] , _sequence:["ReceivedPacketsCnt","TransferedPacketsCnt"]]
+KEYEXPR = [_root:["NetworkCardName"], _sequence:["ReceivedPacketsCnt","TransferedPacketsCnt"]]
 KEYEXPR._unit = [
-		"ReceivedPacketsCnt" : "count", "DiffReceivedPacketsVal": "count", "ReceivedPacketsPerSecPct": "count/sec",
-		"TransferedPacketsCnt":"count", "DiffTransferedPacketsVal": "count", "TransferedPacketsPerSecPct": "count/sec",
-		"ReceivedBytes":"byte", "DiffReceivedBytesVal": "byte", "ReceivedBytesPerSecPct": "byte/sec",
-		"TransferedBytes":"byte", "DiffTransferedBytesVal": "byte", "TransferedBytesPerSecPct": "byte/sec"
+		"ReceivedPacketsCnt" : "count", "DiffReceivedPacketsVal": "count/interval", "ReceivedPacketsPerSecPct": "count/sec",
+		"TransferedPacketsCnt":"count", "DiffTransferedPacketsVal": "count/interval", "TransferedPacketsPerSecPct": "count/sec",
+		"ReceivedBytes":"byte", "DiffReceivedBytesVal": "byte/interval", "ReceivedBytesPerSecPct": "byte/sec",
+		"TransferedBytes":"byte", "DiffTransferedBytesVal": "byte/interval", "TransferedBytesPerSecPct": "byte/sec"
 	]
 KEYEXPR._chart = [
     [
         "type": "line",
-        "name": "Network I/O Linux - Packets transfering ",
+        "name": "Network I/O Linux - Packets transfering",
         "chart_columns": ["DiffReceivedPacketsVal", "DiffTransferedPacketsVal"]
     ],
     [
         "type": "line",
-        "name": "Network I/O Linux - Bytes transfering ",
+        "name": "Network I/O Linux - Bytes transfering",
         "chart_columns": ["DiffReceivedBytesVal", "DiffTransferedBytesVal"]
     ]
 ]

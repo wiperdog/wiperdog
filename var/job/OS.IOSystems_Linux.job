@@ -89,11 +89,11 @@ ACCUMULATE = {
 
 KEYEXPR = ['_root':['DeviceName'], '_sequence':['NumberTransfersRateVal','NumberBlockReadRateVal','NumberBlockWriteRateVal']]
 KEYEXPR._unit = ["NumberTransfersRateVal":"count/sec", "NumberBlockReadRateVal":"count/sec", "NumberBlockWriteRateVal":"count/sec",
-	"NumberBlocksReadInt":"count", "DiffNumberBlocksReadVal": "count", "NumberBlocksReadPerSecPct": "count/sec",
-	"NumberBlocksWriteInt":"count", "DiffNumberBlocksWriteVal": "count", "NumberBlocksWriteIntPerSecPct": "count/sec"]
+	"NumberBlocksReadInt":"count", "DiffNumberBlocksReadVal": "count/interval", "NumberBlocksReadPerSecPct": "count/sec",
+	"NumberBlocksWriteInt":"count", "DiffNumberBlocksWriteVal": "count/interval", "NumberBlocksWriteIntPerSecPct": "count/sec"]
 KEYEXPR._chart = [
     [
-        "type": "area",
+        "type": "line",
         "name": "Number of read/write blocks",
         "chart_columns": ["DiffNumberBlocksReadVal", "DiffNumberBlocksWriteVal"]
     ]
