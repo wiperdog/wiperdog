@@ -59,14 +59,43 @@ FETCHACTION = {
 	}
 	return resultData
 }
+ACCUMULATE = {
+  	assert interval != null, "First time, we cannot return meaningful values"
+  	if(prevOUTPUT != null) {
+    	OUTPUT.each { rec ->
+	      	def checkExists = false
+	      	prevOUTPUT.each { prevREC ->
+	        	if (prevREC.DeviceName == rec.DeviceName) {
+	        		// Number Blocks Read
+	          		rec['DiffNumberBlocksReadVal'] = rec['NumberBlocksReadInt'] - prevREC['NumberBlocksReadInt']
+	          		rec['NumberBlocksReadPerSecPct'] = rec['DiffNumberBlocksReadVal'] / interval
+	          		// Number Blocks Write
+	          		rec['DiffNumberBlocksWriteVal'] = rec['NumberBlocksWriteInt'] - prevREC['NumberBlocksWriteInt']
+	          		rec['NumberBlocksWriteIntPerSecPct'] = rec['DiffNumberBlocksWriteVal'] / interval
+	          		checkExists = true
+	        	}
+	      	}
+	      	if(!checkExists) {
+	      		// Number Blocks Read
+          		rec['DiffNumberBlocksReadVal'] = rec['NumberBlocksReadInt']
+	          		rec['NumberBlocksReadPerSecPct'] = rec['DiffNumberBlocksReadVal'] / interval
+	        	// Number Blocks Write
+          		rec['DiffNumberBlocksWriteVal'] = rec['NumberBlocksWriteInt']
+          		rec['NumberBlocksWriteIntPerSecPct'] = rec['DiffNumberBlocksWriteVal'] / interval
+	      	}
+    	}
+  	}
+}
 
 KEYEXPR = ['_root':['DeviceName'], '_sequence':['NumberTransfersRateVal','NumberBlockReadRateVal','NumberBlockWriteRateVal']]
-KEYEXPR._unit = ["NumberTransfersRateVal":"count/sec", "NumberBlockReadRateVal":"count/sec", "NumberBlockWriteRateVal":"count/sec", "NumberBlocksReadInt":"count", "NumberBlocksWriteInt":"count"]
+KEYEXPR._unit = ["NumberTransfersRateVal":"count/sec", "NumberBlockReadRateVal":"count/sec", "NumberBlockWriteRateVal":"count/sec",
+	"NumberBlocksReadInt":"count", "DiffNumberBlocksReadVal": "count", "NumberBlocksReadPerSecPct": "count/sec",
+	"NumberBlocksWriteInt":"count", "DiffNumberBlocksWriteVal": "count", "NumberBlocksWriteIntPerSecPct": "count/sec"]
 KEYEXPR._chart = [
-	[
-        "type": "line",
-        "name": "IO Systems",
-        "chart_columns": ["NumberTransfersRateVal", "NumberBlockReadRateVal", "NumberBlockWriteRateVal"]
+    [
+        "type": "area",
+        "name": "Number of read/write blocks",
+        "chart_columns": ["DiffNumberBlocksReadVal", "DiffNumberBlocksWriteVal"]
     ]
 ]
 

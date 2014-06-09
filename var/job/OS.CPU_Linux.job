@@ -1,7 +1,7 @@
 /**
  * Monitoring CPU statistics.<br/>
  * <p>
- * Global average activities  among  all processors are also reported.<br/>
+ * Global average activities among all processors are also reported.<br/>
  * Need to install mpstat with command: sudo apt-get install mpstat.<br/>
  * </p>
  * @targetVersion Ubuntu 12.04
@@ -133,9 +133,9 @@ KEYEXPR._chart = [
         "chart_columns": ["UsedPct", "IdlePct"]
     ],
     [
-        "type": "line",
-        "name": "Total Interrupts Received",
-        "chart_columns": ["TotalInterruptsReceivedRateVal"]
+        "type": "area",
+        "name": "Activities of CPU",
+        "chart_columns": ["UserLevelPct", "UserLevelWithNicePriPct", "SystemLevelPct", "SystemWithIOPct", "TimetoInterruptsPct", "TimetoSoftwareInterruptPct", "StealPct", "TotalInterruptsReceivedRateVal"]
     ]
 ]
 
