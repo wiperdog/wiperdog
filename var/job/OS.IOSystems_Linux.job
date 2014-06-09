@@ -92,17 +92,11 @@ KEYEXPR._unit = ["NumberTransfersRateVal":"count/sec", "NumberBlockReadRateVal":
 	"NumberBlocksReadInt":"count", "DiffNumberBlocksReadVal": "count", "NumberBlocksReadPerSecPct": "count/sec",
 	"NumberBlocksWriteInt":"count", "DiffNumberBlocksWriteVal": "count", "NumberBlocksWriteIntPerSecPct": "count/sec"]
 KEYEXPR._chart = [
-	[
-        "type": "line",
-        "name": "Speed per seconds.",
-        "chart_columns": ["NumberTransfersRateVal", "NumberBlockReadRateVal", "NumberBlockWriteRateVal"]
-    ],
     [
         "type": "area",
         "name": "Number of read/write blocks",
         "chart_columns": ["DiffNumberBlocksReadVal", "DiffNumberBlocksWriteVal"]
     ]
-
 ]
 
 SENDTYPE = "Store"
