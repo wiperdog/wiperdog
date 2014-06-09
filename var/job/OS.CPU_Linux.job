@@ -37,69 +37,77 @@ FETCHACTION = {
 	if(listRows.size() == 2){
 		for(int i=3; i< listRows[0].size(); i++){
 			def data = Double.parseDouble(listRows[1][i])
-			if(listRows[0][i] == "%user"){
+			if(listRows[0][i] == "%usr" || listRows[0][i] == "%user"){
 				if(data != null ){
 					resultData['UserLevelPct'] = data
 				} else {
-					resultData['UserLevelPct'] = null
+					resultData['UserLevelPct'] = 0
 				}
 			}
+
 			if(listRows[0][i] == "%nice"){
 				if(data != null ){
 					resultData['UserLevelWithNicePriPct'] = data
 				} else {
-					resultData['UserLevelWithNicePriPct'] = null	
+					resultData['UserLevelWithNicePriPct'] = 0	
 				}			
 			}
+
 			if(listRows[0][i] == "%sys"){
 				if(data != null ){
 					resultData['SystemLevelPct'] = data
 				} else {
-					resultData['SystemLevelPct'] = null	
+					resultData['SystemLevelPct'] = 0	
 				}							
 			}
+
 			if(listRows[0][i] == "%iowait"){
 				if(data != null ){
 					resultData['SystemWithIOPct'] = data
 				} else {
-					resultData['SystemWithIOPct'] = null	
+					resultData['SystemWithIOPct'] = 0	
 				}					
 
 			}
+
 			if(listRows[0][i] == "%irq"){
 				if(data != null ){
 					resultData['TimetoInterruptsPct'] = data
 				} else {
-					resultData['TimetoInterruptsPct'] = null	
+					resultData['TimetoInterruptsPct'] = 0	
 				}	
 			}
+
 			if(listRows[0][i] == "%soft"){
 				if(data != null ){
 					resultData['TimetoSoftwareInterruptPct'] = data
 				} else {
-					resultData['TimetoSoftwareInterruptPct'] = null	
+					resultData['TimetoSoftwareInterruptPct'] = 0	
 				}					
 			}
+
 			if(listRows[0][i] == "%steal"){
 				resultData['StealPct'] = data
 				if(data != null ){
 					resultData['StealPct'] = data
 				} else {
-					resultData['StealPct'] = null	
+					resultData['StealPct'] = 0	
 				}						
 			}
+
 			if(listRows[0][i] == "%idle"){
 				if(data != null ){
 					resultData['IdlePct'] = data
 				} else {
-					resultData['IdlePct'] = null	
+					resultData['IdlePct'] = 0	
 				}				
 			}
+
 			if(listRows[0][i] == "intr/s"){
 				if(data != null ){
 					resultData['TotalInterruptsReceivedRateVal'] = data
 				} else {
-					resultData['TotalInterruptsReceivedRateVal'] = null	
+					resultData['TotalInterruptsReceivedRateVal'] = 0	
 				}				
 			}
 		}
@@ -135,7 +143,7 @@ KEYEXPR._chart = [
 	[
 		"type": "area",
 		"name": "Activities of CPU",
-		"chart_columns": ["UserLevelPct", "UserLevelWithNicePriPct", "SystemLevelPct", "SystemWithIOPct", "TimetoInterruptsPct", "TimetoSoftwareInterruptPct", "StealPct", "TotalInterruptsReceivedRateVal"]
+		"chart_columns": ["UserLevelPct", "UserLevelWithNicePriPct", "SystemLevelPct", "SystemWithIOPct", "TimetoInterruptsPct", "TimetoSoftwareInterruptPct", "StealPct"]
 	]
 ]
 
