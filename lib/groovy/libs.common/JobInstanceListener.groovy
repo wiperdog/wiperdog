@@ -46,7 +46,7 @@ class JobInstanceListener implements Listener,ServiceTrackerCustomizer {
 	}
 
 	public boolean notifyDeleted(File target) throws IOException {
-		return false;
+		return jobdsl.removeInstances(target);
 	}
 
 	public boolean notifyModified(File target) throws IOException {
@@ -71,4 +71,3 @@ class JobInstanceListener implements Listener,ServiceTrackerCustomizer {
 	}
 
 }
-
