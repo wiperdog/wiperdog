@@ -20,7 +20,17 @@ public class InstallerXML {
 	private String runInstallerSyntax = "";
 	private String readmePath = "";
 	private String licensePath = "";
+	private String installLogPath = "";
+	
 	public InstallerXML(){}
+	
+	public String getInstallLogPath() {
+		return installLogPath;
+	}
+
+	public void setInstallLogPath(String installLogPath) {
+		this.installLogPath = installLogPath;
+	}	
 	
 	public String getWelcomeMsg() {
 		return welcomeMsg;

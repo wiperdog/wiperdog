@@ -22,6 +22,7 @@ public class InstallerUtil {
         String runInstallerSyntax = "";
         String readmePath = "";
         String licensePath = "";
+        String installLogPath = "";
 
 		NodeList nodes = elt.getChildNodes();
 		for (int i = 0; i < nodes.getLength(); i++) {
@@ -101,6 +102,14 @@ public class InstallerUtil {
 					if (textNode != null) {
 						installAsOSService = textNode.getData().trim();
 					}
+				}else if (nodeElt.getTagName().equals("installLogPath")) {
+					// location of the output dir for the path to the license file
+					NodeList logoNodes = nodeElt.getChildNodes();
+					org.w3c.dom.Element path = (org.w3c.dom.Element) logoNodes.item(0);
+					Text textNode = (Text) path.getFirstChild();
+					if (textNode != null) {
+						installLogPath = textNode.getData().trim();
+					}
 				}
 			}
 		}
@@ -111,6 +120,7 @@ public class InstallerUtil {
 		installerXml.setInstallAsOSService(installAsOSService);
 		installerXml.setRunInstallerSyntax(runInstallerSyntax);
 		installerXml.setReadmePath(readmePath);
-		installerXml.setLicensePath(licensePath);		
+		installerXml.setLicensePath(licensePath);
+		installerXml.setInstallLogPath(installLogPath);
 	}
 }
