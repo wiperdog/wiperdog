@@ -46,9 +46,7 @@ class JobListener implements Listener,ServiceTrackerCustomizer {
 	}
 
 	public boolean notifyDeleted(File target) throws IOException {
-		def jobName = target.getName().substring(0,target.getName().indexOf(".job"))
-		jobdsl.removeScheduledJob(jobName)
-		return false;
+		return jobdsl.removeJob(target)
 	}
 
 	public boolean notifyModified(File target) throws IOException {
@@ -72,4 +70,3 @@ class JobListener implements Listener,ServiceTrackerCustomizer {
 	}
 
 }
-
