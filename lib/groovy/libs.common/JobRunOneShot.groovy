@@ -5,7 +5,6 @@ import java.util.jar.JarFile;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.osgi.framework.BundleContext;
-import org.wiperdog.bundleextractor.BundleExtractor
 import org.osgi.framework.ServiceReference
 import org.osgi.util.tracker.ServiceTracker
 import org.osgi.util.tracker.ServiceTrackerCustomizer
