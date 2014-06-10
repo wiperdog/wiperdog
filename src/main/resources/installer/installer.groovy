@@ -1,5 +1,3 @@
-import groovy.util.logging.Log
-
 import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
@@ -18,7 +16,6 @@ import org.wiperdog.installer.internal.InstallerUtil
 import org.wiperdog.installer.internal.InstallerXML
 import org.wiperdog.installer.internal.XMLErrorHandler
 
-//@Log("logger")
 public class WPDInstallerGroovy{	
 	private static FileHandler fh = null;
 	static void teeprintln(String content, Level logLevel) {
@@ -44,7 +41,7 @@ public class WPDInstallerGroovy{
             factory.setIgnoringElementContentWhitespace(true)
             DocumentBuilder docBuilder = factory.newDocumentBuilder()
             docBuilder.setErrorHandler(new XMLErrorHandler())
-            Document doc = docBuilder.parse(new FileInputStream(new File("extractor.xml"))/*InstallerUtil.class.getResourceAsStream("/extractor.xml")*/)
+            Document doc = docBuilder.parse(new FileInputStream(new File("extractor.xml")))
             InstallerUtil.parseXml(doc.getDocumentElement())
             //replace  wiperdog home in bin/wiperdog
          	String installAsService = InstallerXML.getInstance().getInstallAsOSService()				
@@ -79,7 +76,7 @@ public class WPDInstallerGroovy{
 					        params['WIPERDOGHOME'] = wiperdogHome							
 					        WPDInstallerGroovy.printInfoLog("Please input Netty port(default set to 13111):")
 					        def tmpNettyPort = inp.readLine().trim();
-					        params['netty.port'] = (tmpNettyPort != null && ! tmpNettyPort.equals(""))?tmpNettyPort:'13111';
+					        params['netty.port'] = (tmpNettyPort != null && ! tmpNettyPort.equals(""))?tmpNettyPort:'13111';						
 					            
 					WPDInstallerGroovy.printInfoLog("Please input job directory: (default set to ${wiperdogHome}/var/job)")
 					def tmpMonitorjobfwJobDir = inp.readLine().trim();
