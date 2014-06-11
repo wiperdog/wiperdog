@@ -40,7 +40,7 @@ import org.wiperdog.installer.internal.XMLErrorHandler;
  */
 public class SelfExtractorCmd {	 
 	
-	private static FileHandler fh = null;
+	static FileHandler fh = null;
 	public static String OUTPUT_FOLDER = "";		
 	public static Logger logger = Logger.getLogger(SelfExtractorCmd.class.getName());
 	static Logger rootLogger = Logger.getLogger("");
@@ -337,6 +337,9 @@ public class SelfExtractorCmd {
 			String newJarPath = (System.getProperty("os.name").toLowerCase()
 					.indexOf("win") != -1) ? jarPath.substring(1, jarPath
 					.length()) : jarPath;			
+			fh.flush();
+		        fh.close();
+			
 			runGroovyInstaller(newJarPath,strArgs);
 			System.exit(0);
 		} catch (Exception e) {

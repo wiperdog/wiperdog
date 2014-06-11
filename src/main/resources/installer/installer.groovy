@@ -17,7 +17,7 @@ import org.wiperdog.installer.internal.InstallerXML
 import org.wiperdog.installer.internal.XMLErrorHandler
 
 public class WPDInstallerGroovy{	
-	private static FileHandler fh = null;
+	static FileHandler fh = null;
 	static void teeprintln(String content, Level logLevel) {
 		SelfExtractorCmd.logger.log(logLevel, content)
 		println content			
@@ -69,10 +69,9 @@ public class WPDInstallerGroovy{
             try {
 				if(installerParam.length == 1){
 						while (userConfirm == null || userConfirm.length() == 0 || !userConfirm.toLowerCase().equalsIgnoreCase("y") ) {
-							//-- prompt for user input parameters
-							//InstallerGroovyUtil.prepareParameters(params,wiperdogHome)							
+						//-- prompt for user input parameters						
 					        WPDInstallerGroovy.printInfoLog("\nGetting input parameters for pre-configured wiperdog, press any key to continue... ") 
-					        def test = inp.readLine()           
+					        def test = inp.readLine()
 					        params['WIPERDOGHOME'] = wiperdogHome							
 					        WPDInstallerGroovy.printInfoLog("Please input Netty port(default set to 13111):")
 					        def tmpNettyPort = inp.readLine().trim();
@@ -512,9 +511,11 @@ public class WPDInstallerGroovy{
                 
             }
             WPDInstallerGroovy.printInfoLog("The installation has been completed successfully! \nPlease use command 'net start/stop wiperdog'(Window) or 'service wiperdog start/stop'(Linux) to control the service.")
-			WPDInstallerGroovy.printInfoLog("For detail installation log, please view the log file at: " + InstallerXML.getInstance().getInstallLogPath() + "*")
+			WPDInstallerGroovy.printInfoLog("For detail installation log, please view the log file at: " + InstallerXML.getInstance().getInstallLogPath())
             WPDInstallerGroovy.printInfoLog("Thank you for choosing Wiperdog!")
             WPDInstallerGroovy.printInfoLog("")
+	    fh.flush();
+	    fh.close();
          }//-- END install as system service
          
     }//-- end main
