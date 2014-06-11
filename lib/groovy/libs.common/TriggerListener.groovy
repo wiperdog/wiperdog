@@ -46,7 +46,7 @@ class TriggerListener implements Listener,ServiceTrackerCustomizer {
 	}
 
 	public boolean notifyDeleted(File target) throws IOException {
-		return false;
+		return jobdsl.removeTrigger(target);
 	}
 
 	public boolean notifyModified(File target) throws IOException {
