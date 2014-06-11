@@ -608,8 +608,16 @@ class JobDsl implements JobDSLService {
 				instFile.each{
 					if(it.getName().endsWith(".instances") && it.getName().equals( key + ".instances")) {
 						mapInstancesWaitJob[key] = it
-						println "mapInstancesWaitJob : ${mapInstancesWaitJob}"
+						mapInstFileListInsts[it.getName()].each{ inst_name->
+						def trigger = jobfacade.getTrigger(inst_name)
+						if(trigger != null ) {
+							jobfacade.unscheduleJob(trigger)
+						}
+
 					}
+
+				}
+
 				}
 				Iterator it = lstJobWaitJobClass.iterator()
 				while(it.hasNext()){
@@ -737,7 +745,7 @@ class JobDsl implements JobDSLService {
 						//Unscheduled job with trigger
 						def trigger = jobfacade.getTrigger(jobName)
 						if(trigger != null ) {
-							println "trigger : ${trigger}"
+
 							def triggerWaitAll = [:]
 							triggerWaitAll["trigger"] = trigger
 							triggerWaitAll["jobName"] = jobName
