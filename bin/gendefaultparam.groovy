@@ -26,6 +26,9 @@ public class ProcessGenDefaultParam {
 		// Get key root: dbinfo, dest, datadirectory, programdirectory, dbmsversion or dblogdir
 		def keyRoot = args[0]
 		if (keyRoot == "dbinfo") { // Update dbinfo
+			println "This command will set up the database's information to connect to DBMS."
+			println "!!Be carefull, incorrect setting will make many jobs inworkable!!"
+			println "CTRL-C will quit without saving ..."
 			def map_db_info = [:]
 			def map_db_info_inner = [:]
 			def dbtype = ""
@@ -39,17 +42,17 @@ public class ProcessGenDefaultParam {
 			print "Enter DB Type (@MYSQL|@PGSQL|@MSSQL|@ORACLE)(*): "
 			dbtype = reader.readLine()
 			while (dbtype != "@MYSQL" && dbtype != "@PGSQL" && dbtype != "@MSSQL" && dbtype != "@ORACLE") {
-				println "DB Type is incorrect. Please re-enter: "
+				print "DB Type is incorrect. Please re-enter (@MYSQL|@PGSQL|@MSSQL|@ORACLE)(*): "
 				dbtype = reader.readLine()
 			}
 			print "Enter Host ID (*): "
 			hostId = reader.readLine()
 			while (hostId == "" || hostId.contains(".")) {
 				if(hostId == "" ) {
-					println "Host ID cannot be empty. Please re-enter: "
+					print "Host ID cannot be empty. Please re-enter (*): "
 				} else {
 					if(hostId.contains(".")) {
-						println "Host ID cannot contains '.' character. Please re-enter: "
+						print "Host ID cannot contains '.' character. Please re-enter (*): "
 					}
 				}
 				hostId = reader.readLine()
@@ -58,13 +61,13 @@ public class ProcessGenDefaultParam {
 			print "Enter Host Name (*): "
 			hostName = reader.readLine()
 			while (hostName == "") {
-				println "Host name cannot be empty. Please re-enter: "
+				print "Host name cannot be empty. Please re-enter (*): "
 				hostName = reader.readLine()
 			}
 			print "Enter Port (Port must be number)(*): "
 			port = reader.readLine()
 			while (!port.isNumber()) {
-				print "Port must be number. Please re-enter: "
+				print "Port must be number. Please re-enter (*): "
 				port = reader.readLine()
 			}
 			print "Set host ID as a DBinfo element (y|Y|n|N): "
@@ -76,7 +79,7 @@ public class ProcessGenDefaultParam {
 			print "Enter User Name (*): "
 			userName = reader.readLine()
 			while (userName == "") {
-				println "User name cannot be empty. Please re-enter: "
+				print "User name cannot be empty. Please re-enter (*): "
 				userName = reader.readLine()
 			}
 			print "Enter Sid: "
@@ -113,6 +116,9 @@ public class ProcessGenDefaultParam {
 			map_db_info_inner["dbSid"] = sid
 			mapDefaultParams['dbinfo'][key] = map_db_info_inner
 		} else if (keyRoot == "dest") { // Update destination
+			println "This command will set up the dest's information to send data monitoring."
+			println "!!Be carefull, incorrect setting will make many jobs inworkable!!"
+			println "CTRL-C will quit without saving ..."
 			def action = ""
 			def keyDest = ""
 			def keyVal = ""
@@ -129,13 +135,13 @@ public class ProcessGenDefaultParam {
 				print "Enter key of dest (file|http|mongoDB)(*): "
 				keyDest = reader.readLine()
 				while(keyDest != "file" && keyDest != "http" && keyDest != "mongoDB") {
-					print "Enter key of dest (file|http|mongoDB)(*): "
+					print "Key of dest is incorrect. Please re-enter (file|http|mongoDB)(*): "
 					keyDest = reader.readLine()
 				}
 				print "Enter correnponding value(*): "
 				keyVal = reader.readLine()
 				while(keyVal == "") {
-					println "Value of key cannot be empty. Please re-enter: "
+					print "Value of key cannot be empty. Please re-enter (*): "
 					keyVal = reader.readLine()
 				}
 				newDest[keyDest] = keyVal
@@ -163,7 +169,7 @@ public class ProcessGenDefaultParam {
 					}
 				}
 				while (!checkExitsKeyDest) {
-					print "This key is not exist. Please re-enter: "
+					print "This key is not exist. Please re-enter (*): "
 					keyDest = reader.readLine()
 					mapDefaultParams['dest'].each {eDest ->
 						if (eDest[keyDest] != null) {
@@ -177,6 +183,9 @@ public class ProcessGenDefaultParam {
 				}
 			}
 		} else if (keyRoot == "datadirectory") {
+			println "This command will set up the information to get data directory of specified DBMS."
+			println "!!Be carefull, incorrect setting will make many jobs inworkable!!"
+			println "CTRL-C will quit without saving ..."
 			def dbType = ""
 			def defaultStr = ""
 			def sqlStr = ""
@@ -184,14 +193,14 @@ public class ProcessGenDefaultParam {
 			print "Enter DB Type (ORACLE|SQLS|MYSQL|POSTGRES)(*): "
 			dbType = reader.readLine()
 			while (dbType != "ORACLE" && dbType != "SQLS" && dbType != "MYSQL" && dbType != "POSTGRES") {
-				print "DB Type is incorrect. Please re-enter: "
+				print "DB Type is incorrect. Please re-enter (ORACLE|SQLS|MYSQL|POSTGRES)(*): "
 				dbType = reader.readLine()
 			}
-			print "Enter default query: "
+			print "Enter default directory [/usr/local/lib/mysql/data]: "
 			defaultStr = reader.readLine()
-			print "Enter query to get datadirectory: "
+			print "Enter query to get datadirectory [SELECT @@datadir]: "
 			sqlStr = reader.readLine()
-			print "Enter append data: "
+			print "Enter append data []: "
 			appendStr = reader.readLine()
 			if (mapDefaultParams['datadirectory'][dbType] != null) {
 				mapDefaultParams['datadirectory'][dbType]['default'] = defaultStr
@@ -205,6 +214,9 @@ public class ProcessGenDefaultParam {
 				mapDefaultParams['datadirectory'][dbType]['getData']['append'] = appendStr
 			}
 		} else if (keyRoot == "programdirectory") {
+			println "This command will set up the information to get program directory of specified DBMS."
+			println "!!Be carefull, incorrect setting will make many jobs inworkable!!"
+			println "CTRL-C will quit without saving ..."
 			def dbType = ""
 			def defaultStr = ""
 			def sqlStr = ""
@@ -212,14 +224,14 @@ public class ProcessGenDefaultParam {
 			print "Enter DB Type (ORACLE|SQLS|MYSQL|POSTGRES)(*): "
 			dbType = reader.readLine()
 			while (dbType != "ORACLE" && dbType != "SQLS" && dbType != "MYSQL" && dbType != "POSTGRES") {
-				print "DB Type is incorrect. Please re-enter: "
+				print "DB Type is incorrect. Please re-enter (ORACLE|SQLS|MYSQL|POSTGRES)(*): "
 				dbType = reader.readLine()
 			}
-			print "Enter default query: "
+			print "Enter default directory [/usr/local/lib/mysql/data]: "
 			defaultStr = reader.readLine()
-			print "Enter query to get programdirectory: "
+			print "Enter query to get programdirectory [SELECT @@basedir]: "
 			sqlStr = reader.readLine()
-			print "Enter append data: "
+			print "Enter append data []: "
 			appendStr = reader.readLine()
 			if (mapDefaultParams['programdirectory'][dbType] != null) {
 				mapDefaultParams['programdirectory'][dbType]['default'] = defaultStr
@@ -233,6 +245,9 @@ public class ProcessGenDefaultParam {
 				mapDefaultParams['programdirectory'][dbType]['getData']['append'] = appendStr
 			}
 		} else if (keyRoot == "dbmsversion") {
+			println "This command will set up the information to get version of specified DBMS."
+			println "!!Be carefull, incorrect setting will make many jobs inworkable!!"
+			println "CTRL-C will quit without saving ..."
 			def dbType = ""
 			def defaultStr = ""
 			def sqlStr = ""
@@ -240,14 +255,14 @@ public class ProcessGenDefaultParam {
 			print "Enter DB Type (ORACLE|SQLS|MYSQL|POSTGRES)(*): "
 			dbType = reader.readLine()
 			while (dbType != "ORACLE" && dbType != "SQLS" && dbType != "MYSQL" && dbType != "POSTGRES") {
-				print "DB Type is incorrect. Please re-enter: "
+				print "DB Type is incorrect. Please re-enter (ORACLE|SQLS|MYSQL|POSTGRES)(*): "
 				dbType = reader.readLine()
 			}
-			print "Enter default query: "
+			print "Enter default directory [/usr/local/lib/mysql/data]: "
 			defaultStr = reader.readLine()
-			print "Enter query to get dbmsversion: "
+			print "Enter query to get dbmsversion [SELECT version()]: "
 			sqlStr = reader.readLine()
-			print "Enter append data: "
+			print "Enter append data []: "
 			appendStr = reader.readLine()
 			if (mapDefaultParams['dbmsversion'][dbType] != null) {
 				mapDefaultParams['dbmsversion'][dbType]['default'] = defaultStr
@@ -261,6 +276,9 @@ public class ProcessGenDefaultParam {
 				mapDefaultParams['dbmsversion'][dbType]['getData']['append'] = appendStr
 			}
 		} else if (keyRoot == "dblogdir") {
+			println "This command will set up the information to get dblog directory of specified DBMS."
+			println "!!Be carefull, incorrect setting will make many jobs inworkable!!"
+			println "CTRL-C will quit without saving ..."
 			def dbType = ""
 			def defaultStr = ""
 			def sqlStr = ""
@@ -268,14 +286,14 @@ public class ProcessGenDefaultParam {
 			print "Enter DB Type (ORACLE|SQLS|MYSQL|POSTGRES)(*): "
 			dbType = reader.readLine()
 			while (dbType != "ORACLE" && dbType != "SQLS" && dbType != "MYSQL" && dbType != "POSTGRES") {
-				print "DB Type is incorrect. Please re-enter: "
+				print "DB Type is incorrect. Please re-enter (ORACLE|SQLS|MYSQL|POSTGRES)(*): "
 				dbType = reader.readLine()
 			}
-			print "Enter default query: "
+			print "Enter default directory [/usr/local/lib/mysql/data]: "
 			defaultStr = reader.readLine()
-			print "Enter query to get dblogdir: "
+			print "Enter query to get dblogdir [SELECT @@general_log_file;]: "
 			sqlStr = reader.readLine()
-			print "Enter append data: "
+			print "Enter append data []: "
 			appendStr = reader.readLine()
 			if (mapDefaultParams['dblogdir'][dbType] != null) {
 				mapDefaultParams['dblogdir'][dbType]['default'] = defaultStr
