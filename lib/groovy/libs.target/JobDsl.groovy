@@ -654,21 +654,24 @@ class JobDsl implements JobDSLService {
 			 }
 		}
 
-		iter = mapJobDefaultSchedule.keySet().iterator();
-		while(iter.hasNext()){
-		  Object key = iter.next();
-		  if(key.equals(jobNameRemove)){
-			  mapJobDefaultSchedule.remove(key)
-		  }
-		}
+		//Remove from mapJobDefaultSchedule
+		def keys = mapJobDefaultSchedule.keySet();
+		def removeKey = null
+		keys.each { key->
+			if(key.equals(jobNameRemove)){
+		  		removeKey = key
+			}
+		}	
+		mapJobDefaultSchedule.remove(removeKey)
 
-		iter = mapJobListInstances.keySet().iterator();
-		while(iter.hasNext()){
-		  Object key = iter.next();
-		  if(key.equals(jobNameRemove)){
-			  mapJobListInstances.remove(key)
-		  }
-		}
+		//Remove from mapJobListInstances
+		keys = mapJobListInstances.keySet();
+		keys.each { key->
+			if(key.equals(jobNameRemove)){
+		  		removeKey = key
+			}
+		}	
+		mapJobListInstances.remove(removeKey)
 
 		return true
 	}
@@ -687,21 +690,29 @@ class JobDsl implements JobDSLService {
 				jobfacade.removeJob(jobDetail)
 			}
 		}
-		Iterator iter = mapInstancesWaitJob.keySet().iterator();
-		while(iter.hasNext()) {
-			Object key = iter.next();
-			if(mapInstancesWaitJob[key].equals(instfile)) {
-				mapInstancesWaitJob.remove(key)
+
+
+		//Remove from mapInstancesWaitJob
+		def keys = mapInstancesWaitJob.keySet();
+		def removeKey = null
+		keys.each { key->
+			if(mapInstancesWaitJob[key].equals(instfile)){
+		  		removeKey = key
 			}
-		}
+		}	
+		mapInstancesWaitJob.remove(removeKey)
+
+
+		//Remove from mapJobListInstances
 		def jobName = instfilename.substring(0,instfilename.lastIndexOf(".instances"))
-		iter = mapJobListInstances.keySet().iterator();
-		while(iter.hasNext()){
-		  Object key = iter.next();
-		  if(key.equals(jobName)){
-			  mapJobListInstances.remove(key)
-		  }
-		}
+		keys = mapJobListInstances.keySet();
+		keys.each { key->
+			if(key.equals(jobName)){
+		  		removeKey = key
+			}
+		}	
+		mapJobListInstances.remove(removeKey)
+
 		mapInstFileListInsts.remove(instfilename)
 		return true
 	}
@@ -721,7 +732,9 @@ class JobDsl implements JobDSLService {
 				mapTrgFileListTrgs[trgFileName].each{ jobname ->
 					//Unscheduled job with trigger
 					def trigger = jobfacade.getTrigger(jobname)
-					jobfacade.unscheduleJob(trigger)
+					if(trigger != null ) {
+						jobfacade.unscheduleJob(trigger)
+					}
 				}
 			}
 		}
