@@ -258,13 +258,16 @@ public class ImportInstance extends HttpServlet {
 	def writeDataToCSVFile(data, fileNameCSV) {
 		def tmpMap
 		def tmpListData = []
-
+		
+		//From instances info, convert to [Instance, schedule, params] format (tmpListData)
 		data.each{
 			tmpMap = [:]
 			tmpMap['Instance'] = it.key
 			tmpMap += it.value
 			tmpListData.add(tmpMap)
 		}
+		
+		//Get all key of params (listKeyParams)
 		def listKeyParams = []
 		tmpListData.each{fd->
 			def paramMap
@@ -279,6 +282,8 @@ public class ImportInstance extends HttpServlet {
 				}
 			}
 		}
+		
+		//Convert to create data with format [INST_NAME, SCHEDULE, {param key of list params}]
 		def mapData
 		def mapParam
 		def listData = []
@@ -330,7 +335,11 @@ public class ImportInstance extends HttpServlet {
 		def tmpStr = ""
 		listDataCSV.each{csv->
 			csv.each{cs->
-				tmpStr += cs + ","
+				if(cs instanceof String) {
+					tmpStr += cs + ","
+				} else {
+					throw new Exception("Can not support instance data with params which is not a string as : " + cs);
+				}
 			}
 			tmpStr = tmpStr.substring(0, tmpStr.lastIndexOf(","))
 			tmpStr += "\n"
@@ -362,7 +371,6 @@ public class ImportInstance extends HttpServlet {
 		}
 		return object
 	}
-
 }
 def importInstance
 try {
