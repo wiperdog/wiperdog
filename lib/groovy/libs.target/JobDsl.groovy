@@ -786,7 +786,6 @@ class JobDsl implements JobDSLService {
 						}
 					}
 					mapJobInCls.remove(clsFileName)
-					listClsRemove.add(clsName)
 				}
 			}
 
