@@ -366,10 +366,8 @@ public class SelfExtractorCmd {
 	            {
 	            oldtext += line + "\n";
 	        }
-	        reader.close();	        
-		System.out.println("*************   " + currentInstallerDir);
-	        String newtext = oldtext.replaceAll("INSTALLER_LOG_PATH", currentInstallerDir + "/" + LOG_FILE_NAME);
-	        //System.out.println("new text " + newtext);
+	        reader.close();	        		
+	        String newtext = oldtext.replaceAll("INSTALLER_LOG_PATH", currentInstallerDir + "/" + LOG_FILE_NAME);	        
 	        FileWriter writer = new FileWriter(OUTPUT_FOLDER + "/extractor.xml");
 	        writer.write(newtext);
 	        writer.close();
