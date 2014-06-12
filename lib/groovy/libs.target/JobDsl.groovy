@@ -743,6 +743,7 @@ class JobDsl implements JobDSLService {
 				}
 			}
 		}
+		mapTrgFileListTrgs.remove(trgFile.getName())
 		return true
 	}
 
@@ -773,7 +774,6 @@ class JobDsl implements JobDSLService {
 							mapTriggerWaitJob["trigger"] = trigger
 							mapTriggerWaitJob["jobName"] = jobName
 							lstTriggerWaitJob.add(mapTriggerWaitJob)
-
 							jobfacade.unscheduleJob(trigger)
 						}
 
@@ -781,13 +781,18 @@ class JobDsl implements JobDSLService {
 						jobWaitClass["jobClass"] = clsName
 						jobWaitClass["jobName"] = jobName
 						lstJobWaitJobClass.add(jobWaitClass)
-						jobfacade.deleteJobClass(clsName)
+						if(jobfacade.getJobClass(clsName) != null ) {
+							jobfacade.deleteJobClass(clsName)
+						}
 					}
 					mapJobInCls.remove(clsFileName)
+					listClsRemove.add(clsName)
 				}
-				mapJCFileListJC.remove(clsFileName)
 			}
+
 		}
+		mapJCFileListJC.remove(jobcls.getName())
+
 		return true
 	}
 }
