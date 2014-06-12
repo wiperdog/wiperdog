@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE wiperdog [
-	<!ELEMENT wiperdog (welcome,appName,appVersion,runAppStr, readmePath, licensePath, installAsOSService)>
+	<!ELEMENT wiperdog (welcome,appName,appVersion,runAppStr, readmePath, licensePath, installAsOSService, installLogPath)>
 	<!ELEMENT welcome (paragraph)*>
 	<!ELEMENT paragraph (#PCDATA)>
 	<!ELEMENT appName (name)>
@@ -13,6 +13,7 @@
 	<!ELEMENT path (#PCDATA)>
 	<!ELEMENT licensePath (path)>
 	<!ELEMENT installAsOSService (str)>
+	<!ELEMENT installLogPath (path)>
 ]>
 <wiperdog>
 	<welcome>
@@ -32,7 +33,9 @@
 		<number>1.0.1</number>
 	</appVersion>	
 	<runAppStr><str>java -classpath lib/java/bundle.a/groovy-all-2.2.1.jar groovy.ui.GroovyMain installer/installer.groovy</str></runAppStr>
+	<!-- runAppStr><str>java -classpath lib/java/bundle.a/groovy-all-2.2.1.jar -Djava.util.logging.config.file=etc/logging.properties groovy.ui.GroovyMain installer/installer.groovy</str></runAppStr-->
 	<readmePath><path>readme.txt</path></readmePath>
 	<licensePath><path>license.txt</path></licensePath>	
 	<installAsOSService><str>yes</str></installAsOSService>
+	<installLogPath><path>INSTALLER_LOG_PATH</path></installLogPath>
 </wiperdog>
