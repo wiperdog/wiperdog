@@ -355,7 +355,7 @@ public class SelfExtractorCmd {
 		//- risk when user choose the output directory in another volume, which is different from current volume
 		String tempPath  = System.getProperty("user.dir");
 		
-		String currentInstallerDir = currentInstallerDir.replaceAll("\\\\", "/");
+		String currentInstallerDir = tempPath.replaceAll("\\\\", "/");
 		
 		try
         {
