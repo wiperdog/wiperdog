@@ -59,6 +59,7 @@ class JobDsl implements JobDSLService {
 	}
 
 	public boolean processJob(File jobfile) {
+		removeJob(jobfile)
 		try {
 			loader.clearCache()
 			def clsJob = loader.parseClass(jobfile)
@@ -93,7 +94,6 @@ class JobDsl implements JobDSLService {
 					jobWaitClass["jobClass"] = jobClassName
 					jobWaitClass["jobName"] = jobName
 					lstJobWaitJobClass.add(jobWaitClass)
-
 					//if job waiting for reading jobclass, add trigger, job, jobclass to list lstTriggerWaitAll
 					lstTriggerWaitJob.each {
 						if (it["jobName"] == jobName) {
@@ -161,6 +161,7 @@ class JobDsl implements JobDSLService {
 	 * @return true
 	 */
 	public boolean processCls(File clsfile) {
+		removeJobCls(clsfile)
 		def clsFileName = clsfile.getName()
 		mapJCFileListJC[clsFileName] = []
 		try{
@@ -227,6 +228,7 @@ class JobDsl implements JobDSLService {
 	 * @return true
 	 */
 	public boolean processTrigger(File trgfile) {
+		removeTrigger(trgfile)
 		def trgFileName = trgfile.getName()
 		mapTrgFileListTrgs[trgFileName] = []
 		try {
@@ -332,6 +334,7 @@ class JobDsl implements JobDSLService {
 	 * @return true 
 	 */
 	public boolean processInstances(File instfile) {
+		removeInstances(instfile)
 		def instfilename = instfile.getName()
 		mapInstFileListInsts[instfilename] = []
 		try {
@@ -398,7 +401,11 @@ class JobDsl implements JobDSLService {
 					// Check if job instances is belongs to a jobClass or not
 					def className = scheduledJob.getJobClassName()
 					if(className != null && className != "") {
-						def jc = getJobClass(className)
+						if(mapJobInCls[className] == null) {
+							mapJobInCls[className] = []
+						}
+						mapJobInCls[className].add(job_inst)
+						def jc = getJobClass(className)							
 						// jobClass has not been loaded yet
 						if(jc == null) {
 							//if job waiting jobclass then add to list lstJobWaitJobClass
@@ -596,10 +603,12 @@ class JobDsl implements JobDSLService {
 			if(value.equals(jobFile)) {
 				def jobDetail = jobfacade.getJob(key)
 				//Add trigger to lstTriggerWaitJob
-				def mapTriggerWaitJob = [:]
-				mapTriggerWaitJob["trigger"] = jobfacade.getTrigger(key)
-				mapTriggerWaitJob["jobName"] = key
-				lstTriggerWaitJob.add(mapTriggerWaitJob)
+				if(jobfacade.getTrigger(key) != null ) {
+					def mapTriggerWaitJob = [:]
+					mapTriggerWaitJob["trigger"] = jobfacade.getTrigger(key)
+					mapTriggerWaitJob["jobName"] = key
+					lstTriggerWaitJob.add(mapTriggerWaitJob)
+				}
 				// Add instance file (if available to mapInstWaitJob)
 				MonitorJobConfigLoader configLoader = new MonitorJobConfigLoader(this.bundleContext)
 				def properties = configLoader.getProperties()
@@ -738,6 +747,8 @@ class JobDsl implements JobDSLService {
 				}
 			}
 		}
+		mapTrgFileListTrgs.remove(trgFile.getName())
+		return true
 	}
 
 	/**
@@ -758,25 +769,33 @@ class JobDsl implements JobDSLService {
 						//Unscheduled job with trigger
 						def trigger = jobfacade.getTrigger(jobName)
 						if(trigger != null ) {
-
 							def triggerWaitAll = [:]
 							triggerWaitAll["trigger"] = trigger
 							triggerWaitAll["jobName"] = jobName
 							triggerWaitAll["jobClass"] = clsName
 							lstTriggerWaitAll.add(triggerWaitAll)
+							def mapTriggerWaitJob = [:]
+							mapTriggerWaitJob["trigger"] = trigger
+							mapTriggerWaitJob["jobName"] = jobName
+							lstTriggerWaitJob.add(mapTriggerWaitJob)
 							jobfacade.unscheduleJob(trigger)
-
 						}
 
 						def jobWaitClass = [:]
 						jobWaitClass["jobClass"] = clsName
 						jobWaitClass["jobName"] = jobName
 						lstJobWaitJobClass.add(jobWaitClass)
+						if(jobfacade.getJobClass(clsName) != null ) {
+							jobfacade.deleteJobClass(clsName)
+						}
 					}
 					mapJobInCls.remove(clsFileName)
 				}
-				mapJCFileListJC.remove(clsFileName)
 			}
+
 		}
+		mapJCFileListJC.remove(jobcls.getName())
+
+		return true
 	}
 }
