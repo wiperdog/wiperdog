@@ -57,6 +57,5 @@ else
 </project>
 Endfile
 	PREFIX=`cd "$dir/.." && pwd`
-	cd "$PREFIX/bin"
 	$PREFIX/bin/groovy $PREFIX/bin/bundle_packaging.groovy $1 $2 $3 $4 $5 "$pom_tpl"
 fi
