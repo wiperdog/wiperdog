@@ -401,7 +401,11 @@ class JobDsl implements JobDSLService {
 					// Check if job instances is belongs to a jobClass or not
 					def className = scheduledJob.getJobClassName()
 					if(className != null && className != "") {
-						def jc = getJobClass(className)
+						if(mapJobInCls[className] == null) {
+							mapJobInCls[className] = []
+						}
+						mapJobInCls[className].add(job_inst)
+						def jc = getJobClass(className)							
 						// jobClass has not been loaded yet
 						if(jc == null) {
 							//if job waiting jobclass then add to list lstJobWaitJobClass
