@@ -105,7 +105,7 @@ public class WiperDogBoot{
 				}
                 def mapURL = [:]
                 mapURL["url"] = url
-                mapURL["fragment"] = bundleCfg["FRAGMENT"]
+                mapURL["action"] = bundleCfg["ACTION"]
                 mapBundle[bundleCfg["RUNLEVEL"]].add(mapURL)
 			}
 		}
@@ -133,8 +133,8 @@ public class WiperDogBoot{
 			def bundle = null
 			try {
 				bundle = context.installBundle(element["url"])
-                //Only add bundle which not is a fragment bundle to list for starting
-                if(!element["fragment"].equals("1")) {
+                //Only add bundle with action is '1' to list for starting
+                if(!element["action"].equals("0")) {
                     lstBundle.add(bundle)
                 }
 			} catch(Exception e) {
@@ -347,17 +347,20 @@ public class WiperDogBoot{
 					if(headers[2] != "RUNLEVEL"){
 						checkHeader = false
 					}
-					if(headers[3] != "FRAGMENT"){
+					if(headers[3] != "OBJECT"){
 						checkHeader = false
 					}
+                    if(headers[4] != "ACTION"){
+                        checkHeader = false
+                    }
 					if(!checkHeader){
-						println "Incorrect headers file format - Format headers mustbe: TYPE, PATH, LEVEL, OBJECT - Line: " + (csvData.indexOf(line) + 1)
+						println "Incorrect headers file format - Format headers mustbe: TYPE, PATH, LEVEL, OBJECT, ACTION - Line: " + (csvData.indexOf(line) + 1)
 						return true
 					}
 				} else {
 					def value = line.split(",",-1)
 					value = value.collect{it = escapeChar(it)}
-					if (value.size == 4) {
+					if (value.size == 5) {
 						if(value[0] == "" || value [1] == "" || value [2] == ""){
 							println "Value of TYPE , PATH OR RUNLEVEL can not be empty - Line: " +   (csvData.indexOf(line) + 1)
 							return
@@ -369,7 +372,7 @@ public class WiperDogBoot{
 						listBundleFromCSV.add(tmpMap)
 						tmpMap = [:]
 					} else {
-							println "Missing params. Need 4 data for TYPE, PATH, RUNLEVEL and FRAGMENT - Line: " +   (csvData.indexOf(line) + 1)
+							println "Missing params. Need 5 data fields for TYPE, PATH, RUNLEVEL, OBJECT,ACTION - Line: " +   (csvData.indexOf(line) + 1)
 							return
 					}
 				}
