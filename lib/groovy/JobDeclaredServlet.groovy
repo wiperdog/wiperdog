@@ -52,14 +52,14 @@ public class JobDeclared extends HttpServlet {
 					job_dir.listFiles().each{
 						def fileName = it.getName()
 						if((fileName.endsWith('.job') && fileName.startsWith(groupMonitoringType))) {
-							list_job.add(fileName.substring(0,fileName.indexOf('.job')))
+							list_job.add(fileName.substring(0,fileName.lastIndexOf('.job')))
 						}
 					}
 				} else {
 					job_dir.listFiles().each{
 						def fileName = it.getName()
 						if(fileName.endsWith('.job') && checkInOthersGroup(fileName,listHeaderJob)) {
-							list_job.add(fileName.substring(0,fileName.indexOf('.job')))
+							list_job.add(fileName.substring(0,fileName.lastIndexOf('.job')))
 						}
 					}
 				}
@@ -76,7 +76,7 @@ public class JobDeclared extends HttpServlet {
 					job_dir.listFiles().each{
 						def fileName = it.getName()
 						if( fileName.startsWith(strDBType) && fileName.endsWith('.job')){
-							list_job.add(fileName.substring(0,fileName.indexOf('.job')))
+							list_job.add(fileName.substring(0,fileName.lastIndexOf('.job')))
 						}
 					}
 
