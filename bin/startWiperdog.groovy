@@ -34,7 +34,25 @@ public class WiperDogBoot{
      * property file to be used for the created the framework instance.
      */
     public static final String CONFIG_PROPERTIES_PROP = "felix.config.properties";
-	
+	public enum BundleAction {
+        START(1),
+        INSTALL(0),
+        DEFAULT(1)
+        private int action;
+
+        BundleAction(int code)
+        {
+            action = code;
+        }
+
+        public int getActionCode()
+        {
+            return action;
+        }
+
+    }
+
+
 	public static void main(String[] args) throws Exception {
 		// Load system properties.
 		WiperDogBoot.loadSystemProperties()
@@ -133,10 +151,13 @@ public class WiperDogBoot{
 			def bundle = null
 			try {
 				bundle = context.installBundle(element["url"])
-                //Only add bundle with action is '1' to list for starting
-                if(!element["action"].equals("0")) {
+                def bundleAction = element["action"]
+                //Only add bundle with action is 1 to list for starting
+                if( bundleAction == BundleAction.START.getActionCode()) {
                     lstBundle.add(bundle)
                 }
+            } catch(NumberFormatException e) {
+                println "Bundle action configuration (in ListBundle.csv) only accept value: 0, 1 or empty" 
 			} catch(Exception e) {
 				println e
 			}
@@ -367,7 +388,36 @@ public class WiperDogBoot{
 						}
 						def tmpMap = [:]
 						for(int i=0 ; i < headers.length;i++){
-							tmpMap[headers[i]] = value[i]
+							//Valid ACTION value
+                            if("ACTION".equals(headers[i])) {
+                                def bundleAction
+                                if("".equals(value[i])) {
+                                    bundleAction = BundleAction.DEFAULT.getActionCode()
+                                    tmpMap[headers[i]] = bundleAction 
+                                } else {
+                                    try {
+                                        bundleAction = Integer.parseInt(value[i])
+                                        BundleAction[] values = BundleAction.values()
+                                        def isValidAction = false
+                                        for(BundleAction val : values) {
+                                            if(bundleAction == val.getActionCode()) {
+                                                isValidAction = true
+                                            }
+                                        }
+                                        if( !isValidAction ) {
+                                            println "Bundle action configuration (in ListBundle.csv) only accept value: 0, 1 or empty - Line: ${csvData.indexOf(line) + 1}" 
+                                        } else {
+                                            tmpMap[headers[i]] = bundleAction 
+                                        }
+                                    } catch(NumberFormatException e) {
+                                            println "Bundle action configuration (in ListBundle.csv) only accept value: 0, 1 or empty - Line: ${csvData.indexOf(line) + 1}" 
+                                    } catch(Exception e) {
+                                        e.printStackTrace()
+                                    }
+                                }
+                            } else {
+                                tmpMap[headers[i]] = value[i]
+                            }
 						}
 						listBundleFromCSV.add(tmpMap)
 						tmpMap = [:]
