@@ -103,7 +103,10 @@ public class WiperDogBoot{
 				if (mapBundle[bundleCfg["RUNLEVEL"]] == null) {
 					mapBundle[bundleCfg["RUNLEVEL"]] = []
 				}
-				mapBundle[bundleCfg["RUNLEVEL"]].add(url)
+                def mapURL = [:]
+                mapURL["url"] = url
+                mapURL["fragment"] = bundleCfg["FRAGMENT"]
+                mapBundle[bundleCfg["RUNLEVEL"]].add(mapURL)
 			}
 		}
 		
@@ -126,11 +129,14 @@ public class WiperDogBoot{
 	 */
 	private static List installall(context, listURL) {
 		def lstBundle = []
-		listURL.each { url ->
+		listURL.each { element ->
 			def bundle = null
 			try {
-				bundle = context.installBundle(url)
-				lstBundle.add(bundle)
+				bundle = context.installBundle(element["url"])
+                //Only add bundle which not is a fragment bundle to list for starting
+                if(!element["fragment"].equals("1")) {
+                    lstBundle.add(bundle)
+                }
 			} catch(Exception e) {
 				println e
 			}
@@ -341,7 +347,7 @@ public class WiperDogBoot{
 					if(headers[2] != "RUNLEVEL"){
 						checkHeader = false
 					}
-					if(headers[3] != "OBJECT"){
+					if(headers[3] != "FRAGMENT"){
 						checkHeader = false
 					}
 					if(!checkHeader){
@@ -363,7 +369,7 @@ public class WiperDogBoot{
 						listBundleFromCSV.add(tmpMap)
 						tmpMap = [:]
 					} else {
-							println "Missing params. Need 4 data for TYPE, PATH, RUNLEVEL and OBJECT - Line: " +   (csvData.indexOf(line) + 1)
+							println "Missing params. Need 4 data for TYPE, PATH, RUNLEVEL and FRAGMENT - Line: " +   (csvData.indexOf(line) + 1)
 							return
 					}
 				}
