@@ -43,7 +43,10 @@ public class RestServiceLoader{
 		def jobRunnerService = new JobRunOneShot(context)
 		server.uri("/runjob", jobRunnerService).method(HttpMethod.POST)
 		server.uri("/runjob/data", jobRunnerService).method(HttpMethod.PUT)
-
+		// DBMS Info Rest Service
+		def dbmsInfoRestService = new DbmsInfoRestService(context)
+		server.uri("/getdbms", dbmsInfoRestService).method(HttpMethod.GET)
+		server.uri("/getdbms", dbmsInfoRestService).method(HttpMethod.POST)
 	}
 
 }

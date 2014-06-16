@@ -310,15 +310,14 @@ public class JobDeclared extends HttpServlet {
 			// process DBTYPE variable
 			println jobData.dbType
 			if((jobData.dbType != null) && (jobData.dbType != "")){
+			    def shell = new GroovyShell()
 				def finalDBType = ""
-				if(jobData.dbType == "SQL_Server"){
-					finalDBType = "@MSSQL"
-				}
-				if(jobData.dbType == "MySQL"){
-					finalDBType = "@MYSQL"
-				}
-				if(jobData.dbType == "Postgres"){
-					finalDBType = "@PGSQL"
+				def dbmsInfoFile = new File(MonitorJobConfigLoader.getProperties().get(ResourceConstants.DBMS_INFO))
+				def mapDbType = shell.evaluate(dbmsInfoFile.getText())['DbType']
+				mapDbType.each {keyType, valType ->
+					if(jobData.dbType == keyType) {
+						finalDBType = valType
+					}
 				}
 				jobStr += "DBTYPE = \"" + finalDBType + "\"\n"
 			}
