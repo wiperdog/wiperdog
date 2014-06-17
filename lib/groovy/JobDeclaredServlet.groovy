@@ -28,9 +28,22 @@ public class JobDeclared extends HttpServlet {
 		def builder
 		def message
 		errorMsg = ""
-		def job_dir = new File(JOB_DIR)		
-		def listHeaderJob = ['MySQL', 'SQL_Server', 'Postgres', 'OS', 'SYS', 'NET']
+		def job_dir = new File(JOB_DIR)
 		try{
+		def getListHeader = {
+			def listHeaderJob = []
+			def config_file = new File(MonitorJobConfigLoader.getProperties().get(ResourceConstants.DBMS_INFO))
+			def config_info = (new GroovyShell()).evaluate(config_file)
+			config_info['MonitoringType'].each{morTyp->
+				listHeaderJob.add(morTyp.replaceAll('@',''))
+			}
+			//listHeaderJob.add(config_info['MonitoringType'].replaceAll('@',''))
+			listHeaderJob.add(config_info['DbType'].keySet())
+			return listHeaderJob
+		}
+		
+		def listHeaderJob = getListHeader()
+		
 			def strMorType = req.getParameter("morType")
 			
 			def checkInOthersGroup = { fileName , list ->
