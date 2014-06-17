@@ -8,7 +8,7 @@ class GenerateTreeMenu {
 	 * @Param JOB_DIR: job directory
 	 * @Return data2CreateMenu
 	 */
-	public static getData2CreateMenu(JOB_DIR) {
+	public static getData2CreateMenu(String JOB_DIR) {
 		def data2CreateMenu = [:]
 		def shell = new GroovyShell()
 
@@ -23,7 +23,14 @@ class GenerateTreeMenu {
 				}
 			}
 		}
-
+		data2CreateMenu = getData2CreateMenu(list_job)
+		return data2CreateMenu
+	}
+	
+	def static getData2CreateMenu(list_job){
+		def data2CreateMenu = [:]
+		def shell = new GroovyShell()
+		
 		def dbmsInfoFile = new File(MonitorJobConfigLoader.getProperties().get(ResourceConstants.DBMS_INFO))
 		def dbmsInfo = shell.evaluate(dbmsInfoFile.getText())
 		def root = dbmsInfo['TreeMenuInfo']
@@ -46,9 +53,9 @@ class GenerateTreeMenu {
 		//Bind job name to create tree menu
 		def isOthersJob
 		def isOthersJobInGroup
-		list_job.each {
+		list_job.each {job->
 			isOthersJob = true
-			def tmpArray = it.split("\\.")
+			def tmpArray = job.split("\\.")
 			if (tmpArray.size() >= 2) {
 				root.each{k,v->
 					if (tmpArray[0] == k) {
@@ -58,7 +65,7 @@ class GenerateTreeMenu {
 								v.each{c, valuec->
 									if (tmpArray[1] == c) {
 										tmpKey = k + "." + c
-										output[tmpKey].add(it)
+										output[tmpKey].add(job)
 										isOthersJobInGroup = false
 										//Set to not add in others group
 										isOthersJob = false
@@ -66,14 +73,14 @@ class GenerateTreeMenu {
 								}
 								if (isOthersJobInGroup) {
 									tmpKey = k + ".Others"
-									output[tmpKey].add(it)
+									output[tmpKey].add(job)
 									//Set to not add in others group
 									isOthersJob = false
 								}
 							}
 						} else {
 							if ((tmpArray.size() == 3) && (output[k] instanceof List)) {
-								output[k].add(it)						
+								output[k].add(job)						
 								//Set to not add in others group
 								isOthersJob = false
 							}
@@ -82,7 +89,7 @@ class GenerateTreeMenu {
 				}
 			}
 			if (isOthersJob) {
-				output["Others"].add(it)
+				output["Others"].add(job)
 			}
 		}
 		data2CreateMenu['root'] = root

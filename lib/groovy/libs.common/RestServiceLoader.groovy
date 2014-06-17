@@ -47,6 +47,10 @@ public class RestServiceLoader{
 		def dbmsInfoRestService = new DbmsInfoRestService(context)
 		server.uri("/getdbms", dbmsInfoRestService).method(HttpMethod.GET)
 		server.uri("/getdbms", dbmsInfoRestService).method(HttpMethod.POST)
+		
+		println "MenuGenerator"
+		def menuGeneratorRestService = new MenuGeneratorRestService()
+		server.uri("/menuGenerator", menuGeneratorRestService).method(HttpMethod.GET)
 	}
 
 }
