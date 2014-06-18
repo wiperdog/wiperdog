@@ -14,12 +14,14 @@ class MenuGeneratorRestService {
 	}
 
 	public def read(Request request, Response response){
-		def responseData
+		def responseData = [:]
 		try{
 			request.addHeader("Access-Control-Allow-Origin", "*")
 			response.addHeader("Access-Control-Allow-Origin", "*")
-			def data2CreateMenu = GenerateTreeMenu.getData2CreateMenu(getCollections())
-			responseData = GenerateTreeMenu.getMenuItemsStr(data2CreateMenu['root'], data2CreateMenu['output'])
+			def listJobFromMongo = GenerateTreeMenu.getListJobFromMongo()
+			def data2CreateMenu = GenerateTreeMenu.getData2CreateMenu(listJobFromMongo)
+			responseData.tree = GenerateTreeMenu.getMenuItemsStr(data2CreateMenu['root'], data2CreateMenu['output'])
+			responseData.mapIstIid = getMapJobistIid()
 		}catch(ex){
 			ex.printStackTrace()
 		}
@@ -31,23 +33,32 @@ class MenuGeneratorRestService {
 		return "delete_METHOD"
 	}
 	
-	def getCollections(){
-		def tmp = []
-		def result = []
-	    def mongoDBConn = MongoDBConnection.getWiperdogConnection()
+	def getMapJobistIid(){
+		def mongoDBConn = MongoDBConnection.getWiperdogConnection()
 	    def collections = mongoDBConn.db.getCollectionNames()
-	    for(def collection in collections){
-			if(collection.lastIndexOf(".") > 0 && collection.split("\\.").size() > 2){
-				def jobname = collection.substring(0, collection.lastIndexOf("."))
-				if(!result.contains(jobname)){
-					result.add(jobname)
-				}
-			}else{
-				if(!result.contains(collection)){
-					result.add(collection)
+		def mapJobIstIid = [:]
+		try{
+			def tmp = []
+			def tmpSize
+			def itemJob
+			def itemIst
+			for(collection in collections){
+				tmp = collection.split("\\.")
+				tmpSize = tmp.size()
+				if(tmpSize >= 2){
+					itemIst = tmp[tmpSize - 1]
+					itemJob = collection - ("." + itemIst)
+					
+					if(mapJobIstIid[itemJob] == null){
+						mapJobIstIid[itemJob] = []
+					}
+					mapJobIstIid[itemJob].add(itemIst)
 				}
 			}
+		}catch(ex){
+			ex.printStackTrace()
 		}
-		return result
+		//mongoDBConn.close()
+		return mapJobIstIid
 	}
 }

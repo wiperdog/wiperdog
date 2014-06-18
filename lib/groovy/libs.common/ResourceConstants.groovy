@@ -94,5 +94,5 @@ class ResourceConstants{
 	public static final String INTERVAL_SENDER = "monitorjobfw.mail.intervalRunSender"
 
 	/** DBMS Information config */
-	public static final String DBMS_INFO = "monitorjobfw.dbms.information.config"
+	public static final String USE_FOR_XWIKI = "monitorjobfw.for_xwiki.information.config"
 }

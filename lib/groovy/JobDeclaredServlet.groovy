@@ -32,7 +32,7 @@ public class JobDeclared extends HttpServlet {
 		try{
 		def getListHeader = {
 			def listHeaderJob = []
-			def config_file = new File(MonitorJobConfigLoader.getProperties().get(ResourceConstants.DBMS_INFO))
+			def config_file = new File(MonitorJobConfigLoader.getProperties().get(ResourceConstants.USE_FOR_XWIKI))
 			def config_info = (new GroovyShell()).evaluate(config_file)
 			config_info['MonitoringType'].each{morTyp->
 				listHeaderJob.add(morTyp.replaceAll('@',''))
@@ -325,7 +325,7 @@ public class JobDeclared extends HttpServlet {
 			if((jobData.dbType != null) && (jobData.dbType != "")){
 			    def shell = new GroovyShell()
 				def finalDBType = ""
-				def dbmsInfoFile = new File(MonitorJobConfigLoader.getProperties().get(ResourceConstants.DBMS_INFO))
+				def dbmsInfoFile = new File(MonitorJobConfigLoader.getProperties().get(ResourceConstants.USE_FOR_XWIKI))
 				def mapDbType = shell.evaluate(dbmsInfoFile.getText())['DbType']
 				mapDbType.each {keyType, valType ->
 					if(jobData.dbType == keyType) {

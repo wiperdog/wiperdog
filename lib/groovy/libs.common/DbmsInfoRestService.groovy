@@ -7,7 +7,7 @@ import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.osgi.framework.BundleContext;
 
 class DbmsInfoRestService {
-	def dbmsInfoFile = new File(MonitorJobConfigLoader.getProperties().get(ResourceConstants.DBMS_INFO))
+	def dbmsInfoFile = new File(MonitorJobConfigLoader.getProperties().get(ResourceConstants.USE_FOR_XWIKI))
 	def static dbmsInfo = null
 	def shell = new GroovyShell()
 	BundleContext ctx;
@@ -17,16 +17,8 @@ class DbmsInfoRestService {
 	}
 
 	public def create(Request request, Response response){
-		request.addHeader("Access-Control-Allow-Origin", "*")
-		response.addHeader("Access-Control-Allow-Origin", "*")
-		def responseData
-		if (dbmsInfo == null) {
-			dbmsInfo = shell.evaluate(dbmsInfoFile.getText())
-			responseData = dbmsInfo['DbType']
-		} else {
-			responseData = dbmsInfo['DbType']
-		}
-		return responseData
+		println "create"
+		return "create_METHOD"
 	}
 
 	public String update(Request request, Response response){
@@ -38,14 +30,15 @@ class DbmsInfoRestService {
 		request.addHeader("Access-Control-Allow-Origin", "*")
 		response.addHeader("Access-Control-Allow-Origin", "*")
 		def responseData
-		def status = request.getRawHeader("status")
+		def keyConfigXwiki = request.getUrlDecodedHeader("keyConfigXwiki")
 		if (dbmsInfo == null) {
 			dbmsInfo = shell.evaluate(dbmsInfoFile.getText())
-		}
-		if(status == null){
-		    responseData = dbmsInfo['DbType'].keySet()
-		} else if(status == "all"){
-			responseData = dbmsInfo
+		} else {
+			if (keyConfigXwiki == null) {
+				responseData = dbmsInfo
+			} else {
+				responseData = dbmsInfo[keyConfigXwiki]
+			}
 		}
 		return responseData
 	}

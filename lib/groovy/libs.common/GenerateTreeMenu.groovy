@@ -12,6 +12,18 @@ class GenerateTreeMenu {
 		def data2CreateMenu = [:]
 		def shell = new GroovyShell()
 
+		// Get list job from job directory
+		def list_job = getListJobFromJobDir(JOB_DIR)
+		data2CreateMenu = getData2CreateMenu(list_job)
+		return data2CreateMenu
+	}
+
+	/**
+	 * getListJobFromJobDir: get list job from job directory
+	 * @Param JOB_DIR: job directory
+	 * @Return list_job
+	 */
+	public static getListJobFromJobDir(String JOB_DIR) {
 		// Get list job
 		def job_dir = new File(JOB_DIR)
 		def list_job = []
@@ -23,15 +35,39 @@ class GenerateTreeMenu {
 				}
 			}
 		}
-		data2CreateMenu = getData2CreateMenu(list_job)
-		return data2CreateMenu
+		return list_job
+	}
+
+	/**
+	 * getListJobFromMongo: get list job from mongo db
+	 * @Return list_job
+	 */
+	public static getListJobFromMongo() {
+		def tmp = []
+		def list_job = []
+	    def mongoDBConn = MongoDBConnection.getWiperdogConnection()
+	    def collections = mongoDBConn.db.getCollectionNames()
+	    for(def collection in collections) {
+			if(collection.lastIndexOf(".") > 0 && collection.split("\\.").size() > 2) {
+				def jobname = collection.substring(0, collection.lastIndexOf("."))
+				if(!list_job.contains(jobname)){
+					list_job.add(jobname)
+				}
+			} else {
+				if(!list_job.contains(collection)) {
+					list_job.add(collection)
+				}
+			}
+		}
+		//mongoDBConn.close()
+		return list_job
 	}
 	
 	def static getData2CreateMenu(list_job){
 		def data2CreateMenu = [:]
 		def shell = new GroovyShell()
 		
-		def dbmsInfoFile = new File(MonitorJobConfigLoader.getProperties().get(ResourceConstants.DBMS_INFO))
+		def dbmsInfoFile = new File(MonitorJobConfigLoader.getProperties().get(ResourceConstants.USE_FOR_XWIKI))
 		def dbmsInfo = shell.evaluate(dbmsInfoFile.getText())
 		def root = dbmsInfo['TreeMenuInfo']
 

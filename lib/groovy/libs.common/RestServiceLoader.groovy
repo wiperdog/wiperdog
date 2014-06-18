@@ -45,10 +45,9 @@ public class RestServiceLoader{
 		server.uri("/runjob/data", jobRunnerService).method(HttpMethod.PUT)
 		// DBMS Info Rest Service
 		def dbmsInfoRestService = new DbmsInfoRestService(context)
-		server.uri("/getdbms", dbmsInfoRestService).method(HttpMethod.GET)
-		server.uri("/getdbms", dbmsInfoRestService).method(HttpMethod.POST)
+		server.uri("/use_for_xwiki/{keyConfigXwiki}", dbmsInfoRestService).alias("/use_for_xwiki").method(HttpMethod.GET)
 		
-		println "MenuGenerator"
+		// Menugenerator RestAPI service
 		def menuGeneratorRestService = new MenuGeneratorRestService()
 		server.uri("/menuGenerator", menuGeneratorRestService).method(HttpMethod.GET)
 	}
