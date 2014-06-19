@@ -115,7 +115,7 @@ class GenerateTreeMenu {
 								}
 							}
 						} else {
-							if ((tmpArray.size() == 3) && (output[k] instanceof List)) {
+							if ((tmpArray.size() >= 2) && (output[k] instanceof List)) {
 								output[k].add(job)						
 								//Set to not add in others group
 								isOthersJob = false
