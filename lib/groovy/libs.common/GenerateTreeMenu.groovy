@@ -25,13 +25,15 @@ class GenerateTreeMenu {
 	 */
 	public static getListJobFromJobDir(String JOB_DIR) {
 		// Get list job
-		def job_dir = new File(JOB_DIR)
 		def list_job = []
-		if(job_dir.isDirectory()){
-			job_dir.listFiles().each {file ->
-				def fileName = file.getName()
-				if(fileName.endsWith('.job')){
-					list_job.add(fileName)
+		if(JOB_DIR != null){
+			def job_dir = new File(JOB_DIR)
+			if(job_dir.isDirectory()){
+				job_dir.listFiles().each {file ->
+					def fileName = file.getName()
+					if(fileName.endsWith('.job')){
+						list_job.add(fileName)
+					}
 				}
 			}
 		}
