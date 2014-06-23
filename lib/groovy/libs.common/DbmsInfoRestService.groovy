@@ -33,12 +33,11 @@ class DbmsInfoRestService {
 		def keyConfigXwiki = request.getUrlDecodedHeader("keyConfigXwiki")
 		if (dbmsInfo == null) {
 			dbmsInfo = shell.evaluate(dbmsInfoFile.getText())
+		}
+		if (keyConfigXwiki == null) {
+			responseData = dbmsInfo
 		} else {
-			if (keyConfigXwiki == null) {
-				responseData = dbmsInfo
-			} else {
-				responseData = dbmsInfo[keyConfigXwiki]
-			}
+			responseData = dbmsInfo[keyConfigXwiki]
 		}
 		return responseData
 	}
