@@ -10,6 +10,12 @@ import org.wiperdog.installer.internal.InstallerUtil
 import org.wiperdog.installer.internal.InstallerXML
 import org.wiperdog.installer.internal.XMLErrorHandler
 
+/**
+ * WPDInstallerGroovy is a Groovy class used by SelfExtractorCmd to perform pre-configuration 
+ * after installation of wiperdog.
+ * @author nguyenvannghia
+ *
+ */
 public class WPDInstallerGroovy{
         static File loggingFile = null
 	static void printInfoLog(String content) throws Exception{

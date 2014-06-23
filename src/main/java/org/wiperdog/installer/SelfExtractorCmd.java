@@ -29,7 +29,8 @@ import org.wiperdog.installer.internal.XMLErrorHandler;
 import java.text.SimpleDateFormat;
 
 /**
- * Self-extractor main class
+ * Self-extractor main class of the installer, it help to peform all major tasks of the installation
+ * such as: Self-extracting, run groovy for pre-configure.
  * @author nguyenvannghia
  *
  */
