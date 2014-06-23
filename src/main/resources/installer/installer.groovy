@@ -501,9 +501,7 @@ public class WPDInstallerGroovy{
             WPDInstallerGroovy.printInfoLog("The installation has been completed successfully! \nPlease use command 'net start/stop wiperdog'(Window) or 'service wiperdog start/stop'(Linux) to control the service.")
 			WPDInstallerGroovy.printInfoLog("For detail installation log, please view the log file at: " + InstallerXML.getInstance().getInstallLogPath())
             WPDInstallerGroovy.printInfoLog("Thank you for choosing Wiperdog!")
-            WPDInstallerGroovy.printInfoLog("Finish the Wiperdog installation at " + SelfExtractorCmd.df.format(new java.util.Date(System.currentTimeMillis())));
-	    
          }//-- END install as system service
-         
+         WPDInstallerGroovy.printInfoLog("Finish the Wiperdog installation at " + SelfExtractorCmd.df.format(new java.util.Date(System.currentTimeMillis())));
     }//-- end main
 }
