@@ -354,9 +354,7 @@ public class SelfExtractorCmd {
 	 */
 	static void runGroovyInstaller(String jarPath,String strArgs)throws Exception{		
 		//- risk when user choose the output directory in another volume, which is different from current volume
-		String tempPath  = System.getProperty("user.dir");
-		
-		String currentInstallerDir = tempPath.replaceAll("\\\\", "/");
+		String logFilePath = LOG_FILE_NAME.replaceAll("\\\\", "/");
 		
 		try
         {
@@ -368,7 +366,7 @@ public class SelfExtractorCmd {
 	            oldtext += line + "\n";
 	        }
 	        reader.close();	        		
-	        String newtext = oldtext.replaceAll("INSTALLER_LOG_PATH", LOG_FILE_NAME);	        
+	        String newtext = oldtext.replaceAll("INSTALLER_LOG_PATH", logFilePath);	        
 	        FileWriter writer = new FileWriter(OUTPUT_FOLDER + "/extractor.xml");
 	        writer.write(newtext);
 	        writer.close();
