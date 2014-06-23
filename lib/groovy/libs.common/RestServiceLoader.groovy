@@ -43,7 +43,13 @@ public class RestServiceLoader{
 		def jobRunnerService = new JobRunOneShot(context)
 		server.uri("/runjob", jobRunnerService).method(HttpMethod.POST)
 		server.uri("/runjob/data", jobRunnerService).method(HttpMethod.PUT)
-
+		// DBMS Info Rest Service
+		def dbmsInfoRestService = new DbmsInfoRestService(context)
+		server.uri("/use_for_xwiki/{keyConfigXwiki}", dbmsInfoRestService).alias("/use_for_xwiki").method(HttpMethod.GET)
+		
+		// Menugenerator RestAPI service
+		def menuGeneratorRestService = new MenuGeneratorRestService()
+		server.uri("/menuGenerator", menuGeneratorRestService).method(HttpMethod.GET)
 	}
 
 }

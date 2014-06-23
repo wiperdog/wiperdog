@@ -28,9 +28,22 @@ public class JobDeclared extends HttpServlet {
 		def builder
 		def message
 		errorMsg = ""
-		def job_dir = new File(JOB_DIR)		
-		def listHeaderJob = ['MySQL', 'SQL_Server', 'Postgres', 'OS', 'SYS', 'NET']
+		def job_dir = new File(JOB_DIR)
 		try{
+		def getListHeader = {
+			def listHeaderJob = []
+			def config_file = new File(MonitorJobConfigLoader.getProperties().get(ResourceConstants.USE_FOR_XWIKI))
+			def config_info = (new GroovyShell()).evaluate(config_file)
+			config_info['MonitoringType'].each{morTyp->
+				listHeaderJob.add(morTyp.replaceAll('@',''))
+			}
+			//listHeaderJob.add(config_info['MonitoringType'].replaceAll('@',''))
+			listHeaderJob.add(config_info['DbType'].keySet())
+			return listHeaderJob
+		}
+		
+		def listHeaderJob = getListHeader()
+		
 			def strMorType = req.getParameter("morType")
 			
 			def checkInOthersGroup = { fileName , list ->
@@ -310,15 +323,14 @@ public class JobDeclared extends HttpServlet {
 			// process DBTYPE variable
 			println jobData.dbType
 			if((jobData.dbType != null) && (jobData.dbType != "")){
+			    def shell = new GroovyShell()
 				def finalDBType = ""
-				if(jobData.dbType == "SQL_Server"){
-					finalDBType = "@MSSQL"
-				}
-				if(jobData.dbType == "MySQL"){
-					finalDBType = "@MYSQL"
-				}
-				if(jobData.dbType == "Postgres"){
-					finalDBType = "@PGSQL"
+				def dbmsInfoFile = new File(MonitorJobConfigLoader.getProperties().get(ResourceConstants.USE_FOR_XWIKI))
+				def mapDbType = shell.evaluate(dbmsInfoFile.getText())['DbType']
+				mapDbType.each {keyType, valType ->
+					if(jobData.dbType == keyType) {
+						finalDBType = valType
+					}
 				}
 				jobStr += "DBTYPE = \"" + finalDBType + "\"\n"
 			}
