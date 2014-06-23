@@ -103,9 +103,12 @@ public class WPDInstallerGroovy{
 					        WPDInstallerGroovy.printInfoLog("Please input mail send data policy, Mail Policy (default set to testmail@gmail.com):")    
 					        def tmpMonitorjobfwMailPolicy = inp.readLine().trim();					        
 					        params['monitorjobfw.mail.toMail'] = (tmpMonitorjobfwMailPolicy != null && ! tmpMonitorjobfwMailPolicy.equals(""))?tmpMonitorjobfwMailPolicy:'testmail@gmail.com';        
-					        
-						WPDInstallerGroovy.printInfoLog("Do you want to install wiperdog as system service, default set to '"+installAsService+"' (type yes|no), enter for default value:") 
-        					def tmpServiceFlag = inp.readLine().trim();
+						    
+							def tmpServiceFlag = "null"
+	        				while(tmpServiceFlag != "" && tmpServiceFlag != "yes" && tmpServiceFlag != "no"){
+	        					WPDInstallerGroovy.printInfoLog("Do you want to install wiperdog as system service, default set to '"+installAsService+"' (type yes|no), enter for default value:") 
+	        				    tmpServiceFlag = inp.readLine().trim();
+	        				}
         					installAsService = (tmpServiceFlag == null || tmpServiceFlag == "")?installAsService:tmpServiceFlag;
         					
 							WPDInstallerGroovy.printInfoLog("\n")
