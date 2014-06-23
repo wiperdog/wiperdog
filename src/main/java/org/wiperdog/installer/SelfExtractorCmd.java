@@ -8,6 +8,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URI;
@@ -15,12 +16,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.FileHandler;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -31,45 +26,45 @@ import org.w3c.dom.Document;
 import org.wiperdog.installer.internal.InstallerUtil;
 import org.wiperdog.installer.internal.InstallerXML;
 import org.wiperdog.installer.internal.XMLErrorHandler;
-
+import java.text.SimpleDateFormat;
 
 /**
  * Self-extractor main class
  * @author nguyenvannghia
  *
  */
-public class SelfExtractorCmd {	 
+public class SelfExtractorCmd {
+	public static String OUTPUT_FOLDER = "";
 	
-	static FileHandler fh = null;
-	public static String OUTPUT_FOLDER = "";		
-	public static Logger logger = Logger.getLogger(SelfExtractorCmd.class.getName());
-	static Logger rootLogger = Logger.getLogger("");
-	public static final String LOG_FILE_NAME = "WiperdogInstaller.log";  
+	public static final String LOG_FILE_NAME = System.getProperty("user.dir")+"/WiperdogInstaller.log";  
+	public static SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd hh:mm:ss.S");
+	public static File loggingFile = new File(LOG_FILE_NAME);	
+	public static FileOutputStream  fo = null;
 	
-	static void teeprintln(String content, Level logLevel) {
-		SelfExtractorCmd.logger.log(logLevel, content);
-		System.out.println(content);			
-	}
-	static void printInfoLog(String content) {
-		SelfExtractorCmd.logger.log(Level.INFO,content);
+	static void printInfoLog(String content) throws Exception{
+		if(fo == null)
+			fo = new FileOutputStream(loggingFile, true);		
+		fo.write((content+ "\n").getBytes());
 		System.out.println(content);
+	}	
+	public static void fileInfoLog(String content) throws Exception{
+		if(fo == null)
+			fo = new FileOutputStream(loggingFile, true);		
+		fo.write((content+ "\n").getBytes());
 	}	
 	
 	public static void main(String args[]) throws Exception{	
 		try {
-		 fh=new FileHandler(LOG_FILE_NAME, false);
+			// Create a new log file for each time user run the installer				
+			fo = new FileOutputStream(loggingFile);
+			String beginMessage = "Start the Wiperdog installation at " + df.format(new java.util.Date(System.currentTimeMillis())) + "\n";
+			fo.write(beginMessage.getBytes());
+			fo.flush();
+			fo.close();
+			fo = null;
 		} catch (Exception e) {
-		 e.printStackTrace();
-		}
-		
-		//- Remove console handler
-		Handler[] handlers = rootLogger.getHandlers();
-		if (handlers[0] instanceof ConsoleHandler) {
-		   rootLogger.removeHandler(handlers[0]);
-		}
-		fh.setFormatter(new SimpleFormatter());
-		rootLogger.addHandler(fh);
-		rootLogger.setLevel(Level.ALL);
+			e.printStackTrace();
+		}		
 		//Argurments : -d (wiperdog home) ,-j(jetty port),-m(mongodb host),-p(mongodb port),-n(database name),-u(user database),-pw(password database),-mp(mail policy),-s(install as OS service)
 		//              -jd (job directory ) , -id (instances directory) , -cd (jobclass directory) 
 		List<String> listParams = new ArrayList<String>();
@@ -176,8 +171,7 @@ public class SelfExtractorCmd {
 							strArgs += "-id " + args[i + 1] + " ";
 							i++;
 						} else {
-							logger.warning("Incorrect value of params: " + args[i]);
-							System.out.println("Incorrect value of params: " + args[i]);
+							printInfoLog("Incorrect value of params: " + args[i]);							
 							return;
 						}
 					}
@@ -336,15 +330,21 @@ public class SelfExtractorCmd {
 			unZip(jarPath, OUTPUT_FOLDER);			
 			String newJarPath = (System.getProperty("os.name").toLowerCase()
 					.indexOf("win") != -1) ? jarPath.substring(1, jarPath
-					.length()) : jarPath;			
-			fh.flush();
-		        fh.close();
-			
+					.length()) : jarPath;
+			try {
+				fo.flush();
+				fo.close();
+			} catch (Exception e) {
+				fo.flush();
+				fo.close();
+				e.printStackTrace();
+			}
 			runGroovyInstaller(newJarPath,strArgs);
 			System.exit(0);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		
 	}
 	/**
 	 * Run the installer script written in Groovy
@@ -367,7 +367,7 @@ public class SelfExtractorCmd {
 	            oldtext += line + "\n";
 	        }
 	        reader.close();	        		
-	        String newtext = oldtext.replaceAll("INSTALLER_LOG_PATH", currentInstallerDir + "/" + LOG_FILE_NAME);	        
+	        String newtext = oldtext.replaceAll("INSTALLER_LOG_PATH", LOG_FILE_NAME);	        
 	        FileWriter writer = new FileWriter(OUTPUT_FOLDER + "/extractor.xml");
 	        writer.write(newtext);
 	        writer.close();
@@ -441,7 +441,7 @@ public class SelfExtractorCmd {
 	 * @param zipFile input zip file
 	 * @param outputFolder zip file output folder
 	 */
-    public static void unZip(String zipFile, String outputFolder){    
+    public static void unZip(String zipFile, String outputFolder) throws Exception{    
      byte[] buffer = new byte[1024];
  
      try{
@@ -489,8 +489,7 @@ public class SelfExtractorCmd {
  
         zis2.closeEntry();
     	zis2.close();
-    	logger.info("Self-extracting done!");
-    	System.out.println("Self-extracting done!");
+    	printInfoLog("Self-extracting done!");    	
     }catch(IOException ex){
        ex.printStackTrace(); 
     }
@@ -586,5 +585,7 @@ class Redirector implements Runnable {
 	}//- end sync
     }
 }
+
+
 
 	 

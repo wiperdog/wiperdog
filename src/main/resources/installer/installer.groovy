@@ -16,18 +16,17 @@ import org.wiperdog.installer.internal.InstallerUtil
 import org.wiperdog.installer.internal.InstallerXML
 import org.wiperdog.installer.internal.XMLErrorHandler
 
-public class WPDInstallerGroovy{	
-	static FileHandler fh = null;
-	static void teeprintln(String content, Level logLevel) {
-		SelfExtractorCmd.logger.log(logLevel, content)
-		println content			
-	}
-	static void printInfoLog(String content) {
-		SelfExtractorCmd.logger.log(Level.INFO,content)
+public class WPDInstallerGroovy{
+        static File loggingFile = null
+	static void printInfoLog(String content) throws Exception{
+		loggingFile.append(content + "\n")		
 		println content
 	}	
+	static void fileInfoLog(String content) throws Exception{
+		loggingFile.append(content + "\n")		
+	}
+    public static void main(String[] installerParam) throws Exception{			
 	
-    public static void main(String[] installerParam) throws Exception{		
         def params = [:]
         def userConfirm = null		
 		String wiperdogHome = installerParam[0]
@@ -44,26 +43,16 @@ public class WPDInstallerGroovy{
             Document doc = docBuilder.parse(new FileInputStream(new File("extractor.xml")))
             InstallerUtil.parseXml(doc.getDocumentElement())
             //replace  wiperdog home in bin/wiperdog
-         	String installAsService = InstallerXML.getInstance().getInstallAsOSService()				
-			 
-			 try {
-				 fh=new FileHandler(InstallerXML.getInstance().getInstallLogPath(), true);
-				} catch (Exception e) {
-				 e.printStackTrace();
-				}
-				Logger rootLogger = Logger.getLogger("");
-				//- Remove console handler
-				Handler[] handlers = rootLogger.getHandlers();
-				if (handlers[0] instanceof ConsoleHandler) {
-				   rootLogger.removeHandler(handlers[0]);
-				}
-				fh.setFormatter(new SimpleFormatter());
-				rootLogger.addHandler(fh);
-				rootLogger.setLevel(Level.INFO);
-				
-			WPDInstallerGroovy.printInfoLog("----------------------------------------------------------------")			
-			WPDInstallerGroovy.printInfoLog("------------------    INSTALLATION     -------------------------")			
-			WPDInstallerGroovy.printInfoLog("----------------------------------------------------------------")			
+         	String installAsService = InstallerXML.getInstance().getInstallAsOSService()
+	     try {
+		 println "Log file  = " + InstallerXML.getInstance().getInstallLogPath()
+		 loggingFile = new File(InstallerXML.getInstance().getInstallLogPath());
+		} catch (Exception e) {			
+		 e.printStackTrace();
+		}
+	    WPDInstallerGroovy.printInfoLog("----------------------------------------------------------------")			
+	    WPDInstallerGroovy.printInfoLog("------------------    INSTALLATION     -------------------------")			
+	    WPDInstallerGroovy.printInfoLog("----------------------------------------------------------------")			
             WPDInstallerGroovy.printInfoLog("Welcome to the installation of " +InstallerXML.getInstance().getAppName()  + " - Version: "+ InstallerXML.getInstance().getAppVersion()) 
             WPDInstallerGroovy.printInfoLog(InstallerXML.getInstance().getWelcomeMsg() )
             try {
@@ -137,8 +126,8 @@ public class WPDInstallerGroovy{
 							WPDInstallerGroovy.printInfoLog("Install as OS service:"+ installAsService)
 							WPDInstallerGroovy.printInfoLog("\n")
 							WPDInstallerGroovy.printInfoLog("Your input are correct(Y|y|N|n):")							
-							userConfirm = inp.readLine().trim();        
-							SelfExtractorCmd.logger.log(Level.INFO,"User confirm input: "+userConfirm)
+							userConfirm = inp.readLine().trim()
+							WPDInstallerGroovy.fileInfoLog("User confirm input: "+userConfirm)
 						} //-- END while
 				} else {
 					if(installerParam.length > 2) {
@@ -230,7 +219,7 @@ public class WPDInstallerGroovy{
 						WPDInstallerGroovy.printInfoLog("User name:"+ params['monitorjobfw.mongodb.user'])
 						WPDInstallerGroovy.printInfoLog("Password:"+ params['monitorjobfw.mongodb.pass'])
 						WPDInstallerGroovy.printInfoLog("Mail Policy:"+ params['monitorjobfw.mail.toMail'])
-						WPDInstallerGroovy.printInfoLog("Install as OS service:"+ installAsService)
+						WPDInstallerGroovy.printInfoLog("Install as OS service:"+ installAsService)						
 					} 
 				}
             } catch (Exception ignore) {
@@ -513,9 +502,8 @@ public class WPDInstallerGroovy{
             WPDInstallerGroovy.printInfoLog("The installation has been completed successfully! \nPlease use command 'net start/stop wiperdog'(Window) or 'service wiperdog start/stop'(Linux) to control the service.")
 			WPDInstallerGroovy.printInfoLog("For detail installation log, please view the log file at: " + InstallerXML.getInstance().getInstallLogPath())
             WPDInstallerGroovy.printInfoLog("Thank you for choosing Wiperdog!")
-            WPDInstallerGroovy.printInfoLog("")
-	    fh.flush();
-	    fh.close();
+            WPDInstallerGroovy.printInfoLog("Finish the Wiperdog installation at " + SelfExtractorCmd.df.format(new java.util.Date(System.currentTimeMillis())));
+	    
          }//-- END install as system service
          
     }//-- end main
