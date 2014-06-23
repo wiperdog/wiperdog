@@ -1,9 +1,3 @@
-import java.util.logging.ConsoleHandler;
-import java.util.logging.FileHandler;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 
@@ -44,8 +38,7 @@ public class WPDInstallerGroovy{
             InstallerUtil.parseXml(doc.getDocumentElement())
             //replace  wiperdog home in bin/wiperdog
          	String installAsService = InstallerXML.getInstance().getInstallAsOSService()
-	     try {
-		 println "Log file  = " + InstallerXML.getInstance().getInstallLogPath()
+	     try {		 
 		 loggingFile = new File(InstallerXML.getInstance().getInstallLogPath());
 		} catch (Exception e) {			
 		 e.printStackTrace();
@@ -223,7 +216,7 @@ public class WPDInstallerGroovy{
 					} 
 				}
             } catch (Exception ignore) {
-                teeprintln(ignore, Level.WARNING)
+		WPDInstallerGroovy.printInfoLog("Error:"+ ignore)                
             }
         //------------------------------------ CONFIGURE WIPERDOG ------------------------------------------//
          // Configure system.properties for netty.port
