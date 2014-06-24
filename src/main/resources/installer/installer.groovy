@@ -14,7 +14,7 @@ import org.wiperdog.installer.internal.XMLErrorHandler
  * WPDInstallerGroovy is a Groovy class used by SelfExtractorCmd to perform pre-configuration 
  * after installation of wiperdog.
  * @author nguyenvannghia
- *
+ * Email: nghia.n.v2007@gmail.com
  */
 public class WPDInstallerGroovy{
         static File loggingFile = null
@@ -50,71 +50,88 @@ public class WPDInstallerGroovy{
 	    WPDInstallerGroovy.printInfoLog("----------------------------------------------------------------")			
 	    WPDInstallerGroovy.printInfoLog("------------------    INSTALLATION     -------------------------")			
 	    WPDInstallerGroovy.printInfoLog("----------------------------------------------------------------")			
-            WPDInstallerGroovy.printInfoLog("Welcome to the installation of " +InstallerXML.getInstance().getAppName()  + " - Version: "+ InstallerXML.getInstance().getAppVersion()) 
-            WPDInstallerGroovy.printInfoLog(InstallerXML.getInstance().getWelcomeMsg() )
+        WPDInstallerGroovy.printInfoLog("Welcome to the installation of " +InstallerXML.getInstance().getAppName()  + " - Version: "+ InstallerXML.getInstance().getAppVersion()) 
+        WPDInstallerGroovy.printInfoLog(InstallerXML.getInstance().getWelcomeMsg() )        
+         
+        params['WIPERDOGHOME'] = wiperdogHome
+        params['netty.port'] = '13111'
+        params['monitorjobfw.directory.job'] = '${felix.home}/var/job'
+        params['monitorjobfw.directory.trigger'] = '${felix.home}/var/job'
+        params['monitorjobfw.directory.jobcls'] = '${felix.home}/var/job'
+		params['monitorjobfw.directory.instances'] = '${felix.home}/var/job'
+		params['monitorjobfw.mongodb.host'] = '127.0.0.1'
+		params['monitorjobfw.mongodb.port'] = '27017'
+		params['monitorjobfw.mongodb.dbName'] = 'wiperdog'
+		params['monitorjobfw.mongodb.user'] = ''
+		params['monitorjobfw.mongodb.pass'] = ''
+		params['monitorjobfw.mail.toMail'] = 'testmail@gmail.com'
+		def installMode = InstallerXML.getInstance().getInstallMode() 
             try {
 				if(installerParam.length == 1){
 						while (userConfirm == null || userConfirm.length() == 0 || !userConfirm.toLowerCase().equalsIgnoreCase("y") ) {
 							userConfirm = null
 							installAsService = InstallerXML.getInstance().getInstallAsOSService()
-							//-- prompt for user input parameters						
-					        WPDInstallerGroovy.printInfoLog("\nGetting input parameters for pre-configured wiperdog, press any key to continue... ") 
-					        def test = inp.readLine()
-					        params['WIPERDOGHOME'] = wiperdogHome							
-					        WPDInstallerGroovy.printInfoLog("Please input Netty port(default set to 13111):")
-					        def tmpNettyPort = "13111"
-					        tmpNettyPort = inp.readLine().trim();
-					        params['netty.port'] = (tmpNettyPort != null && ! tmpNettyPort.equals(""))?tmpNettyPort:'13111';						
-					            
-							WPDInstallerGroovy.printInfoLog("Please input job directory: (default set to ${wiperdogHome}/var/job)")
-							def tmpMonitorjobfwJobDir = ""
-							tmpMonitorjobfwJobDir = inp.readLine().trim();
-							params['monitorjobfw.directory.job'] = (tmpMonitorjobfwJobDir != null && ! tmpMonitorjobfwJobDir.equals(""))?tmpMonitorjobfwJobDir:'${felix.home}/var/job';
+					        WPDInstallerGroovy.printInfoLog("\n\n")
+					        if(installMode.toLowerCase().equalsIgnoreCase("interactive")){
+					        	//-- prompt for user input parameters						
+								WPDInstallerGroovy.printInfoLog("\nGetting input parameters for pre-configured wiperdog, press any key to continue... ")
+								def test = inp.readLine()
+						        WPDInstallerGroovy.printInfoLog("Please input Netty port(default set to 13111):")
+						        def tmpNettyPort = "13111"
+						        tmpNettyPort = inp.readLine().trim()
+						        params['netty.port'] = (tmpNettyPort != null && ! tmpNettyPort.equals(""))?tmpNettyPort:'13111'	
+						            
+								WPDInstallerGroovy.printInfoLog("Please input job directory: (default set to ${wiperdogHome}/var/job)")
+								def tmpMonitorjobfwJobDir = ""
+								tmpMonitorjobfwJobDir = inp.readLine().trim()
+								params['monitorjobfw.directory.job'] = (tmpMonitorjobfwJobDir != null && ! tmpMonitorjobfwJobDir.equals(""))?tmpMonitorjobfwJobDir:'${felix.home}/var/job'
 
-							WPDInstallerGroovy.printInfoLog("Please input trigger directory:(default set to ${wiperdogHome}/var/job)")
-							def tmpMonitorjobfwTrgDir = inp.readLine().trim();
-							params['monitorjobfw.directory.trigger'] = (tmpMonitorjobfwTrgDir != null && ! tmpMonitorjobfwTrgDir.equals(""))?tmpMonitorjobfwTrgDir:'${felix.home}/var/job';
+								WPDInstallerGroovy.printInfoLog("Please input trigger directory:(default set to ${wiperdogHome}/var/job)")
+								def tmpMonitorjobfwTrgDir = inp.readLine().trim()
+								params['monitorjobfw.directory.trigger'] = (tmpMonitorjobfwTrgDir != null && ! tmpMonitorjobfwTrgDir.equals(""))?tmpMonitorjobfwTrgDir:'${felix.home}/var/job'
 
-							WPDInstallerGroovy.printInfoLog("Please input job class directory:(default set to ${wiperdogHome}/var/job)")
-							def tmpMonitorjobfwJobClsDir = inp.readLine().trim();
-							params['monitorjobfw.directory.jobcls'] = (tmpMonitorjobfwJobClsDir != null && ! tmpMonitorjobfwJobClsDir.equals(""))?tmpMonitorjobfwJobClsDir:'${felix.home}/var/job';
+								WPDInstallerGroovy.printInfoLog("Please input job class directory:(default set to ${wiperdogHome}/var/job)")
+								def tmpMonitorjobfwJobClsDir = inp.readLine().trim()
+								params['monitorjobfw.directory.jobcls'] = (tmpMonitorjobfwJobClsDir != null && ! tmpMonitorjobfwJobClsDir.equals(""))?tmpMonitorjobfwJobClsDir:'${felix.home}/var/job'
 
-							WPDInstallerGroovy.printInfoLog("Please input job instance directory:(default set to ${wiperdogHome}/var/job)")
-							def tmpMonitorjobfwJobInstDir = inp.readLine().trim();
-							params['monitorjobfw.directory.instances'] = (tmpMonitorjobfwJobInstDir != null && ! tmpMonitorjobfwJobInstDir.equals(""))?tmpMonitorjobfwJobInstDir:'${felix.home}/var/job';
-					        WPDInstallerGroovy.printInfoLog("Please input database server (Mongodb) IP address (default set to 127.0.0.1):")
-					        def tmpMonitorjobfwMongodbHost = inp.readLine().trim();
-					        params['monitorjobfw.mongodb.host'] = (tmpMonitorjobfwMongodbHost != null && ! tmpMonitorjobfwMongodbHost.equals(""))?tmpMonitorjobfwMongodbHost:'127.0.0.1';
-					        
-					        WPDInstallerGroovy.printInfoLog("Please input database server port, Mongodb port (default set to 27017):")    
-					        def tmpMonitorjobfwMongodbPort = inp.readLine().trim();
-					        params['monitorjobfw.mongodb.port'] = (tmpMonitorjobfwMongodbPort != null && ! tmpMonitorjobfwMongodbPort.equals(""))?tmpMonitorjobfwMongodbPort:'27017';
-					            
-					        WPDInstallerGroovy.printInfoLog("Please input database name (default set to wiperdog):")
-					        def tmpMonitorjobfwMongodbDbName = inp.readLine().trim();
-					        params['monitorjobfw.mongodb.dbName'] = (tmpMonitorjobfwMongodbDbName != null && ! tmpMonitorjobfwMongodbDbName.equals(""))?tmpMonitorjobfwMongodbDbName:'wiperdog';
-					        
-					        WPDInstallerGroovy.printInfoLog("Please input database server user name, (Mongodb user name, default set to empty):")    
-					        def tmpMonitorjobfwMongodbUser = inp.readLine().trim();
-					        params['monitorjobfw.mongodb.user'] = (tmpMonitorjobfwMongodbUser != null && ! tmpMonitorjobfwMongodbUser.equals(""))?tmpMonitorjobfwMongodbUser:'';
-					        
-					        WPDInstallerGroovy.printInfoLog("Please input database server password, (Mongodb password, default set to empty):") 
-					        def tmpMonitorjobfwMongodbPass = inp.readLine().trim();
-					        params['monitorjobfw.mongodb.pass'] = (tmpMonitorjobfwMongodbPass != null && ! tmpMonitorjobfwMongodbPass.equals(""))?tmpMonitorjobfwMongodbPass:'';
-					        
-					        WPDInstallerGroovy.printInfoLog("Please input mail send data policy, Mail Policy (default set to testmail@gmail.com):")    
-					        def tmpMonitorjobfwMailPolicy = inp.readLine().trim();					        
-					        params['monitorjobfw.mail.toMail'] = (tmpMonitorjobfwMailPolicy != null && ! tmpMonitorjobfwMailPolicy.equals(""))?tmpMonitorjobfwMailPolicy:'testmail@gmail.com';        
-						    
-							def tmpServiceFlag = "null"
-	        				while(tmpServiceFlag != "" && tmpServiceFlag != "yes" && tmpServiceFlag != "no"){
-	        					WPDInstallerGroovy.printInfoLog("Do you want to install wiperdog as system service, default set to '"+installAsService+"' (type yes|no), enter for default value:") 
-	        				    tmpServiceFlag = inp.readLine().trim();
-	        				}
-        					installAsService = (tmpServiceFlag == null || tmpServiceFlag == "")?installAsService:tmpServiceFlag;
-        					
-							WPDInstallerGroovy.printInfoLog("\n")
-							WPDInstallerGroovy.printInfoLog("Please CONFIRM The following configuration are correct:")
+								WPDInstallerGroovy.printInfoLog("Please input job instance directory:(default set to ${wiperdogHome}/var/job)")
+								def tmpMonitorjobfwJobInstDir = inp.readLine().trim()
+								params['monitorjobfw.directory.instances'] = (tmpMonitorjobfwJobInstDir != null && ! tmpMonitorjobfwJobInstDir.equals(""))?tmpMonitorjobfwJobInstDir:'${felix.home}/var/job'
+						        WPDInstallerGroovy.printInfoLog("Please input database server (Mongodb) IP address (default set to 127.0.0.1):")
+						        def tmpMonitorjobfwMongodbHost = inp.readLine().trim()
+						        params['monitorjobfw.mongodb.host'] = (tmpMonitorjobfwMongodbHost != null && ! tmpMonitorjobfwMongodbHost.equals(""))?tmpMonitorjobfwMongodbHost:'127.0.0.1'
+						        
+						        WPDInstallerGroovy.printInfoLog("Please input database server port, Mongodb port (default set to 27017):")    
+						        def tmpMonitorjobfwMongodbPort = inp.readLine().trim()
+						        params['monitorjobfw.mongodb.port'] = (tmpMonitorjobfwMongodbPort != null && ! tmpMonitorjobfwMongodbPort.equals(""))?tmpMonitorjobfwMongodbPort:'27017'
+						            
+						        WPDInstallerGroovy.printInfoLog("Please input database name (default set to wiperdog):")
+						        def tmpMonitorjobfwMongodbDbName = inp.readLine().trim()
+						        params['monitorjobfw.mongodb.dbName'] = (tmpMonitorjobfwMongodbDbName != null && ! tmpMonitorjobfwMongodbDbName.equals(""))?tmpMonitorjobfwMongodbDbName:'wiperdog'
+						        
+						        WPDInstallerGroovy.printInfoLog("Please input database server user name, (Mongodb user name, default set to empty):")    
+						        def tmpMonitorjobfwMongodbUser = inp.readLine().trim()
+						        params['monitorjobfw.mongodb.user'] = (tmpMonitorjobfwMongodbUser != null && ! tmpMonitorjobfwMongodbUser.equals(""))?tmpMonitorjobfwMongodbUser:''
+						        
+						        WPDInstallerGroovy.printInfoLog("Please input database server password, (Mongodb password, default set to empty):") 
+						        def tmpMonitorjobfwMongodbPass = inp.readLine().trim()
+						        params['monitorjobfw.mongodb.pass'] = (tmpMonitorjobfwMongodbPass != null && ! tmpMonitorjobfwMongodbPass.equals(""))?tmpMonitorjobfwMongodbPass:''
+						        
+						        WPDInstallerGroovy.printInfoLog("Please input mail send data policy, Mail Policy (default set to testmail@gmail.com):")    
+						        def tmpMonitorjobfwMailPolicy = inp.readLine().trim()
+						        params['monitorjobfw.mail.toMail'] = (tmpMonitorjobfwMailPolicy != null && ! tmpMonitorjobfwMailPolicy.equals(""))?tmpMonitorjobfwMailPolicy:'testmail@gmail.com'
+							    
+								def tmpServiceFlag = "null"
+		        				while(tmpServiceFlag != "" && tmpServiceFlag != "yes" && tmpServiceFlag != "no"){
+		        					WPDInstallerGroovy.printInfoLog("Do you want to install wiperdog as system service, default set to '"+installAsService+"' (type yes|no), enter for default value:") 
+		        				    tmpServiceFlag = inp.readLine().trim()
+		        				}
+	        					installAsService = (tmpServiceFlag == null || tmpServiceFlag == "")?installAsService:tmpServiceFlag
+	        					WPDInstallerGroovy.printInfoLog("\n")
+								WPDInstallerGroovy.printInfoLog("Please CONFIRM The following configuration are correct:")
+		        			}else{
+		        				WPDInstallerGroovy.printInfoLog("The following install configurations will be applied, please be noticed:")
+		        			}							
 							WPDInstallerGroovy.printInfoLog("Wiperdog Home:"+ params['WIPERDOGHOME'])
 							WPDInstallerGroovy.printInfoLog("Server Port:"+ params['netty.port'])
 							WPDInstallerGroovy.printInfoLog("Job directory:"+ params['monitorjobfw.directory.job'])
@@ -128,12 +145,18 @@ public class WPDInstallerGroovy{
 							WPDInstallerGroovy.printInfoLog("Password:"+ params['monitorjobfw.mongodb.pass'])
 							WPDInstallerGroovy.printInfoLog("Mail Policy:"+ params['monitorjobfw.mail.toMail'])
 							WPDInstallerGroovy.printInfoLog("Install as OS service:"+ installAsService)
-							WPDInstallerGroovy.printInfoLog("\n")							
-							while(userConfirm == null || (!userConfirm.toLowerCase().equalsIgnoreCase("y") && !userConfirm.toLowerCase().equalsIgnoreCase("n"))){
-								WPDInstallerGroovy.printInfoLog("Your input are correct(Y|y|N|n):")							
-								userConfirm = inp.readLine().trim()
-							}							
-							WPDInstallerGroovy.fileInfoLog("User confirm input: "+userConfirm)
+							WPDInstallerGroovy.printInfoLog("\n")		
+							if(installMode.toLowerCase().equalsIgnoreCase("interactive")){			
+								while(userConfirm == null || (!userConfirm.toLowerCase().equalsIgnoreCase("y") && !userConfirm.toLowerCase().equalsIgnoreCase("n"))){
+									WPDInstallerGroovy.printInfoLog("Your input are correct(Y|y|N|n):")							
+									userConfirm = inp.readLine().trim()
+								}							
+								WPDInstallerGroovy.fileInfoLog("User confirm input: "+userConfirm)
+							}else{
+								WPDInstallerGroovy.printInfoLog("Press any key to continue...")							
+								def userKeyPress = inp.readLine().trim()
+								userConfirm = "y"
+							}
 						} //-- END while
 				} else {
 					if(installerParam.length > 2) {

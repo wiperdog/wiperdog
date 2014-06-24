@@ -32,7 +32,7 @@ import java.text.SimpleDateFormat;
  * Self-extractor main class of the installer, it help to peform all major tasks of the installation
  * such as: Self-extracting, run groovy for pre-configure.
  * @author nguyenvannghia
- *
+ * Email: nghia.n.v2007@gmail.com
  */
 public class SelfExtractorCmd {
 	public static String OUTPUT_FOLDER = "";
@@ -113,8 +113,26 @@ public class SelfExtractorCmd {
 				InputStreamReader converter = new InputStreamReader(System.in);
 	            BufferedReader inp = new BufferedReader(converter, 512);
 	            String confirmStr = "";
+	            String userConfirmInteractiveMode = null;
+	            try{	
+	            	Runtime.getRuntime().addShutdownHook(new Thread(new Runnable(){
+	            		public void run(){
+	            			try{
+	            				printInfoLog("Installer shutdown...");
+	            			}catch(Exception exx){
+	            				//Ignore exception for shutdown hook.
+	            			}
+	            		}
+	            	}));
+	            	printInfoLog("You are executing installation without -d option. You can execute default installation with -d [install_path] option");
+	            	printInfoLog("Press any key to start interactive installation or CTRL+C to quit.");
+	            	userConfirmInteractiveMode = inp.readLine().trim();
+	        	}catch(Exception ex){
+	        		// In case CTRL + C were pressed
+	        		Thread.currentThread().sleep(100);
+	        	}
 	            
-	            while ((!confirmStr.toLowerCase().equalsIgnoreCase("y")) && (!confirmStr.toLowerCase().equalsIgnoreCase("n"))) {	            	
+	            while (confirmStr!=null && (!confirmStr.toLowerCase().equalsIgnoreCase("y") && !confirmStr.toLowerCase().equalsIgnoreCase("n"))) {
 	            	printInfoLog("Are you sure to install wiperdog at " + wiperdogPath + " ? [y/n] :");
 	            	confirmStr = inp.readLine().trim();
 	            	if (confirmStr.toLowerCase().equalsIgnoreCase("y")) {
@@ -340,6 +358,35 @@ public class SelfExtractorCmd {
 				fo.close();
 				e.printStackTrace();
 			}
+			/**
+			 Before running groovy script:
+			 1. Set log file name for groovy because groovy will have user.dir as WIPERDOG_HOME which is different from 
+			 SelfExtractor user.dir
+			 2. Setup extractor.xml for installation mode based on -d option (args.length = 0 -> without -d option).
+			 We need to change extractor xm schema to define new INSTALLATION_MODE(see element installMode in extractor.xml)
+			 */
+			String logFilePath = LOG_FILE_NAME.replaceAll("\\\\", "/");		
+			try
+	        {
+		        File file = new File(OUTPUT_FOLDER + "/extractor.xml");
+		        BufferedReader reader = new BufferedReader(new FileReader(file));
+		        String line = "", oldtext = "";
+		        while((line = reader.readLine()) != null)
+		            {
+		            oldtext += line + "\n";
+		        }
+		        reader.close();	        		
+		        String tempText = oldtext.replaceAll("INSTALLER_LOG_PATH", logFilePath);	        
+		        String newText = tempText.replaceAll("INSTALL_MODE", (args.length == 0)?"interactive":"silient");	        
+		        FileWriter writer = new FileWriter(OUTPUT_FOLDER + "/extractor.xml");
+		        writer.write(newText);
+		        writer.close();
+		    }
+		    catch (IOException ioe)
+		        {
+		        ioe.printStackTrace();
+		    }
+		    // run pre-configuration groovy script
 			runGroovyInstaller(newJarPath,strArgs);
 			System.exit(0);
 		} catch (Exception e) {
@@ -353,29 +400,7 @@ public class SelfExtractorCmd {
 	 * @throws Exception any exception
 	 */
 	static void runGroovyInstaller(String jarPath,String strArgs)throws Exception{		
-		//- risk when user choose the output directory in another volume, which is different from current volume
-		String logFilePath = LOG_FILE_NAME.replaceAll("\\\\", "/");
-		
-		try
-        {
-	        File file = new File(OUTPUT_FOLDER + "/extractor.xml");
-	        BufferedReader reader = new BufferedReader(new FileReader(file));
-	        String line = "", oldtext = "";
-	        while((line = reader.readLine()) != null)
-	            {
-	            oldtext += line + "\n";
-	        }
-	        reader.close();	        		
-	        String newtext = oldtext.replaceAll("INSTALLER_LOG_PATH", logFilePath);	        
-	        FileWriter writer = new FileWriter(OUTPUT_FOLDER + "/extractor.xml");
-	        writer.write(newtext);
-	        writer.close();
-	    }
-	    catch (IOException ioe)
-	        {
-	        ioe.printStackTrace();
-	    }
-		
+		//- risk when user choose the output directory in another volume(disk drive), which is different from current volume
 		File workDir = new File(OUTPUT_FOLDER);		
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 		factory.setValidating(true);
