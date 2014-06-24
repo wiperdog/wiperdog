@@ -1,9 +1,3 @@
-import java.util.logging.ConsoleHandler;
-import java.util.logging.FileHandler;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 
@@ -16,82 +10,78 @@ import org.wiperdog.installer.internal.InstallerUtil
 import org.wiperdog.installer.internal.InstallerXML
 import org.wiperdog.installer.internal.XMLErrorHandler
 
-public class WPDInstallerGroovy{	
-	static FileHandler fh = null;
-	static void teeprintln(String content, Level logLevel) {
-		SelfExtractorCmd.logger.log(logLevel, content)
-		println content			
-	}
-	static void printInfoLog(String content) {
-		SelfExtractorCmd.logger.log(Level.INFO,content)
+/**
+ * WPDInstallerGroovy is a Groovy class used by SelfExtractorCmd to perform pre-configuration 
+ * after installation of wiperdog.
+ * @author nguyenvannghia
+ *
+ */
+public class WPDInstallerGroovy{
+        static File loggingFile = null
+	static void printInfoLog(String content) throws Exception{
+		loggingFile.append(content + "\n")		
 		println content
 	}	
+	static void fileInfoLog(String content) throws Exception{
+		loggingFile.append(content + "\n")		
+	}
+    public static void main(String[] installerParam) throws Exception{			
 	
-    public static void main(String[] installerParam) throws Exception{		
         def params = [:]
         def userConfirm = null		
 		String wiperdogHome = installerParam[0]
 		InputStreamReader converter = new InputStreamReader(System.in)
-		BufferedReader inp = new BufferedReader(converter, 512)	    
-		
-		
-            //-------------------------------------- Parse configuration XML ------------------------------------//
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance()
-            factory.setValidating(true)
-            factory.setIgnoringElementContentWhitespace(true)
-            DocumentBuilder docBuilder = factory.newDocumentBuilder()
-            docBuilder.setErrorHandler(new XMLErrorHandler())
-            Document doc = docBuilder.parse(new FileInputStream(new File("extractor.xml")))
-            InstallerUtil.parseXml(doc.getDocumentElement())
-            //replace  wiperdog home in bin/wiperdog
-         	String installAsService = InstallerXML.getInstance().getInstallAsOSService()				
-			 
-			 try {
-				 fh=new FileHandler(InstallerXML.getInstance().getInstallLogPath(), true);
-				} catch (Exception e) {
-				 e.printStackTrace();
-				}
-				Logger rootLogger = Logger.getLogger("");
-				//- Remove console handler
-				Handler[] handlers = rootLogger.getHandlers();
-				if (handlers[0] instanceof ConsoleHandler) {
-				   rootLogger.removeHandler(handlers[0]);
-				}
-				fh.setFormatter(new SimpleFormatter());
-				rootLogger.addHandler(fh);
-				rootLogger.setLevel(Level.INFO);
-				
-			WPDInstallerGroovy.printInfoLog("----------------------------------------------------------------")			
-			WPDInstallerGroovy.printInfoLog("------------------    INSTALLATION     -------------------------")			
-			WPDInstallerGroovy.printInfoLog("----------------------------------------------------------------")			
+		BufferedReader inp = new BufferedReader(converter, 512)	  
+        //-------------------------------------- Parse configuration XML ------------------------------------//
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance()
+        factory.setValidating(true)
+        factory.setIgnoringElementContentWhitespace(true)
+        DocumentBuilder docBuilder = factory.newDocumentBuilder()
+        docBuilder.setErrorHandler(new XMLErrorHandler())
+        Document doc = docBuilder.parse(new FileInputStream(new File("extractor.xml")))
+        InstallerUtil.parseXml(doc.getDocumentElement())
+        //replace  wiperdog home in bin/wiperdog
+     	String installAsService = InstallerXML.getInstance().getInstallAsOSService()
+	    try {		 
+		 loggingFile = new File(InstallerXML.getInstance().getInstallLogPath());
+		} catch (Exception e) {			
+		 e.printStackTrace();
+		}
+	    WPDInstallerGroovy.printInfoLog("----------------------------------------------------------------")			
+	    WPDInstallerGroovy.printInfoLog("------------------    INSTALLATION     -------------------------")			
+	    WPDInstallerGroovy.printInfoLog("----------------------------------------------------------------")			
             WPDInstallerGroovy.printInfoLog("Welcome to the installation of " +InstallerXML.getInstance().getAppName()  + " - Version: "+ InstallerXML.getInstance().getAppVersion()) 
             WPDInstallerGroovy.printInfoLog(InstallerXML.getInstance().getWelcomeMsg() )
             try {
 				if(installerParam.length == 1){
 						while (userConfirm == null || userConfirm.length() == 0 || !userConfirm.toLowerCase().equalsIgnoreCase("y") ) {
-						//-- prompt for user input parameters						
+							userConfirm = null
+							installAsService = InstallerXML.getInstance().getInstallAsOSService()
+							//-- prompt for user input parameters						
 					        WPDInstallerGroovy.printInfoLog("\nGetting input parameters for pre-configured wiperdog, press any key to continue... ") 
 					        def test = inp.readLine()
 					        params['WIPERDOGHOME'] = wiperdogHome							
 					        WPDInstallerGroovy.printInfoLog("Please input Netty port(default set to 13111):")
-					        def tmpNettyPort = inp.readLine().trim();
+					        def tmpNettyPort = "13111"
+					        tmpNettyPort = inp.readLine().trim();
 					        params['netty.port'] = (tmpNettyPort != null && ! tmpNettyPort.equals(""))?tmpNettyPort:'13111';						
 					            
-					WPDInstallerGroovy.printInfoLog("Please input job directory: (default set to ${wiperdogHome}/var/job)")
-					def tmpMonitorjobfwJobDir = inp.readLine().trim();
-					params['monitorjobfw.directory.job'] = (tmpMonitorjobfwJobDir != null && ! tmpMonitorjobfwJobDir.equals(""))?tmpMonitorjobfwJobDir:'${felix.home}/var/job';
+							WPDInstallerGroovy.printInfoLog("Please input job directory: (default set to ${wiperdogHome}/var/job)")
+							def tmpMonitorjobfwJobDir = ""
+							tmpMonitorjobfwJobDir = inp.readLine().trim();
+							params['monitorjobfw.directory.job'] = (tmpMonitorjobfwJobDir != null && ! tmpMonitorjobfwJobDir.equals(""))?tmpMonitorjobfwJobDir:'${felix.home}/var/job';
 
-					WPDInstallerGroovy.printInfoLog("Please input trigger directory:(default set to ${wiperdogHome}/var/job)")
-					def tmpMonitorjobfwTrgDir = inp.readLine().trim();
-					params['monitorjobfw.directory.trigger'] = (tmpMonitorjobfwTrgDir != null && ! tmpMonitorjobfwTrgDir.equals(""))?tmpMonitorjobfwTrgDir:'${felix.home}/var/job';
+							WPDInstallerGroovy.printInfoLog("Please input trigger directory:(default set to ${wiperdogHome}/var/job)")
+							def tmpMonitorjobfwTrgDir = inp.readLine().trim();
+							params['monitorjobfw.directory.trigger'] = (tmpMonitorjobfwTrgDir != null && ! tmpMonitorjobfwTrgDir.equals(""))?tmpMonitorjobfwTrgDir:'${felix.home}/var/job';
 
-					WPDInstallerGroovy.printInfoLog("Please input job class directory:(default set to ${wiperdogHome}/var/job)")
-					def tmpMonitorjobfwJobClsDir = inp.readLine().trim();
-					params['monitorjobfw.directory.jobcls'] = (tmpMonitorjobfwJobClsDir != null && ! tmpMonitorjobfwJobClsDir.equals(""))?tmpMonitorjobfwJobClsDir:'${felix.home}/var/job';
+							WPDInstallerGroovy.printInfoLog("Please input job class directory:(default set to ${wiperdogHome}/var/job)")
+							def tmpMonitorjobfwJobClsDir = inp.readLine().trim();
+							params['monitorjobfw.directory.jobcls'] = (tmpMonitorjobfwJobClsDir != null && ! tmpMonitorjobfwJobClsDir.equals(""))?tmpMonitorjobfwJobClsDir:'${felix.home}/var/job';
 
-					WPDInstallerGroovy.printInfoLog("Please input job instance directory:(default set to ${wiperdogHome}/var/job)")
-					def tmpMonitorjobfwJobInstDir = inp.readLine().trim();
-					params['monitorjobfw.directory.instances'] = (tmpMonitorjobfwJobInstDir != null && ! tmpMonitorjobfwJobInstDir.equals(""))?tmpMonitorjobfwJobInstDir:'${felix.home}/var/job';
+							WPDInstallerGroovy.printInfoLog("Please input job instance directory:(default set to ${wiperdogHome}/var/job)")
+							def tmpMonitorjobfwJobInstDir = inp.readLine().trim();
+							params['monitorjobfw.directory.instances'] = (tmpMonitorjobfwJobInstDir != null && ! tmpMonitorjobfwJobInstDir.equals(""))?tmpMonitorjobfwJobInstDir:'${felix.home}/var/job';
 					        WPDInstallerGroovy.printInfoLog("Please input database server (Mongodb) IP address (default set to 127.0.0.1):")
 					        def tmpMonitorjobfwMongodbHost = inp.readLine().trim();
 					        params['monitorjobfw.mongodb.host'] = (tmpMonitorjobfwMongodbHost != null && ! tmpMonitorjobfwMongodbHost.equals(""))?tmpMonitorjobfwMongodbHost:'127.0.0.1';
@@ -115,19 +105,22 @@ public class WPDInstallerGroovy{
 					        WPDInstallerGroovy.printInfoLog("Please input mail send data policy, Mail Policy (default set to testmail@gmail.com):")    
 					        def tmpMonitorjobfwMailPolicy = inp.readLine().trim();					        
 					        params['monitorjobfw.mail.toMail'] = (tmpMonitorjobfwMailPolicy != null && ! tmpMonitorjobfwMailPolicy.equals(""))?tmpMonitorjobfwMailPolicy:'testmail@gmail.com';        
-					        
-						WPDInstallerGroovy.printInfoLog("Do you want to install wiperdog as system service, default set to '"+installAsService+"' (type yes|no), enter for default value:") 
-        					def tmpServiceFlag = inp.readLine().trim();
+						    
+							def tmpServiceFlag = "null"
+	        				while(tmpServiceFlag != "" && tmpServiceFlag != "yes" && tmpServiceFlag != "no"){
+	        					WPDInstallerGroovy.printInfoLog("Do you want to install wiperdog as system service, default set to '"+installAsService+"' (type yes|no), enter for default value:") 
+	        				    tmpServiceFlag = inp.readLine().trim();
+	        				}
         					installAsService = (tmpServiceFlag == null || tmpServiceFlag == "")?installAsService:tmpServiceFlag;
         					
 							WPDInstallerGroovy.printInfoLog("\n")
 							WPDInstallerGroovy.printInfoLog("Please CONFIRM The following configuration are correct:")
 							WPDInstallerGroovy.printInfoLog("Wiperdog Home:"+ params['WIPERDOGHOME'])
 							WPDInstallerGroovy.printInfoLog("Server Port:"+ params['netty.port'])
-					WPDInstallerGroovy.printInfoLog("Job directory:"+ params['monitorjobfw.directory.job'])
-					WPDInstallerGroovy.printInfoLog("Trigger directory:"+ params['monitorjobfw.directory.trigger'])
-					WPDInstallerGroovy.printInfoLog("Job class directory:"+ params['monitorjobfw.directory.jobcls'])
-					WPDInstallerGroovy.printInfoLog("Job instances directory:"+ params['monitorjobfw.directory.instances'])
+							WPDInstallerGroovy.printInfoLog("Job directory:"+ params['monitorjobfw.directory.job'])
+							WPDInstallerGroovy.printInfoLog("Trigger directory:"+ params['monitorjobfw.directory.trigger'])
+							WPDInstallerGroovy.printInfoLog("Job class directory:"+ params['monitorjobfw.directory.jobcls'])
+							WPDInstallerGroovy.printInfoLog("Job instances directory:"+ params['monitorjobfw.directory.instances'])
 							WPDInstallerGroovy.printInfoLog("Database address:"+ params['monitorjobfw.mongodb.host'])
 							WPDInstallerGroovy.printInfoLog("Database port:"+ params['monitorjobfw.mongodb.port'])
 							WPDInstallerGroovy.printInfoLog("Database name:"+ params['monitorjobfw.mongodb.dbName'])
@@ -135,10 +128,12 @@ public class WPDInstallerGroovy{
 							WPDInstallerGroovy.printInfoLog("Password:"+ params['monitorjobfw.mongodb.pass'])
 							WPDInstallerGroovy.printInfoLog("Mail Policy:"+ params['monitorjobfw.mail.toMail'])
 							WPDInstallerGroovy.printInfoLog("Install as OS service:"+ installAsService)
-							WPDInstallerGroovy.printInfoLog("\n")
-							WPDInstallerGroovy.printInfoLog("Your input are correct(Y|y|N|n):")							
-							userConfirm = inp.readLine().trim();        
-							SelfExtractorCmd.logger.log(Level.INFO,"User confirm input: "+userConfirm)
+							WPDInstallerGroovy.printInfoLog("\n")							
+							while(userConfirm == null || (!userConfirm.toLowerCase().equalsIgnoreCase("y") && !userConfirm.toLowerCase().equalsIgnoreCase("n"))){
+								WPDInstallerGroovy.printInfoLog("Your input are correct(Y|y|N|n):")							
+								userConfirm = inp.readLine().trim()
+							}							
+							WPDInstallerGroovy.fileInfoLog("User confirm input: "+userConfirm)
 						} //-- END while
 				} else {
 					if(installerParam.length > 2) {
@@ -230,11 +225,11 @@ public class WPDInstallerGroovy{
 						WPDInstallerGroovy.printInfoLog("User name:"+ params['monitorjobfw.mongodb.user'])
 						WPDInstallerGroovy.printInfoLog("Password:"+ params['monitorjobfw.mongodb.pass'])
 						WPDInstallerGroovy.printInfoLog("Mail Policy:"+ params['monitorjobfw.mail.toMail'])
-						WPDInstallerGroovy.printInfoLog("Install as OS service:"+ installAsService)
+						WPDInstallerGroovy.printInfoLog("Install as OS service:"+ installAsService)						
 					} 
 				}
             } catch (Exception ignore) {
-                teeprintln(ignore, Level.WARNING)
+		WPDInstallerGroovy.printInfoLog("Error:"+ ignore)                
             }
         //------------------------------------ CONFIGURE WIPERDOG ------------------------------------------//
          // Configure system.properties for netty.port
@@ -513,10 +508,7 @@ public class WPDInstallerGroovy{
             WPDInstallerGroovy.printInfoLog("The installation has been completed successfully! \nPlease use command 'net start/stop wiperdog'(Window) or 'service wiperdog start/stop'(Linux) to control the service.")
 			WPDInstallerGroovy.printInfoLog("For detail installation log, please view the log file at: " + InstallerXML.getInstance().getInstallLogPath())
             WPDInstallerGroovy.printInfoLog("Thank you for choosing Wiperdog!")
-            WPDInstallerGroovy.printInfoLog("")
-	    fh.flush();
-	    fh.close();
          }//-- END install as system service
-         
+         WPDInstallerGroovy.printInfoLog("Finish the Wiperdog installation at " + SelfExtractorCmd.df.format(new java.util.Date(System.currentTimeMillis())));
     }//-- end main
 }
