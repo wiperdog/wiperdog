@@ -36,6 +36,7 @@ FETCHACTION = {
 	}
 	//Convert data from MB,GB to KB
 	def dataConverter = {data->
+                data = data.toLowerCase()
 		if(data.contains("m")){
 			data = (Double.parseDouble(data.replace('m','')))*1024
 		} else if(data.contains("g")){
@@ -52,6 +53,7 @@ FETCHACTION = {
 		tmpDataDev = [:]
 		for(int k=0; k<tmpHeaderDev.size(); k++){
 			def tmpData = rowDataDev[k]
+			def tmpDataUpperCase = tmpData.toUpperCase()
 			//get ProcessId
 			if(tmpHeaderDev[k] == "PID"){
 				tmpDataDev["ProcessId"] = tmpData.toLong()
@@ -62,12 +64,12 @@ FETCHACTION = {
 			}
 			//get priority of the process
 			if(tmpHeaderDev[k] == "PR"){
-				if(!tmpData.contains("RT")){
+				if(!tmpDataUpperCase.contains("RT")){
 					tmpData = Integer.parseInt(tmpData)
 				}
 				tmpDataDev["PriorityInt"] = tmpData
 			}
-			//get the �NICE�Evalue of the process
+			//get the NICE Evalue of the process
 			if(tmpHeaderDev[k] == "NI"){
 				tmpDataDev["NicePriorityInt"] = Integer.parseInt(tmpData)
 			}
@@ -86,15 +88,15 @@ FETCHACTION = {
 			}
 			//get indicates the status of the process
 			if(tmpHeaderDev[k] == "S"){
-				if(tmpData == "S") {
+				if(tmpDataUpperCase == "S") {
 					tmpData = "Sleeping"
-				} else if(tmpData == "R") {
+				} else if(tmpDataUpperCase == "R") {
 					tmpData = "Running"
-				} else if(tmpData == "D") {
+				} else if(tmpDataUpperCase == "D") {
 					tmpData = "Uninterruptible Sleep"
-				} else if(tmpData == "T") {
+				} else if(tmpDataUpperCase == "T") {
 					tmpData = "Stopped/Traced"
-				} else if(tmpData == "Z") {
+				} else if(tmpDataUpperCase == "Z") {
 					tmpData = "Zombie"
 				}
 				tmpDataDev["StateTaskStr"] = tmpData
