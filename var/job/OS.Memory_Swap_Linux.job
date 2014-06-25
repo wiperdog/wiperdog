@@ -41,7 +41,7 @@ FETCHACTION = {
 		def mapData = [:]
 		mapData['TypeName'] =  row[0].trim()
 		mapData['UsedMemoryKB'] =  tmpMapVal["used"]
-		mapData['UsedMemoryPct'] =  (tmpMapVal["used"]/tmpMapVal["total"])*100
+        	mapData['UsedMemoryPct'] =  (tmpMapVal["total"] != 0)?(tmpMapVal["used"]/tmpMapVal["total"])*100 : 0
 		mapData['TotalMemorySizeKB'] =  tmpMapVal["total"]
 		mapData['FreeMemoryKB'] =  tmpMapVal["free"]
 		mapData['SharedMemoryKB'] =  tmpMapVal["shared"]
