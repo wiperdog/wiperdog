@@ -63,7 +63,7 @@ FETCHACTION={
 		resultData['NotCachedCumCnt'] = Long.parseLong(data[0]['NotCachedCumCnt'])
 		resultData['QueriesInCacheCumCnt'] = Long.parseLong(data[0]['QueriesInCacheCumCnt'])
 		resultData['TotalBlocksCnt'] = Long.parseLong(data[0]['TotalBlocksCnt'])
-		resultData['UsedPct'] = (resultData['TotalBlocksCnt'] - resultData['FreeBlocksCnt']) / resultData['TotalBlocksCnt'] * 100
+		resultData['UsedPct'] = (resultData['TotalBlocksCnt'] != 0) ? (resultData['TotalBlocksCnt'] - resultData['FreeBlocksCnt']) / resultData['TotalBlocksCnt'] * 100 : null
 		//Set PERSISTENTDATA
 		PERSISTENTDATA['HitsCumCnt'] = resultData['HitsCumCnt']
 		PERSISTENTDATA['InsertsCumCnt'] = resultData['InsertsCumCnt']
