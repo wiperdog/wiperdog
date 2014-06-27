@@ -14,10 +14,12 @@
  */
 JOB = [name:"OS.Network_IO_Linux"]
 FETCHACTION = {
-	def command = 'ifconfig'
+	def command = '/sbin/ifconfig'
 	def output = procRunner.procExecute(command,false)
 	def map = [:]
-	def data = output.out.split("\\n\\n")
+	def dataOut = output.out
+	assert dataOut != null && dataOut != "", "Process output is null or empty " + output.err
+ 	def data = dataOut.split("\\n\\n")        
 	def resultData = []
 	data.each{d->
 		def checkHeader = false

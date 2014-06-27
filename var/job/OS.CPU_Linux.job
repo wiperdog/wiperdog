@@ -25,7 +25,9 @@ FETCHACTION = {
 	def listData = []
 	def listRows = []
 	//data remote
-	def output = procRunner.procExecute(command,false).out
+	def processRet = procRunner.procExecute(command,false)
+        def output = processRet.out
+        assert output != null && output != "", "Process output is null or empty, interrupted the job" + processRet.err 
 	output.eachLine{line->
 		def row = line.trim().split(" ").findAll{!it.trim().equals("")}
 		if(row.size() > 0){
