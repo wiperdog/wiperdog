@@ -19,7 +19,9 @@ FETCHACTION = {
  def command = "free"
  def resultData = []
  //data remote
- def output = procRunner.procExecute(command,false).out
+ def outputProc = procRunner.procExecute(command,false)
+ def output = outputProc.out
+ assert output != null && output != "", "Process output is null or empty " + outputProc.err
  def listColHeader = new ArrayList<String>()
  def checkColHeader = false
  output.eachLine{ line->
