@@ -99,7 +99,7 @@ KEYEXPR._unit = ["FreeBlocksCnt" :"blocks" , "FreeMemorySize" : "MB" , "HitsCumC
 KEYEXPR._chart = [
 	[
         "type": "line",
-        "name": "Buffer usage(%) information",
+        "name": "Buffer usage percent information",
         "chart_columns": ["UsedPct"],
         "hint_columns": ["TotalBlocksCnt","FreeBlocksCnt"]
     ],
