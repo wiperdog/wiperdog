@@ -13,14 +13,17 @@
  */
 JOB = [name:"OS.Network_IO_Windows"]
 FETCHACTION = {
-   def command = [type:"wmic",commandStr:"path Win32_PerfRawData_Tcpip_NetworkInterface Get Name,PacketsReceivedPersec,PacketsSentPersec,BytesReceivedPersec,BytesSentPersec /format:csv"]
+   def command = [type:"wmic",commandStr:"path Win32_PerfRawData_Tcpip_NetworkInterface Get PacketsReceivedPersec,PacketsSentPersec,BytesReceivedPersec,BytesSentPersec"]
    def procData = procRunner.procExecute(command,true)
    def output = procData.out
+   assert (output != null && output != "" ), "Output empty : " + procData.err
+   
    def checkHeader = false
    def headers = []
    def rawData = []
    //process raw data
    output.eachLine{
+   	    it = it.replaceAll("(\\s+)", ",")
 		if(!checkHeader){
 			if(it.trim() != "") {
 				headers = (it.split(",") as List)
@@ -32,27 +35,36 @@ FETCHACTION = {
 			}
 		}
    }
-   //remove redundant data 
-   headers.remove(0)
-    rawData.each{
-		it.remove(0)
-   }
+   
    def resultData = []
-   //Merge headers and data
-   rawData.each {
-		def elemData = [:]
-		for(int i = 0; i < it.size(); i++ ){
-			try	{
-				elemData[headers[i]] = it[i].toLong()
-			} catch(NumberFormatException  ex){
-				if(headers[i] == "Name"){
-					headers[i] = "NetworkCardName"
-				}
-				elemData[headers[i]] = it[i]
-			}
+   
+   //Get Name of Network card
+   command = [type:"wmic",commandStr:"path Win32_PerfRawData_Tcpip_NetworkInterface Get Name"]
+   procData = procRunner.procExecute(command,true)
+   output = procData.out
+   def nameLst = []
+   output.eachLine{
+   	   	if (it.trim() != "") {
+			nameLst.add(it.trim())
 		}
+   }
+   nameLst.remove(0)
+   
+   //Merge headers and data
+   def dataRecord
+   def elemData
+   for(int i = 0; i < rawData.size(); i++ ) {
+	elemData = [:]
+	dataRecord = rawData[i]
+	for(int j = 0; j < dataRecord.size(); j++ ){
+		try	{
+			elemData[headers[j]] = dataRecord[j].toLong()
+		} catch(NumberFormatException  ex){
+		}
+	}
+	
     def tmpElemData = [:]
-    tmpElemData['NetworkCardName'] = elemData['NetworkCardName']
+    tmpElemData['NetworkCardName'] = nameLst[i]
     tmpElemData['PacketsReceivedCnt'] = elemData['PacketsReceivedPersec']
     tmpElemData['PacketsSentCnt'] = elemData['PacketsSentPersec']
     tmpElemData['BytesReceivedVal'] = elemData['BytesReceivedPersec']
@@ -62,6 +74,7 @@ FETCHACTION = {
    //Merge listData and list device
    return resultData
 }
+
 ACCUMULATE = {
   assert interval != null, "First time, we cannot return meaningful values"
   if(prevOUTPUT != null) {
@@ -71,32 +84,32 @@ ACCUMULATE = {
         if (prevREC.NetworkCardName == rec.NetworkCardName) {
           // packets have been received.
           rec['DiffPacketsReceivedVal'] = rec['PacketsReceivedCnt'] - prevREC['PacketsReceivedCnt']
-          rec['PacketsReceivedPerSecPct'] = rec['DiffPacketsReceivedVal'] / interval
+          rec['PacketsReceivedPerSecVal'] = rec['DiffPacketsReceivedVal'] / interval
           // packets have been sent.
           rec['DiffPacketsSentVal'] = rec['PacketsSentCnt'] - prevREC['PacketsSentCnt']
-          rec['PacketsSentPerSecPct'] = rec['DiffPacketsSentVal'] / interval
+          rec['PacketsSentPerSecVal'] = rec['DiffPacketsSentVal'] / interval
           // total packets have been received.
           rec['DiffBytesReceivedVal'] = rec['BytesReceivedVal'] - prevREC['BytesReceivedVal']
-          rec['BytesReceivedPerSecPct'] = rec['DiffBytesReceivedVal'] / interval
+          rec['BytesReceivedPerSecVal'] = rec['DiffBytesReceivedVal'] / interval
           // total packets have been sent.
           rec['DiffBytesSentVal'] = rec['BytesSentVal'] - prevREC['BytesSentVal']
-          rec['BytesSentPerSecPct'] = rec['DiffBytesSentVal'] / interval
+          rec['BytesSentPerSecVal'] = rec['DiffBytesSentVal'] / interval
           checkExists = true
         }
       }
       if(!checkExists) {
         // packets have been received.
         rec['DiffPacketsReceivedVal'] = rec['PacketsReceivedCnt']
-        rec['PacketsReceivedPerSecPct'] = rec['PacketsReceivedCnt'] / interval
+        rec['PacketsReceivedPerSecVal'] = rec['PacketsReceivedCnt'] / interval
         // packets have been sent.
         rec['DiffPacketsSentVal'] = rec['PacketsSentCnt'] 
-        rec['PacketsSentPerSecPct'] = rec['PacketsSentCnt'] / interval
+        rec['PacketsSentPerSecVal'] = rec['PacketsSentCnt'] / interval
         // total packets have been received.
         rec['DiffBytesReceivedVal'] = rec['BytesReceivedVal']
-        rec['BytesReceivedPerSecPct'] = rec['DiffBytesReceivedVal'] / interval
+        rec['BytesReceivedPerSecVal'] = rec['DiffBytesReceivedVal'] / interval
         // total packets have been sent.
         rec['DiffBytesSentVal'] = rec['BytesSentVal']
-        rec['BytesSentPerSecPct'] = rec['DiffBytesSentVal'] / interval
+        rec['BytesSentPerSecVal'] = rec['DiffBytesSentVal'] / interval
       }
     }
   }
@@ -104,10 +117,10 @@ ACCUMULATE = {
 
 KEYEXPR = [_root:["NetworkCardName"] , _sequence:["PacketsReceivedCnt","BytesReceivedVal"]]
 KEYEXPR._unit = [
-    "PacketsReceivedCnt" : "count", "DiffPacketsReceivedVal": "count/interval", "PacketsReceivedPerSecPct": "count/sec",
-    "PacketsSentCnt":"count", "DiffPacketsSentVal": "count/interval", "PacketsSentPerSecPct": "count/sec",
-    "BytesReceivedCnt":"byte", "DiffBytesReceivedVal": "byte/interval", "BytesReceivedPerSecPct": "byte/sec",
-    "BytesSentCnt":"byte", "DiffBytesSentVal": "byte/interval", "BytesSentPerSecPct": "byte/sec"
+    "PacketsReceivedCnt" : "count", "DiffPacketsReceivedVal": "count/interval", "PacketsReceivedPerSecVal": "count/sec",
+    "PacketsSentCnt":"count", "DiffPacketsSentVal": "count/interval", "PacketsSentPerSecVal": "count/sec",
+    "BytesReceivedCnt":"byte", "DiffBytesReceivedVal": "byte/interval", "BytesReceivedPerSecVal": "byte/sec",
+    "BytesSentCnt":"byte", "DiffBytesSentVal": "byte/interval", "BytesSentPerSecVal": "byte/sec"
   ]
 KEYEXPR._chart = [
     [

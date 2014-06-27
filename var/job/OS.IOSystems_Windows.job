@@ -16,10 +16,12 @@
 JOB = [name:"OS.IOSystems_Windows"]
 
 FETCHACTION = {
-	def command = [type:"wmic",commandStr:"path Win32_PerfRawData_PerfDisk_PhysicalDisk Get Name, DiskTransfersPerSec,DiskReadsPerSec,DiskWritesPerSec,DiskBytesPerSec,DiskReadBytesPerSec,DiskWriteBytesPerSec,SplitIOPerSec /format:csv"]
+	def command = [type:"wmic",commandStr:"path Win32_PerfRawData_PerfDisk_PhysicalDisk Get Name, DiskTransfersPerSec,DiskReadsPerSec,DiskWritesPerSec,DiskBytesPerSec,DiskReadBytesPerSec,DiskWriteBytesPerSec,SplitIOPerSec"]
 	def procData = procRunner.procExecute(command,true)
 	//get output data
 	def output = procData.out
+	assert (output != null && output != "" ), "Output empty : " + procData.err
+	
 	def checkHeader = false
 	def headers = []
 	def rawData = []
@@ -27,13 +29,14 @@ FETCHACTION = {
 	def listData = []
 	//process raw data
 	output.eachLine{
+		it = it.replaceAll("(\\s+)", ",")
 		if(!checkHeader){
 			if(it.trim() != "") {
 				headers = (it.split(",") as List)
 				checkHeader = true
 			}
 		} else {
-			if(it.trim() != "") {
+			if((it.trim() != "") && it.contains("_Total")) {
 				rawData.add((it.split(",") as List))
 			}
 		}
@@ -41,14 +44,11 @@ FETCHACTION = {
 	//get list data final
 	rawData.each{
 		tmpData = [:]
-		for(int i=1; i < headers.size(); i++){
+		for(int i=0; i < headers.size(); i++){
 			def data
 			try	{
 				data = it[i].toLong()
 			} catch(NumberFormatException  ex){
-				if(headers[i] == "Name"){
-					tmpData["Name"] = it[i]
-				}
 			}
 			if(headers[i] == "DiskBytesPersec"){
 				tmpData["DiskBytesVal"] = data
@@ -74,7 +74,6 @@ FETCHACTION = {
 		}
 		listData.add(tmpData)
 	}
-	listData.remove(0)
 	return listData
 }
 ACCUMULATE = {
@@ -83,53 +82,37 @@ ACCUMULATE = {
     	OUTPUT.each { rec ->
 	      	def checkExists = false
 	      	prevOUTPUT.each { prevREC ->
-	        	if (prevREC.Name == rec.Name) {
-	        		// DiskBytesVal
-	          		rec['DiffDiskBytesVal'] = rec['DiskBytesVal'] - prevREC['DiskBytesVal']
-	          		rec['DiskBytesPerSecPct'] = rec['DiffDiskBytesVal'] / interval
-	          		// DiskReadBytesVal
-	          		rec['DiffDiskReadBytesVal'] = rec['DiskReadBytesVal'] - prevREC['DiskReadBytesVal']
-	          		rec['DiskReadBytesPerSecPct'] = rec['DiffDiskReadBytesVal'] / interval
-	          		// DiskReadsVal
-	          		rec['DiffDiskReadsVal'] = rec['DiskReadsVal'] - prevREC['DiskReadsVal']
-	          		rec['DiskReadsPerSecPct'] = rec['DiffDiskReadsVal'] / interval
-	          		// DiskTransfersVal
-	          		rec['DiffDiskTransfersVal'] = rec['DiskTransfersVal'] - prevREC['DiskTransfersVal']
-	          		rec['DiskTransfersPerSecPct'] = rec['DiffDiskTransfersVal'] / interval
-	          		// DiskWriteBytesVal
-	          		rec['DiffDiskWriteBytesVal'] = rec['DiskWriteBytesVal'] - prevREC['DiskWriteBytesVal']
-	          		rec['DiskWriteBytesPerSecPct'] = rec['DiffDiskWriteBytesVal'] / interval
-	          		// DiskWritesVal
-	          		rec['DiffDiskWritesVal'] = rec['DiskWritesVal'] - prevREC['DiskWritesVal']
-	          		rec['DiskWritesPerSecPct'] = rec['DiffDiskWritesVal'] / interval
-	          		// SplitIOVal
-	          		rec['DiffSplitIOVal'] = rec['SplitIOVal'] - prevREC['SplitIOVal']
-	          		rec['SplitIOPerSecPct'] = rec['DiffSplitIOVal'] / interval
-	          		checkExists = true
-	        	}
+	        	// DiskBytesVal
+	          	rec['DiffDiskBytesVal'] = rec['DiskBytesVal'] - prevREC['DiskBytesVal']
+	          	// DiskReadBytesVal
+	          	rec['DiffDiskReadBytesVal'] = rec['DiskReadBytesVal'] - prevREC['DiskReadBytesVal']
+	          	// DiskReadsVal
+	          	rec['DiffDiskReadsVal'] = rec['DiskReadsVal'] - prevREC['DiskReadsVal']
+	          	// DiskTransfersVal
+	          	rec['DiffDiskTransfersVal'] = rec['DiskTransfersVal'] - prevREC['DiskTransfersVal']
+	          	// DiskWriteBytesVal
+	          	rec['DiffDiskWriteBytesVal'] = rec['DiskWriteBytesVal'] - prevREC['DiskWriteBytesVal']
+	          	// DiskWritesVal
+	          	rec['DiffDiskWritesVal'] = rec['DiskWritesVal'] - prevREC['DiskWritesVal']
+	          	// SplitIOVal
+	          	rec['DiffSplitIOVal'] = rec['SplitIOVal'] - prevREC['SplitIOVal']
+	          	checkExists = true
 	      	}
 	      	if(!checkExists) {
 	        	// DiskBytesVal
           		rec['DiffDiskBytesVal'] = rec['DiskBytesVal']
-          		rec['DiskBytesPerSecPct'] = rec['DiffDiskBytesVal'] / interval
           		// DiskReadBytesVal
           		rec['DiffDiskReadBytesVal'] = rec['DiskReadBytesVal']
-          		rec['DiskReadBytesPerSecPct'] = rec['DiffDiskReadBytesVal'] / interval
           		// DiskReadsVal
           		rec['DiffDiskReadsVal'] = rec['DiskReadsVal']
-          		rec['DiskReadsPerSecPct'] = rec['DiffDiskReadsVal'] / interval
           		// DiskTransfersVal
           		rec['DiffDiskTransfersVal'] = rec['DiskTransfersVal']
-          		rec['DiskTransfersPerSecPct'] = rec['DiffDiskTransfersVal'] / interval
           		// DiskWriteBytesVal
           		rec['DiffDiskWriteBytesVal'] = rec['DiskWriteBytesVal']
-          		rec['DiskWriteBytesPerSecPct'] = rec['DiffDiskWriteBytesVal'] / interval
           		// DiskWritesVal
           		rec['DiffDiskWritesVal'] = rec['DiskWritesVal']
-          		rec['DiskWritesPerSecPct'] = rec['DiffDiskWritesVal'] / interval
           		// SplitIOVal
           		rec['DiffSplitIOVal'] = rec['SplitIOVal']
-          		rec['SplitIOPerSecPct'] = rec['DiffSplitIOVal'] / interval
 	      	}
     	}
   	}
@@ -137,13 +120,13 @@ ACCUMULATE = {
 
 KEYEXPR = ['_sequence':['DiskTransfersVal','DiskReadsVal','DiskWritesVal']]
 KEYEXPR._unit = [
-		"DiskBytesVal":"byte", "DiffDiskBytesVal": "byte/interval", "DiskBytesPerSecPct": "byte/sec",
-		"DiskReadBytesVal":"byte", "DiffDiskReadBytesVal": "byte/interval", "DiskReadBytesPerSecPct": "byte/sec",
-		"DiskReadsVal":"count", "DiffDiskReadsVal": "count/interval", "DiskReadsPerSecPct": "count/sec",
-		"DiskTransfersVal":"count", "DiffDiskTransfersVal": "count/interval", "DiskTransfersPerSecPct": "count/sec",
-		"DiskWriteBytesVal":"byte", "DiffDiskWriteBytesVal": "byte/interval", "DiskWriteBytesPerSecPct": "byte/sec",
-		"DiskWritesVal":"count", "DiffDiskWritesVal": "count/interval", "DiskWritesPerSecPct": "count/sec",
-		"SplitIOVal":"byte",  "DiffSplitIOVal": "byte/interval", "SplitIOPerSecPct": "byte/sec"
+		"DiskBytesVal":"byte", "DiffDiskBytesVal": "byte/interval",
+		"DiskReadBytesVal":"byte", "DiffDiskReadBytesVal": "byte/interval",
+		"DiskReadsVal":"count", "DiffDiskReadsVal": "count/interval",
+		"DiskTransfersVal":"count", "DiffDiskTransfersVal": "count/interval",
+		"DiskWriteBytesVal":"byte", "DiffDiskWriteBytesVal": "byte/interval",
+		"DiskWritesVal":"count", "DiffDiskWritesVal": "count/interval",
+		"SplitIOVal":"byte",  "DiffSplitIOVal": "byte/interval"
 	]
 KEYEXPR._chart = [
 	[

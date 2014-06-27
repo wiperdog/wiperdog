@@ -10,13 +10,17 @@
  */
 JOB = [name:"OS.Pagefiles_Usage_Windows"]
 FETCHACTION = {
-	def cmdGetPagefile= [type:"wmic",commandStr:"PAGEFILE GET Name,CurrentUsage,AllocatedBasesize /format:csv"]
-	def dataPagefile = procRunner.procExecute(cmdGetPagefile,true).out
+	def cmdGetPagefile= [type:"wmic",commandStr:"PAGEFILE GET CurrentUsage,AllocatedBaseSize"]
+	def procData = procRunner.procExecute(cmdGetPagefile,true)
+	def dataPagefile = procData.out
+	assert (dataPagefile != null && dataPagefile != "" ), "Output empty : " + procData.err
+	
 	def checkHeader = false
 	def headers = []
 	def rawData = []
 	//process raw data
 	dataPagefile.eachLine{
+		it = it.replaceAll("(\\s+)", ",")
 		if(!checkHeader){
 			if(it.trim() != "") {
 				headers = (it.split(",") as List)
@@ -29,18 +33,34 @@ FETCHACTION = {
 		}
 	}
 	def resultData = []
+	
+	//Get name of page file
+   	command = [type:"wmic",commandStr:"PAGEFILE GET Name"]
+   	procData = procRunner.procExecute(command,true)
+  	output = procData.out
+   	def nameLst = []
+   	output.eachLine{
+   	   	if (it.trim() != "") {
+			nameLst.add(it.trim())
+		}
+   	}
+   	nameLst.remove(0)
+	
 	//Merge headers and data
-	rawData.each {
-		def elemData = [:]
-		for(int i = 1; i < it.size(); i++ ){
+	def dataRecord
+    def elemData
+    for(int i = 0; i < rawData.size(); i++ ) {
+		elemData = [:]
+		dataRecord = rawData[i]
+		for(int j = 0; j < dataRecord.size(); j++ ){
 			try{
-				elemData[headers[i]] = it[i].toLong()
+				elemData[headers[j]] = dataRecord[j].toLong()
 			} catch(Exception ex){
-				elemData[headers[i]] = it[i]
 			}
 		}
+		
 		def finalData = [:]
-		finalData["PagefileLocName"] = elemData["Name"]
+		finalData["PagefileLocName"] = nameLst[i]
 		finalData["FreePagefileKB"] = elemData["AllocatedBaseSize"] - elemData["CurrentUsage"]
 		finalData["UsedPct"] = Math.round((elemData["CurrentUsage"]/elemData["AllocatedBaseSize"])*100)
 		finalData["CurrentUsageKB"] = elemData["CurrentUsage"]
