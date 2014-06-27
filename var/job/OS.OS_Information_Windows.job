@@ -13,65 +13,48 @@
 JOB = [name:"OS.OS_Information_Windows"]
 
 FETCHACTION = {
-	def command = [type:"wmic",commandStr:"OS GET Caption,Version,WindowsDirectory,NumberOfUsers,CSName,InstallDate,ServicePackMajorVersion /format:csv"]
-	def procData = procRunner.procExecute(command,true)
-	//get output data
-	def output = procData.out
-	def listRawData = []
-	def listHeaders = []
-	def resultData = [:]
-	def checkHeader = false
-	output.eachLine{line->
-		if(line.trim() != ""){
-			if(!checkHeader){
-				listHeaders = line.trim().split(",") as List
-				checkHeader = true
-			} else {			
-				listRawData.add(line.trim().split(",") as List)
+	//def command = [type:"wmic",commandStr:"OS GET Caption,Version,WindowsDirectory,NumberOfUsers,CSName,InstallDate,ServicePackMajorVersion /format:csv"]
+	
+	def getOSInfo = {varStr ->
+		def command = [type:"wmic",commandStr:"OS GET $varStr"]
+		def procData = procRunner.procExecute(command,true)
+		def output = procData.out
+		assert (output != null && output != "" ), "Output empty : " + procData.err
+		
+		def retList = []
+		output.eachLine{line->
+			if(line.trim() != ""){
+				retList.add(line.trim())
 			}
 		}
-	}
-	def newHeaders = []
-	// Rename Header
-	for(int i = 0 ; i < listHeaders.size() ; i++ ){
-		if(listHeaders[i].equals("Caption")){
-			newHeaders[i] = "OSName"
-		} else if(listHeaders[i].equals("Version")){
-			newHeaders[i] = "VersionID"
-		} else if(listHeaders[i].equals("WindowsDirectory")){
-			newHeaders[i] = "WindowsDirName"
-		} else if(listHeaders[i].equals("NumberOfUsers")){
-			newHeaders[i] = "NumberOfUsersCnt"
-		} else if(listHeaders[i].equals("CSName")){
-			newHeaders[i] = "HostName"
-		} else if(listHeaders[i].equals("InstallDate")){
-			newHeaders[i] = "InstallDate"
-		} else if(listHeaders[i].equals("ServicePackMajorVersion")){
-			newHeaders[i] = "ServicePackVersionID"
-		} 
-	}
-	def listData = []
-	//get result data
-	listRawData.each{
-		def tmpMap = [:]
-		for(int i = 1 ; i < it.size() ; i++ ){
-			if(newHeaders[i].equals("InstallDate")){
-				it[i] = (it[i].trim().split("\\.") as List )[0]	
-				java.text.SimpleDateFormat sf = new java.text.SimpleDateFormat("yyyyMMddHHmmss")
-				def date = sf.parse(it[i])
-				sf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-				tmpMap[newHeaders[i]] = sf.format(date)
-			} else  {
-				try	{
-					tmpMap[newHeaders[i]] = it[i].toLong()
-				}catch(NumberFormatException ex){				
-					tmpMap[newHeaders[i]] = it[i]
-				}
-			}
+		def size = retList.size()
+		if (size >= 1) {
+			return retList[size - 1]
+		} else {
+			return ""
 		}
-		listData.add(tmpMap)
 	}
 	
+	def convertToDate = { dateStr ->
+		dateStr = (dateStr.trim().split("\\.") as List )[0]	
+		java.text.SimpleDateFormat sf = new java.text.SimpleDateFormat("yyyyMMddHHmmss")
+		def date = sf.parse(dateStr)
+		sf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+		return sf.format(date)
+	}
+	
+	def resultData = [:]
+	resultData["OSName"] = getOSInfo("Caption")
+	resultData["VersionID"] = getOSInfo("Version")
+	resultData["WindowsDirName"] = getOSInfo("WindowsDirectory")
+	resultData["NumberOfUsersCnt"] = getOSInfo("NumberOfUsers")
+	resultData["HostName"] = getOSInfo("CSName")
+	def installDate = getOSInfo("InstallDate")
+	resultData["InstallDate"] = convertToDate(installDate)
+	resultData["ServicePackVersionID"] = getOSInfo("ServicePackMajorVersion")
+	
+	def listData = []
+	listData.add(resultData)
 	return listData
 }
 SENDTYPE = "Store"

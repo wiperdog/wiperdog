@@ -12,13 +12,17 @@
  */
 JOB = [name:"OS.Memory_Usage_Windows"]
 FETCHACTION = {
-	def cmdGetPhysMem= [type:"wmic",commandStr:"OS GET FreePhysicalMemory,TotalVisibleMemorySize /format:csv"]
-	def dataPhysMem =  procRunner.procExecute(cmdGetPhysMem,true).out
+	def cmdGetPhysMem= [type:"wmic",commandStr:"OS GET FreePhysicalMemory,TotalVisibleMemorySize"]
+	def procData =  procRunner.procExecute(cmdGetPhysMem,true)
+	def dataPhysMem = procData.out
+	assert (dataPhysMem != null && dataPhysMem != "" ), "Output empty : " + procData.err
+	
 	def checkHeader = false
 	def headers = []
 	def rawData = []
 	//process raw data
 	dataPhysMem.eachLine{
+		it = it.replaceAll("(\\s+)", ",")
 		if(!checkHeader){
 			if(it.trim() != "") {
 				headers = (it.split(",") as List)
@@ -35,7 +39,7 @@ FETCHACTION = {
    rawData.each {
 		def elemData = [:]
 		def data = [:]
-		for(int i = 1 ; i < it.size() ; i++ ){			
+		for(int i = 0 ; i < it.size() ; i++ ){			
 			try{
 				elemData[headers[i]] = it[i].toLong()
 			} catch(Exception ex){
