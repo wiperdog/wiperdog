@@ -24,7 +24,9 @@ FETCHACTION = {
 	def resultData = []
 	def finalData = []
 	//data remote
-	def output = procRunner.procExecute(command,true).out
+	def outputProc = procRunner.procExecute(command,true)
+	def output = outputProc.out
+	assert output != null && output != "", "Process output is null or empty "+ outputProc.err
 	def listRows = []
 	output.eachLine{line->
 	 	def row = line.trim()

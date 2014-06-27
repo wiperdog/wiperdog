@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE wiperdog [
-	<!ELEMENT wiperdog (welcome,appName,appVersion,runAppStr, readmePath, licensePath, installAsOSService, installLogPath)>
+	<!ELEMENT wiperdog (welcome,appName,appVersion,runAppStr, readmePath, licensePath, installAsOSService, installLogPath, installMode)>
 	<!ELEMENT welcome (paragraph)*>
 	<!ELEMENT paragraph (#PCDATA)>
 	<!ELEMENT appName (name)>
@@ -14,6 +14,7 @@
 	<!ELEMENT licensePath (path)>
 	<!ELEMENT installAsOSService (str)>
 	<!ELEMENT installLogPath (path)>
+	<!ELEMENT installMode (str)>
 ]>
 <wiperdog>
 	<welcome>
@@ -37,5 +38,8 @@
 	<readmePath><path>readme.txt</path></readmePath>
 	<licensePath><path>license.txt</path></licensePath>	
 	<installAsOSService><str>yes</str></installAsOSService>
+	<!-- INSTALLER_LOG_PATH will be replaced while running, based on current directory which contain installer jar file-->
 	<installLogPath><path>INSTALLER_LOG_PATH</path></installLogPath>
+	<!-- INSTALL_MODE will be replaced while running, based on -d option in the main installer-->
+	<installMode><str>INSTALL_MODE</str></installMode>
 </wiperdog>
