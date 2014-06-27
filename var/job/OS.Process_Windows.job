@@ -54,6 +54,7 @@ FETCHACTION = {
 	command = [type:"wmic",commandStr:"Process GET ExecutablePath"]
    	procData = procRunner.procExecute(command,true)
   	output = procData.out
+	assert (output != null && output != "" ), "Output empty : " + procData.err	
    	def exePathLst = []
    	output.eachLine{
    		if(it.trim() != "") {
