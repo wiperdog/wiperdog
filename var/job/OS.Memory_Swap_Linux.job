@@ -19,7 +19,9 @@ FETCHACTION = {
  def command = "free"
  def resultData = []
  //data remote
- def output = procRunner.procExecute(command,false).out
+ def outputProc = procRunner.procExecute(command,false)
+ def output = outputProc.out
+ assert output != null && output != "", "Process output is null or empty " + outputProc.err
  def listColHeader = new ArrayList<String>()
  def checkColHeader = false
  output.eachLine{ line->
@@ -31,23 +33,25 @@ FETCHACTION = {
 		def rowData = row[1].trim().split(" ").findAll{!it.trim().equals("")}
 		def tmpMapVal = [:]
 		def tmpMapKey = [:]
-		for(int i=0 ; i< listColHeader.size() ; i++ ){
-			if(rowData.size() > i){
-				 tmpMapVal[listColHeader[i]] = rowData.get(i).trim().toLong()
-			} else {
-				 tmpMapVal[listColHeader[i]] = 0
+		if (!row[0].contains("buffers/cache")) {
+			for(int i=0 ; i< listColHeader.size() ; i++ ){
+				if(rowData.size() > i){
+					 tmpMapVal[listColHeader[i]] = rowData.get(i).trim().toLong()
+				} else {
+					 tmpMapVal[listColHeader[i]] = 0
+				}
 			}
+			def mapData = [:]
+			mapData['TypeName'] =  row[0].trim()
+			mapData['UsedMemoryKB'] =  tmpMapVal["used"]
+	        	mapData['UsedMemoryPct'] =  (tmpMapVal["total"] != 0)?(tmpMapVal["used"]/tmpMapVal["total"])*100 : 0
+			mapData['TotalMemorySizeKB'] =  tmpMapVal["total"]
+			mapData['FreeMemoryKB'] =  tmpMapVal["free"]
+			mapData['SharedMemoryKB'] =  tmpMapVal["shared"]
+			mapData['BuffersKB'] =  tmpMapVal["buffers"]
+			mapData['CachedKB'] =  tmpMapVal["cached"]
+			resultData.add(mapData)
 		}
-		def mapData = [:]
-		mapData['TypeName'] =  row[0].trim()
-		mapData['UsedMemoryKB'] =  tmpMapVal["used"]
-		mapData['UsedMemoryPct'] =  (tmpMapVal["used"]/tmpMapVal["total"])*100
-		mapData['TotalMemorySizeKB'] =  tmpMapVal["total"]
-		mapData['FreeMemoryKB'] =  tmpMapVal["free"]
-		mapData['SharedMemoryKB'] =  tmpMapVal["shared"]
-		mapData['BuffersKB'] =  tmpMapVal["buffers"]
-		mapData['CachedKB'] =  tmpMapVal["cached"]
-		resultData.add(mapData)
     }
  }
  return resultData
