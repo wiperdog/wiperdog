@@ -14,7 +14,6 @@ FETCHACTION = {
 	def procData = procRunner.procExecute(cmdGetPagefile,true)
 	def dataPagefile = procData.out
 	assert (dataPagefile != null && dataPagefile != "" ), "Output empty : " + procData.err
-	
 	def checkHeader = false
 	def headers = []
 	def rawData = []
@@ -38,6 +37,7 @@ FETCHACTION = {
    	command = [type:"wmic",commandStr:"PAGEFILE GET Name"]
    	procData = procRunner.procExecute(command,true)
   	output = procData.out
+	assert (output != null && output != "" ), "Output empty : " + procData.err
    	def nameLst = []
    	output.eachLine{
    	   	if (it.trim() != "") {
