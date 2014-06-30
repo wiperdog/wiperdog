@@ -60,7 +60,7 @@ FETCHACTION = {
 		}
 		
 		def finalData = [:]
-		finalData["PagefileLocName"] = nameLst[i]
+		finalData["PagefileLocName"] = nameLst[i].replace("\\","/")
 		finalData["FreePagefileKB"] = elemData["AllocatedBaseSize"] - elemData["CurrentUsage"]
 		finalData["UsedPct"] = Math.round((elemData["CurrentUsage"]/elemData["AllocatedBaseSize"])*100)
 		finalData["CurrentUsageKB"] = elemData["CurrentUsage"]
