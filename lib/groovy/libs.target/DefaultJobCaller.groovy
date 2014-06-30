@@ -924,7 +924,8 @@ class ProcessRunner{
 			errorGobbler.join()
 			outputGobbler.join()
 		} catch (Exception ex){
-			ex.printStackTrace();
+			resultData['err'] = ex.getMessage()
+			println ex.getMessage()
 		}
 		return resultData
 	}
