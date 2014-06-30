@@ -79,7 +79,7 @@ FETCHACTION = {
 	return resultData
 }
 ACCUMULATE = {
-  	assert interval != null, "First time, we cannot return meaningful values"
+  	assert interval != null && interval != 0, "First time, we cannot return meaningful values"
   	if(prevOUTPUT != null) {
     	OUTPUT.each { rec ->
 	      	def checkExists = false
