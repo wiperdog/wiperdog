@@ -13,96 +13,94 @@
  * @returnParam NumberBlocksWriteInt The total number of kilobytes written.
  */
 JOB = [name:"OS.IOSystems_Linux"]
-
 FETCHACTION = {
-	def command = "iostat"
-	def resultData = []
-	//data remote
-	def outputProc = procRunner.procExecute(command,false)
-	def output =outputProc.out
-	assert output != null && output != "", "Process output is null or empty "+ outputProc.err
-	def listRows = []
-	output.eachLine{line->
-	 	def row = line.trim()
-		if(row.size() > 0){
-			listRows.add(row)
-		}
-	}
-	listRows.remove(0)
-	//split data Device
-	def tmpHeaderDev = listRows[2].trim().split(" ").findAll{!it.trim().equals("")}
-	def tmpDataDev
-	for(int j=3;j < listRows.size(); j++){
-	def rowDataDev = listRows[j].trim().split(" ").findAll{!it.trim().equals("")}	
-	tmpDataDev = [:]
-	for(int k=0; k<tmpHeaderDev.size(); k++){
-		if(k == 0){
-			tmpDataDev["DeviceName"] = rowDataDev[k]
-		} else {
-			def data = Double.parseDouble(rowDataDev[k])
-			if(tmpHeaderDev[k] == "tps"){
-				tmpDataDev["NumberTransfersRateVal"] = data
-			}
-			if(tmpHeaderDev[k] == "kB_read/s"){
-				tmpDataDev["NumberBlockReadRateVal"] = data
-			}
-			if(tmpHeaderDev[k] == "kB_wrtn/s"){
-				tmpDataDev["NumberBlockWriteRateVal"] = data
-			}
-			if(tmpHeaderDev[k] == "kB_read"){
-				tmpDataDev["NumberBlocksReadInt"] = data
-			}
-			if(tmpHeaderDev[k] == "kB_wrtn"){
-				tmpDataDev["NumberBlocksWriteInt"] = data
-			}
-		}
-	}
-	resultData.add(tmpDataDev)
-	}
-	return resultData
+    def command = "iostat"
+    def resultData = []
+    //data remote
+    def outputProc = procRunner.procExecute(command,false)
+    def output =outputProc.out
+    assert output != null && output != "", "Process output is null or empty, error information: "+ outputProc.err
+    def listRows = []
+    output.eachLine{line->
+         def row = line.trim()
+        if(row.size() > 0){
+            listRows.add(row)
+        }
+    }
+    listRows.remove(0)
+    //split data Device
+    def tmpHeaderDev = listRows[2].trim().split(" ").findAll{!it.trim().equals("")}
+    def tmpDataDev
+    for(int j=3;j < listRows.size(); j++){
+    def rowDataDev = listRows[j].trim().split(" ").findAll{!it.trim().equals("")}    
+    tmpDataDev = [:]
+    for(int k=0; k<tmpHeaderDev.size(); k++){
+        if(k == 0){
+            tmpDataDev["DeviceName"] = rowDataDev[k]
+        } else {
+            def data = Double.parseDouble(rowDataDev[k])
+            if(tmpHeaderDev[k] == "tps"){
+                tmpDataDev["NumberTransfersRateVal"] = data
+            }
+            if(tmpHeaderDev[k] == "kB_read/s"){
+                tmpDataDev["NumberBlockReadRateVal"] = data
+            }
+            if(tmpHeaderDev[k] == "kB_wrtn/s"){
+                tmpDataDev["NumberBlockWriteRateVal"] = data
+            }
+            if(tmpHeaderDev[k] == "kB_read"){
+                tmpDataDev["NumberBlocksReadInt"] = data
+            }
+            if(tmpHeaderDev[k] == "kB_wrtn"){
+                tmpDataDev["NumberBlocksWriteInt"] = data
+            }
+        }
+    }
+    resultData.add(tmpDataDev)
+    }
+    return resultData
 }
 ACCUMULATE = {
-  	assert interval != null, "First time, we cannot return meaningful values"
-  	if(prevOUTPUT != null) {
-    	OUTPUT.each { rec ->
-	      	def checkExists = false
-	      	prevOUTPUT.each { prevREC ->
-	        	if (prevREC.DeviceName == rec.DeviceName) {
-	        		// Number Blocks Read
-	          		rec['DiffNumberBlocksReadVal'] = rec['NumberBlocksReadInt'] - prevREC['NumberBlocksReadInt']
-	          		rec['NumberBlocksReadPerSecPct'] = rec['DiffNumberBlocksReadVal'] / interval
-	          		// Number Blocks Write
-	          		rec['DiffNumberBlocksWriteVal'] = rec['NumberBlocksWriteInt'] - prevREC['NumberBlocksWriteInt']
-	          		rec['NumberBlocksWriteIntPerSecPct'] = rec['DiffNumberBlocksWriteVal'] / interval
-	          		checkExists = true
-	        	}
-	      	}
-	      	if(!checkExists) {
-	      		// Number Blocks Read
-          		rec['DiffNumberBlocksReadVal'] = rec['NumberBlocksReadInt']
-	          		rec['NumberBlocksReadPerSecPct'] = rec['DiffNumberBlocksReadVal'] / interval
-	        	// Number Blocks Write
-          		rec['DiffNumberBlocksWriteVal'] = rec['NumberBlocksWriteInt']
-          		rec['NumberBlocksWriteIntPerSecPct'] = rec['DiffNumberBlocksWriteVal'] / interval
-	      	}
-    	}
-  	}
+      assert interval != null, "First time, we cannot return meaningful values"
+      if(prevOUTPUT != null) {
+        OUTPUT.each { rec ->
+              def checkExists = false
+              prevOUTPUT.each { prevREC ->
+                if (prevREC.DeviceName == rec.DeviceName) {
+                    // Number Blocks Read
+                      rec['DiffNumberBlocksReadVal'] = rec['NumberBlocksReadInt'] - prevREC['NumberBlocksReadInt']
+                      rec['NumberBlocksReadPerSecPct'] = rec['DiffNumberBlocksReadVal'] / interval
+                      // Number Blocks Write
+                      rec['DiffNumberBlocksWriteVal'] = rec['NumberBlocksWriteInt'] - prevREC['NumberBlocksWriteInt']
+                      rec['NumberBlocksWriteIntPerSecPct'] = rec['DiffNumberBlocksWriteVal'] / interval
+                      checkExists = true
+                }
+              }
+              if(!checkExists) {
+                  // Number Blocks Read
+                  rec['DiffNumberBlocksReadVal'] = rec['NumberBlocksReadInt']
+                      rec['NumberBlocksReadPerSecPct'] = rec['DiffNumberBlocksReadVal'] / interval
+                // Number Blocks Write
+                  rec['DiffNumberBlocksWriteVal'] = rec['NumberBlocksWriteInt']
+                  rec['NumberBlocksWriteIntPerSecPct'] = rec['DiffNumberBlocksWriteVal'] / interval
+              }
+        }
+      }
 }
-
-KEYEXPR = ['_root':['DeviceName'], '_sequence':['NumberTransfersRateVal','NumberBlockReadRateVal','NumberBlockWriteRateVal']]
-KEYEXPR._unit = ["NumberTransfersRateVal":"count/sec", "NumberBlockReadRateVal":"count/sec", "NumberBlockWriteRateVal":"count/sec",
-	"NumberBlocksReadInt":"count", "DiffNumberBlocksReadVal": "count/interval", "NumberBlocksReadPerSecPct": "count/sec",
-	"NumberBlocksWriteInt":"count", "DiffNumberBlocksWriteVal": "count/interval", "NumberBlocksWriteIntPerSecPct": "count/sec"]
+KEYEXPR = [_root:["DeviceName"], _sequence:["NumberTransfersRateVal","NumberBlockReadRateVal","NumberBlockWriteRateVal"]]
+KEYEXPR._unit = ["NumberTransfersRateVal":"count/sec","NumberBlockReadRateVal":"count/sec","NumberBlockWriteRateVal":"count/sec","NumberBlocksReadInt":"count","DiffNumberBlocksReadVal":"count/interval","NumberBlocksReadPerSecPct":"count/sec","NumberBlocksWriteInt":"count","DiffNumberBlocksWriteVal":"count/interval","NumberBlocksWriteIntPerSecPct":"count/sec"]
 KEYEXPR._chart = [
-    [
-        "type": "line",
-        "name": "Number of read/write blocks",
-        "chart_columns": ["DiffNumberBlocksReadVal", "DiffNumberBlocksWriteVal"]
+  [
+    "type": "line",
+    "name": "Number of read/write blocks",
+    "chart_columns": [
+      "DiffNumberBlocksReadVal",
+      "DiffNumberBlocksWriteVal"
     ]
+  ]
 ]
-
 SENDTYPE = "Store"
 RESOURCEID = "Linux/IOSystems"
-DEST = parameters.dest
+MONITORINGTYPE = "@OS"
 OSINFO = parameters.osinfo
-MONITORINGTYPE = '@OS'
+DEST = parameters.dest

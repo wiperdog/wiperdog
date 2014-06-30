@@ -14,131 +14,131 @@
  */
 JOB = [name:"OS.Network_IO_Linux"]
 FETCHACTION = {
-	def command = '/sbin/ifconfig'
-	def output = procRunner.procExecute(command,false)
-	def map = [:]
-	def dataOut = output.out
-	assert dataOut != null && dataOut != "", "Process output is null or empty " + output.err
- 	def data = dataOut.split("\\n\\n")        
-	def resultData = []
-	data.each{d->
-		def checkHeader = false
-		def tmpMapRX = [:]
-		def tmpMapTX = [:]
-		def networkCard = ""
-		def mapData = [:]
-		d.eachLine{
-			if(it.trim() != ""){
-				if(!checkHeader){
-					checkHeader = true
-					mapData["NetworkCardName"] = it.trim().split(" ")[0]
-				} else {
-					if(it.contains("RX packets")){
-						def dataRX = ((it.trim()).split(" ") as List)
-						for(int i = 1 ; i< dataRX.size() ; i++){
-							def item = dataRX[i].split(":")
-							tmpMapRX[item[0]] = item[1].toLong()
-						}
-						tmpMapRX.each{ key,value ->
-							if(key.trim().equals("packets")){
-								mapData["ReceivedPacketsCnt"] = value
-							}
-						}
-					}
-					if(it.contains("TX packets")){
-						def dataTX = ((it.trim()).split(" ") as List)
-						for(int i = 1 ; i< dataTX.size() ; i++){
-							def item = dataTX[i].split(":")
-							tmpMapTX[item[0]] = item[1].toLong()
-						}
-						tmpMapTX.each{ key,value ->
-							if(key.trim().equals("packets")){
-								mapData["TransferedPacketsCnt"] = value
-							}
-						}
-					}
-					if(it.contains("RX byte")){
-						def dataBytes = it.split("  ")
-						dataBytes.each{ dbyte->
-							if(dbyte.contains("RX")){
-								def idx =  dbyte.split(":")[1].indexOf("(")
-								//tmpMapRX["bytes"] = dbyte.split(":")[1].substring(0,idx).toLong()
-								mapData["ReceivedBytes"] = dbyte.split(":")[1].substring(0,idx).toLong()
-							}
-							if(dbyte.contains("TX")){
-								def idx =  dbyte.split(":")[1].indexOf("(")
-								mapData["TransferedBytes"] = dbyte.split(":")[1].substring(0,idx).toLong()
-							}
-						}
-					}
-				}
-			}
-		}
-		resultData.add(mapData)
-	}
-	return resultData
+    def command = '/sbin/ifconfig'
+    def output = procRunner.procExecute(command,false)
+    def map = [:]
+    def dataOut = output.out
+    assert dataOut != null && dataOut != "", "Process output is null or empty, error information: " + output.err
+     def data = dataOut.split("\\n\\n")        
+    def resultData = []
+    data.each{d->
+        def checkHeader = false
+        def tmpMapRX = [:]
+        def tmpMapTX = [:]
+        def networkCard = ""
+        def mapData = [:]
+        d.eachLine{
+            if(it.trim() != ""){
+                if(!checkHeader){
+                    checkHeader = true
+                    mapData["NetworkCardName"] = it.trim().split(" ")[0]
+                } else {
+                    if(it.contains("RX packets")){
+                        def dataRX = ((it.trim()).split(" ") as List)
+                        for(int i = 1 ; i< dataRX.size() ; i++){
+                            def item = dataRX[i].split(":")
+                            tmpMapRX[item[0]] = item[1].toLong()
+                        }
+                        tmpMapRX.each{ key,value ->
+                            if(key.trim().equals("packets")){
+                                mapData["ReceivedPacketsCnt"] = value
+                            }
+                        }
+                    }
+                    if(it.contains("TX packets")){
+                        def dataTX = ((it.trim()).split(" ") as List)
+                        for(int i = 1 ; i< dataTX.size() ; i++){
+                            def item = dataTX[i].split(":")
+                            tmpMapTX[item[0]] = item[1].toLong()
+                        }
+                        tmpMapTX.each{ key,value ->
+                            if(key.trim().equals("packets")){
+                                mapData["TransferedPacketsCnt"] = value
+                            }
+                        }
+                    }
+                    if(it.contains("RX byte")){
+                        def dataBytes = it.split("  ")
+                        dataBytes.each{ dbyte->
+                            if(dbyte.contains("RX")){
+                                def idx =  dbyte.split(":")[1].indexOf("(")
+                                //tmpMapRX["bytes"] = dbyte.split(":")[1].substring(0,idx).toLong()
+                                mapData["ReceivedBytes"] = dbyte.split(":")[1].substring(0,idx).toLong()
+                            }
+                            if(dbyte.contains("TX")){
+                                def idx =  dbyte.split(":")[1].indexOf("(")
+                                mapData["TransferedBytes"] = dbyte.split(":")[1].substring(0,idx).toLong()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        resultData.add(mapData)
+    }
+    return resultData
 }
 ACCUMULATE = {
-  	assert interval != null, "First time, we cannot return meaningful values"
-  	if(prevOUTPUT != null) {
-    	OUTPUT.each { rec ->
-	      	def checkExists = false
-	      	prevOUTPUT.each { prevREC ->
-	        	if (prevREC.NetworkCardName == rec.NetworkCardName) {
-	        		// Received Packets
-	          		rec['DiffReceivedPacketsVal'] = rec['ReceivedPacketsCnt'] - prevREC['ReceivedPacketsCnt']
-	          		rec['ReceivedPacketsPerSecPct'] = rec['DiffReceivedPacketsVal'] / interval
-	          		// Transfered Packets
-	          		rec['DiffTransferedPacketsVal'] = rec['TransferedPacketsCnt'] - prevREC['TransferedPacketsCnt']
-	          		rec['TransferedPacketsPerSecPct'] = rec['DiffTransferedPacketsVal'] / interval
-	          		// Received Bytes
-	          		rec['DiffReceivedBytesVal'] = rec['ReceivedBytes'] - prevREC['ReceivedBytes']
-	          		rec['ReceivedBytesPerSecPct'] = rec['DiffReceivedBytesVal'] / interval
-	          		// Transfered Bytes
-	          		rec['DiffTransferedBytesVal'] = rec['TransferedBytes'] - prevREC['TransferedBytes']
-	          		rec['TransferedBytesPerSecPct'] = rec['DiffTransferedBytesVal'] / interval
-	          		checkExists = true
-	        	}
-	      	}
-	      	if(!checkExists) {
-	      		// Received Packets
-          		rec['DiffReceivedPacketsVal'] = rec['ReceivedPacketsCnt']
-          		rec['ReceivedPacketsPerSecPct'] = rec['DiffReceivedPacketsVal'] / interval
-          		// Transfered Packets
-          		rec['DiffTransferedPacketsVal'] = rec['TransferedPacketsCnt']
-          		rec['TransferedPacketsPerSecPct'] = rec['DiffTransferedPacketsVal'] / interval
-          		// Received Bytes
-          		rec['DiffReceivedBytesVal'] = rec['ReceivedBytes']
-          		rec['ReceivedBytesPerSecPct'] = rec['DiffReceivedBytesVal'] / interval
-          		// Transfered Bytes
-          		rec['DiffTransferedBytesVal'] = rec['TransferedBytes']
-          		rec['TransferedBytesPerSecPct'] = rec['DiffTransferedBytesVal'] / interval
-	      	}
-    	}
-  	}
+      assert interval != null, "First time, we cannot return meaningful values"
+      if(prevOUTPUT != null) {
+        OUTPUT.each { rec ->
+              def checkExists = false
+              prevOUTPUT.each { prevREC ->
+                if (prevREC.NetworkCardName == rec.NetworkCardName) {
+                    // Received Packets
+                      rec['DiffReceivedPacketsVal'] = rec['ReceivedPacketsCnt'] - prevREC['ReceivedPacketsCnt']
+                      rec['ReceivedPacketsPerSecPct'] = rec['DiffReceivedPacketsVal'] / interval
+                      // Transfered Packets
+                      rec['DiffTransferedPacketsVal'] = rec['TransferedPacketsCnt'] - prevREC['TransferedPacketsCnt']
+                      rec['TransferedPacketsPerSecPct'] = rec['DiffTransferedPacketsVal'] / interval
+                      // Received Bytes
+                      rec['DiffReceivedBytesVal'] = rec['ReceivedBytes'] - prevREC['ReceivedBytes']
+                      rec['ReceivedBytesPerSecPct'] = rec['DiffReceivedBytesVal'] / interval
+                      // Transfered Bytes
+                      rec['DiffTransferedBytesVal'] = rec['TransferedBytes'] - prevREC['TransferedBytes']
+                      rec['TransferedBytesPerSecPct'] = rec['DiffTransferedBytesVal'] / interval
+                      checkExists = true
+                }
+              }
+              if(!checkExists) {
+                  // Received Packets
+                  rec['DiffReceivedPacketsVal'] = rec['ReceivedPacketsCnt']
+                  rec['ReceivedPacketsPerSecPct'] = rec['DiffReceivedPacketsVal'] / interval
+                  // Transfered Packets
+                  rec['DiffTransferedPacketsVal'] = rec['TransferedPacketsCnt']
+                  rec['TransferedPacketsPerSecPct'] = rec['DiffTransferedPacketsVal'] / interval
+                  // Received Bytes
+                  rec['DiffReceivedBytesVal'] = rec['ReceivedBytes']
+                  rec['ReceivedBytesPerSecPct'] = rec['DiffReceivedBytesVal'] / interval
+                  // Transfered Bytes
+                  rec['DiffTransferedBytesVal'] = rec['TransferedBytes']
+                  rec['TransferedBytesPerSecPct'] = rec['DiffTransferedBytesVal'] / interval
+              }
+        }
+      }
 }
-
 KEYEXPR = [_root:["NetworkCardName"], _sequence:["ReceivedPacketsCnt","TransferedPacketsCnt"]]
-KEYEXPR._unit = [
-		"ReceivedPacketsCnt" : "count", "DiffReceivedPacketsVal": "count/interval", "ReceivedPacketsPerSecPct": "count/sec",
-		"TransferedPacketsCnt":"count", "DiffTransferedPacketsVal": "count/interval", "TransferedPacketsPerSecPct": "count/sec",
-		"ReceivedBytes":"byte", "DiffReceivedBytesVal": "byte/interval", "ReceivedBytesPerSecPct": "byte/sec",
-		"TransferedBytes":"byte", "DiffTransferedBytesVal": "byte/interval", "TransferedBytesPerSecPct": "byte/sec"
-	]
+KEYEXPR._unit = ["ReceivedPacketsCnt":"count","DiffReceivedPacketsVal":"count/interval","ReceivedPacketsPerSecPct":"count/sec","TransferedPacketsCnt":"count","DiffTransferedPacketsVal":"count/interval","TransferedPacketsPerSecPct":"count/sec","ReceivedBytes":"byte","DiffReceivedBytesVal":"byte/interval","ReceivedBytesPerSecPct":"byte/sec","TransferedBytes":"byte","DiffTransferedBytesVal":"byte/interval","TransferedBytesPerSecPct":"byte/sec"]
 KEYEXPR._chart = [
-    [
-        "type": "line",
-        "name": "Network I/O Linux - Packets transfering",
-        "chart_columns": ["DiffReceivedPacketsVal", "DiffTransferedPacketsVal"]
-    ],
-    [
-        "type": "line",
-        "name": "Network I/O Linux - Bytes transfering",
-        "chart_columns": ["DiffReceivedBytesVal", "DiffTransferedBytesVal"]
+  [
+    "type": "line",
+    "name": "Network I/O Linux - Packets transfering",
+    "chart_columns": [
+      "DiffReceivedPacketsVal",
+      "DiffTransferedPacketsVal"
     ]
+  ],
+  [
+    "type": "line",
+    "name": "Network I/O Linux - Bytes transfering",
+    "chart_columns": [
+      "DiffReceivedBytesVal",
+      "DiffTransferedBytesVal"
+    ]
+  ]
 ]
 SENDTYPE = "Store"
 RESOURCEID = "Linux/NetworkIO"
-DEST = parameters.dest
+MONITORINGTYPE = "@OS"
 OSINFO = parameters.osinfo
-MONITORINGTYPE = '@OS'
+DEST = parameters.dest
