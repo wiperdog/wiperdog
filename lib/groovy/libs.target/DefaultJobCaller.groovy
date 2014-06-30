@@ -912,55 +912,13 @@ class ProcessRunner{
 			listCmd.addAll(tmpList)
 			ProcessBuilder builder = new ProcessBuilder(listCmd)
 			Process proc = builder.start()
-			StreamGobbler errorGobbler = new StreamGobbler(proc.getErrorStream(), resultData,'err');
-			StreamGobbler outputGobbler = new StreamGobbler(proc.getInputStream(), resultData,'out');
-			errorGobbler.start();
-			outputGobbler.start();
-			//Read output and error from process executing
-			proc.getOutputStream().close()
-			if(isWaitFor){
-				resultData['exitVal'] = proc.waitFor()
-			}
-			errorGobbler.join()
-			outputGobbler.join()
+			resultData['exitVal'] = proc.waitFor()
+			resultData['err'] = proc.err.text
+			resultData['out'] = proc.in.text
 		} catch (Exception ex){
 			resultData['err'] = ex.getMessage()
 			println ex.getMessage()
 		}
 		return resultData
 	}
-}
-
-// Thread to get data from output/error stream of process
-class StreamGobbler extends Thread {
-    InputStream is;
-    def resultData;
-	def type;
-	
-    StreamGobbler(InputStream is,resultData,type) {
-        this.is = is;
-        this.resultData = resultData;
-		this.type = type;
-    }
-	
-    public void run() {
-        try {
-            InputStreamReader isr = new InputStreamReader(is);
-            BufferedReader br = new BufferedReader(isr);
-			StringBuffer str = new StringBuffer()
-            String line=null;
-            while ( (line = br.readLine()) != null){
-				str.append(line + "\n")
-			}
-			this.is.close()
-			isr.close()
-			br.close()	
-			this.resultData[this.type] = str.toString()
-        } catch (IOException ioe){
-            ioe.printStackTrace();
-			this.is.close()
-			isr.close()
-			br.close()	
-        }
-    }
 }
