@@ -21,58 +21,62 @@ FETCHACTION = {
  //data remote
  def outputProc = procRunner.procExecute(command,false)
  def output = outputProc.out
- assert output != null && output != "", "Process output is null or empty " + outputProc.err
+ assert output != null && output != "", "Process output is null or empty, error information: " + outputProc.err
  def listColHeader = new ArrayList<String>()
  def checkColHeader = false
  output.eachLine{ line->
    if(!checkColHeader){
-		listColHeader = line.trim().split(" ").findAll{!it.trim().equals("")}
-		checkColHeader = true
+        listColHeader = line.trim().split(" ").findAll{!it.trim().equals("")}
+        checkColHeader = true
    } else {
-		def row = line.trim().split(":")
-		def rowData = row[1].trim().split(" ").findAll{!it.trim().equals("")}
-		def tmpMapVal = [:]
-		def tmpMapKey = [:]
-		if (!row[0].contains("buffers/cache")) {
-			for(int i=0 ; i< listColHeader.size() ; i++ ){
-				if(rowData.size() > i){
-					 tmpMapVal[listColHeader[i]] = rowData.get(i).trim().toLong()
-				} else {
-					 tmpMapVal[listColHeader[i]] = 0
-				}
-			}
-			def mapData = [:]
-			mapData['TypeName'] =  row[0].trim()
-			mapData['UsedMemoryKB'] =  tmpMapVal["used"]
-	        	mapData['UsedMemoryPct'] =  (tmpMapVal["total"] != 0)?(tmpMapVal["used"]/tmpMapVal["total"])*100 : 0
-			mapData['TotalMemorySizeKB'] =  tmpMapVal["total"]
-			mapData['FreeMemoryKB'] =  tmpMapVal["free"]
-			mapData['SharedMemoryKB'] =  tmpMapVal["shared"]
-			mapData['BuffersKB'] =  tmpMapVal["buffers"]
-			mapData['CachedKB'] =  tmpMapVal["cached"]
-			resultData.add(mapData)
-		}
+        def row = line.trim().split(":")
+        def rowData = row[1].trim().split(" ").findAll{!it.trim().equals("")}
+        def tmpMapVal = [:]
+        def tmpMapKey = [:]
+        if (!row[0].contains("buffers/cache")) {
+            for(int i=0 ; i< listColHeader.size() ; i++ ){
+                if(rowData.size() > i){
+                     tmpMapVal[listColHeader[i]] = rowData.get(i).trim().toLong()
+                } else {
+                     tmpMapVal[listColHeader[i]] = 0
+                }
+            }
+            def mapData = [:]
+            mapData['TypeName'] =  row[0].trim()
+            mapData['UsedMemoryKB'] =  tmpMapVal["used"]
+                mapData['UsedMemoryPct'] =  (tmpMapVal["total"] != 0)?(tmpMapVal["used"]/tmpMapVal["total"])*100 : 0
+            mapData['TotalMemorySizeKB'] =  tmpMapVal["total"]
+            mapData['FreeMemoryKB'] =  tmpMapVal["free"]
+            mapData['SharedMemoryKB'] =  tmpMapVal["shared"]
+            mapData['BuffersKB'] =  tmpMapVal["buffers"]
+            mapData['CachedKB'] =  tmpMapVal["cached"]
+            resultData.add(mapData)
+        }
     }
  }
  return resultData
 }
-
-KEYEXPR = [_root:["TypeName"] , _sequence:["UsedMemoryKB","FreeMemoryKB","UsedMemoryPct"]]
-KEYEXPR._unit = ["TotalMemorySizeKB" : "KB", "UsedMemoryKB":"KB", "FreeMemoryKB":"KB", "SharedMemoryKB":"KB","BuffersKB":"KB","CachedKB":"KB","UsedMemoryPct":"%"]
+KEYEXPR = [_root:["TypeName"], _sequence:["UsedMemoryKB","FreeMemoryKB","UsedMemoryPct"]]
+KEYEXPR._unit = ["TotalMemorySizeKB":"KB","UsedMemoryKB":"KB","FreeMemoryKB":"KB","SharedMemoryKB":"KB","BuffersKB":"KB","CachedKB":"KB","UsedMemoryPct":"%"]
 KEYEXPR._chart = [
-    [
-        "type": "pie",
-        "name": "Memory Usage Linux ",
-        "chart_columns": ["UsedMemoryKB", "FreeMemoryKB"]
-    ],
-	[
-        "type": "line",
-        "name": "Memory Usage Linux - Used percentage",
-        "chart_columns": ["UsedMemoryPct"]
+  [
+    "type": "line",
+    "name": "Memory Usage Linux - Used percentage",
+    "chart_columns": [
+      "UsedMemoryPct"
     ]
+  ],
+  [
+    "type": "pie",
+    "name": "Memory Usage Linux ",
+    "chart_columns": [
+      "UsedMemoryKB",
+      "FreeMemoryKB"
+    ]
+  ]
 ]
 SENDTYPE = "Store"
 RESOURCEID = "Linux/MemoryUsage"
-DEST = parameters.dest
+MONITORINGTYPE = "@OS"
 OSINFO = parameters.osinfo
-MONITORINGTYPE = '@OS'
+DEST = parameters.dest

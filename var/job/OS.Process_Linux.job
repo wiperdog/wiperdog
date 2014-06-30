@@ -18,151 +18,152 @@
  * @returnParam CommandStr Name of the process or the path to the command used to start the process.
  */
 JOB = [name:"OS.Process_Linux"]
-
 FETCHACTION = {
-	def command = "top -b -n 1"
-	def resultData = []
-	def finalData = []
-	//data remote
-	def outputProc = procRunner.procExecute(command,true)
-	def output = outputProc.out
-	assert output != null && output != "", "Process output is null or empty "+ outputProc.err
-	def listRows = []
-	output.eachLine{line->
-	 	def row = line.trim()
-		if(row.size() > 0){
-			if(!row.contains("top -") && !row.contains("Tasks:") && !row.contains("Cpu(s):") && !row.contains("Mem:") && !row.contains("Swap:")){
-				listRows.add(row)
-			}
-		}
-	}
-	//Convert data from MB,GB to KB
-	def dataConverter = {data->
+    def command = "top2n -b -n 1"
+    def resultData = []
+    def finalData = []
+    //data remote
+    def outputProc = procRunner.procExecute(command,true)
+    def output = outputProc.out
+    assert output != null && output != "", "Process output is null or empty, error information: "+ outputProc.err
+    def listRows = []
+    output.eachLine{line->
+         def row = line.trim()
+        if(row.size() > 0){
+            if(!row.contains("top -") && !row.contains("Tasks:") && !row.contains("Cpu(s):") && !row.contains("Mem:") && !row.contains("Swap:")){
+                listRows.add(row)
+            }
+        }
+    }
+    //Convert data from MB,GB to KB
+    def dataConverter = {data->
                 data = data.toLowerCase()
-		if(data.contains("m")){
-			data = (Double.parseDouble(data.replace('m','')))*1024
-		} else if(data.contains("g")){
-			data = (Double.parseDouble(data.replace('g','')))*1024*1024					
-		} else {
-			data = data.toLong()
-		}
-		return data
-	}
-	def tmpHeaderDev = listRows[0].trim().split(" ").findAll{!it.trim().equals("")}
-	def tmpDataDev
-	for(int i=1; i<listRows.size(); i++){
-		def rowDataDev = listRows[i].trim().split(" ").findAll{!it.trim().equals("")}	
-		tmpDataDev = [:]
-		for(int k=0; k<tmpHeaderDev.size(); k++){
-			def tmpData = rowDataDev[k]
-			def tmpDataUpperCase = tmpData.toUpperCase()
-			//get ProcessId
-			if(tmpHeaderDev[k] == "PID"){
-				tmpDataDev["ProcessId"] = tmpData.toLong()
-			}
-			//get user that is the owner of the process 
-			if(tmpHeaderDev[k] == "USER"){
-				tmpDataDev["UserName"] = tmpData
-			}
-			//get priority of the process
-			if(tmpHeaderDev[k] == "PR"){
-				if(!tmpDataUpperCase.contains("RT")){
-					tmpData = Integer.parseInt(tmpData)
-				}
-				tmpDataDev["PriorityInt"] = tmpData
-			}
-			//get the NICE Evalue of the process
-			if(tmpHeaderDev[k] == "NI"){
-				tmpDataDev["NicePriorityInt"] = Integer.parseInt(tmpData)
-			}
-			//get virtual memory used by the process
-			if(tmpHeaderDev[k] == "VIRT"){
-				
-				tmpDataDev["TotalVirtualMemUsedKB"] = dataConverter(tmpData)
-			}
-			//get physical memory used from the process
-			if(tmpHeaderDev[k] == "RES"){
-				tmpDataDev["ResidentTaskSizeKB"] = dataConverter(tmpData)
-			}
-			//get shared memory of the process
-			if(tmpHeaderDev[k] == "SHR"){
-				tmpDataDev["TotalSharedMemUsedKB"] = dataConverter(tmpData)
-			}
-			//get indicates the status of the process
-			if(tmpHeaderDev[k] == "S"){
-				if(tmpDataUpperCase == "S") {
-					tmpData = "Sleeping"
-				} else if(tmpDataUpperCase == "R") {
-					tmpData = "Running"
-				} else if(tmpDataUpperCase == "D") {
-					tmpData = "Uninterruptible Sleep"
-				} else if(tmpDataUpperCase == "T") {
-					tmpData = "Stopped/Traced"
-				} else if(tmpDataUpperCase == "Z") {
-					tmpData = "Zombie"
-				}
-				tmpDataDev["StateTaskStr"] = tmpData
-			}
-			//get percentage of CPU used
-			if(tmpHeaderDev[k] == "%CPU"){
-				tmpDataDev["CpuUsedPct"] = Double.parseDouble(tmpData)
-			}
-			//get percentage of RAM used
-			if(tmpHeaderDev[k] == "%MEM"){
-				tmpDataDev["MemUsedPct"] = Double.parseDouble(tmpData)
-			}
-			//get total time of activity of this process
-			if(tmpHeaderDev[k] == "TIME+"){
-				def tmpTime = tmpData.split(':')
-				tmpDataDev["CpuUsedTimeLong"] = Double.parseDouble(tmpTime[0])*60 + Double.parseDouble(tmpTime[1])
-			}
-			//get name of the process
-			if(tmpHeaderDev[k] == "COMMAND"){
-				tmpDataDev["CommandStr"] = tmpData
-			}
-		}
-		resultData.add(tmpDataDev)
-	}
-	// Sort records by MemUsedPct and CpuUsedPct
-	def arrayMapData = resultData.toArray(resultData)
-	Arrays.sort(arrayMapData, new Comparator() {
-		public int compare(arg0, arg1) {
-			def first = arg0
-			def second = arg1
-			int countTime = (second['MemUsedPct'] != null ? second['MemUsedPct'] : 0) - (first['MemUsedPct'] != null ? first['MemUsedPct'] : 0)
-			if (countTime == 0) {
-				int countExecute = (second['CpuUsedPct'] != null ? second['CpuUsedPct'] : 0) - (first['CpuUsedPct'] != null ? first['CpuUsedPct'] : 0)
-				countTime = (countExecute < 0 ? -1 : (countExecute == 0 ? 0 : 1))
-			}
-			return countTime
-		}
-	})
-	//get top 10 process
-	if (resultData.size() > 10) {
-		 finalData = arrayMapData.getAt(0..9)
-	} else {
-		 finalData = arrayMapData
-	}
-	return finalData
+        if(data.contains("m")){
+            data = (Double.parseDouble(data.replace('m','')))*1024
+        } else if(data.contains("g")){
+            data = (Double.parseDouble(data.replace('g','')))*1024*1024                    
+        } else {
+            data = data.toLong()
+        }
+        return data
+    }
+    def tmpHeaderDev = listRows[0].trim().split(" ").findAll{!it.trim().equals("")}
+    def tmpDataDev
+    for(int i=1; i<listRows.size(); i++){
+        def rowDataDev = listRows[i].trim().split(" ").findAll{!it.trim().equals("")}    
+        tmpDataDev = [:]
+        for(int k=0; k<tmpHeaderDev.size(); k++){
+            def tmpData = rowDataDev[k]
+            def tmpDataUpperCase = tmpData.toUpperCase()
+            //get ProcessId
+            if(tmpHeaderDev[k] == "PID"){
+                tmpDataDev["ProcessId"] = tmpData.toLong()
+            }
+            //get user that is the owner of the process 
+            if(tmpHeaderDev[k] == "USER"){
+                tmpDataDev["UserName"] = tmpData
+            }
+            //get priority of the process
+            if(tmpHeaderDev[k] == "PR"){
+                if(!tmpDataUpperCase.contains("RT")){
+                    tmpData = Integer.parseInt(tmpData)
+                }
+                tmpDataDev["PriorityInt"] = tmpData
+            }
+            //get the NICE Evalue of the process
+            if(tmpHeaderDev[k] == "NI"){
+                tmpDataDev["NicePriorityInt"] = Integer.parseInt(tmpData)
+            }
+            //get virtual memory used by the process
+            if(tmpHeaderDev[k] == "VIRT"){
+                
+                tmpDataDev["TotalVirtualMemUsedKB"] = dataConverter(tmpData)
+            }
+            //get physical memory used from the process
+            if(tmpHeaderDev[k] == "RES"){
+                tmpDataDev["ResidentTaskSizeKB"] = dataConverter(tmpData)
+            }
+            //get shared memory of the process
+            if(tmpHeaderDev[k] == "SHR"){
+                tmpDataDev["TotalSharedMemUsedKB"] = dataConverter(tmpData)
+            }
+            //get indicates the status of the process
+            if(tmpHeaderDev[k] == "S"){
+                if(tmpDataUpperCase == "S") {
+                    tmpData = "Sleeping"
+                } else if(tmpDataUpperCase == "R") {
+                    tmpData = "Running"
+                } else if(tmpDataUpperCase == "D") {
+                    tmpData = "Uninterruptible Sleep"
+                } else if(tmpDataUpperCase == "T") {
+                    tmpData = "Stopped/Traced"
+                } else if(tmpDataUpperCase == "Z") {
+                    tmpData = "Zombie"
+                }
+                tmpDataDev["StateTaskStr"] = tmpData
+            }
+            //get percentage of CPU used
+            if(tmpHeaderDev[k] == "%CPU"){
+                tmpDataDev["CpuUsedPct"] = Double.parseDouble(tmpData)
+            }
+            //get percentage of RAM used
+            if(tmpHeaderDev[k] == "%MEM"){
+                tmpDataDev["MemUsedPct"] = Double.parseDouble(tmpData)
+            }
+            //get total time of activity of this process
+            if(tmpHeaderDev[k] == "TIME+"){
+                def tmpTime = tmpData.split(':')
+                tmpDataDev["CpuUsedTimeLong"] = Double.parseDouble(tmpTime[0])*60 + Double.parseDouble(tmpTime[1])
+            }
+            //get name of the process
+            if(tmpHeaderDev[k] == "COMMAND"){
+                tmpDataDev["CommandStr"] = tmpData
+            }
+        }
+        resultData.add(tmpDataDev)
+    }
+    // Sort records by MemUsedPct and CpuUsedPct
+    def arrayMapData = resultData.toArray(resultData)
+    Arrays.sort(arrayMapData, new Comparator() {
+        public int compare(arg0, arg1) {
+            def first = arg0
+            def second = arg1
+            int countTime = (second['MemUsedPct'] != null ? second['MemUsedPct'] : 0) - (first['MemUsedPct'] != null ? first['MemUsedPct'] : 0)
+            if (countTime == 0) {
+                int countExecute = (second['CpuUsedPct'] != null ? second['CpuUsedPct'] : 0) - (first['CpuUsedPct'] != null ? first['CpuUsedPct'] : 0)
+                countTime = (countExecute < 0 ? -1 : (countExecute == 0 ? 0 : 1))
+            }
+            return countTime
+        }
+    })
+    //get top 10 process
+    if (resultData.size() > 10) {
+         finalData = arrayMapData.getAt(0..9)
+    } else {
+         finalData = arrayMapData
+    }
+    return finalData
 }
-    
-KEYEXPR = ['_root':['ProcessId'], '_sequence':['MemUsedPct','CpuUsedPct','CpuUsedTimeLong']]
-KEYEXPR._unit = ["TotalVirtualMemUsedKB":"KB", "ResidentTaskSizeKB":"KB", "TotalSharedMemUsedKB":"KB", "CpuUsedPct":"%", "MemUsedPct":"%", "CpuUsedTimeLong":"sec"]
+KEYEXPR = [_root:["ProcessId"], _sequence:["MemUsedPct","CpuUsedPct","CpuUsedTimeLong"]]
+KEYEXPR._unit = ["TotalVirtualMemUsedKB":"KB","ResidentTaskSizeKB":"KB","TotalSharedMemUsedKB":"KB","CpuUsedPct":"%","MemUsedPct":"%","CpuUsedTimeLong":"sec"]
 KEYEXPR._chart = [
-	[
-        "type": "line",
-        "name": "Percentage of CPU Used",
-        "chart_columns": ["CpuUsedPct"]
-    ],
-    [
-        "type": "line",
-        "name": "Percentage of Memory Used",
-        "chart_columns": ["MemUsedPct"]
+  [
+    "type": "line",
+    "name": "Percentage of Memory Used",
+    "chart_columns": [
+      "MemUsedPct"
     ]
+  ],
+  [
+    "type": "line",
+    "name": "Percentage of CPU Used",
+    "chart_columns": [
+      "CpuUsedPct"
+    ]
+  ]
 ]
-
 SENDTYPE = "Store"
 RESOURCEID = "Linux/Process"
-DEST = parameters.dest
+MONITORINGTYPE = "@OS"
 OSINFO = parameters.osinfo
-MONITORINGTYPE = '@OS'
+DEST = parameters.dest

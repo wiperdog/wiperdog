@@ -18,139 +18,147 @@
  * @returnParam TotalInterruptsReceivedRateVal Show the total number of interrupts received per second by the CPU or CPUs.
  */
 JOB = [name:"OS.CPU_Linux"]
-
 FETCHACTION = {
-	def command = "mpstat"
-	def resultData = [:]
-	def listData = []
-	def listRows = []
-	//data remote
-	def processRet = procRunner.procExecute(command,false)
+    def command = "mpstat"
+    def resultData = [:]
+    def listData = []
+    def listRows = []
+    //data remote
+    def processRet = procRunner.procExecute(command,false)
         def output = processRet.out
-        assert output != null && output != "", "Process output is null or empty, interrupted the job" + processRet.err 
-	output.eachLine{line->
-		def row = line.trim().split(" ").findAll{!it.trim().equals("")}
-		if(row.size() > 0){
-			listRows.add(row)
-		}
-	}
-	//remove row title
-	listRows.remove(0)
-	if(listRows.size() == 2){
-		for(int i=3; i< listRows[0].size(); i++){
-			def data = Double.parseDouble(listRows[1][i])
-			if(listRows[0][i] == "%usr" || listRows[0][i] == "%user"){
-				if(data != null ){
-					resultData['UserLevelPct'] = data
-				} else {
-					resultData['UserLevelPct'] = 0
-				}
-			}
+        assert output != null && output != "", "Process output is null or empty, interrupted the job, error information: " + processRet.err 
+    output.eachLine{line->
+        def row = line.trim().split(" ").findAll{!it.trim().equals("")}
+        if(row.size() > 0){
+            listRows.add(row)
+        }
+    }
+    //remove row title
+    listRows.remove(0)
+    if(listRows.size() == 2){
+        for(int i=3; i< listRows[0].size(); i++){
+            def data = Double.parseDouble(listRows[1][i])
+            if(listRows[0][i] == "%usr" || listRows[0][i] == "%user"){
+                if(data != null ){
+                    resultData['UserLevelPct'] = data
+                } else {
+                    resultData['UserLevelPct'] = 0
+                }
+            }
 
-			if(listRows[0][i] == "%nice"){
-				if(data != null ){
-					resultData['UserLevelWithNicePriPct'] = data
-				} else {
-					resultData['UserLevelWithNicePriPct'] = 0	
-				}			
-			}
+            if(listRows[0][i] == "%nice"){
+                if(data != null ){
+                    resultData['UserLevelWithNicePriPct'] = data
+                } else {
+                    resultData['UserLevelWithNicePriPct'] = 0    
+                }            
+            }
 
-			if(listRows[0][i] == "%sys"){
-				if(data != null ){
-					resultData['SystemLevelPct'] = data
-				} else {
-					resultData['SystemLevelPct'] = 0	
-				}							
-			}
+            if(listRows[0][i] == "%sys"){
+                if(data != null ){
+                    resultData['SystemLevelPct'] = data
+                } else {
+                    resultData['SystemLevelPct'] = 0    
+                }                            
+            }
 
-			if(listRows[0][i] == "%iowait"){
-				if(data != null ){
-					resultData['SystemWithIOPct'] = data
-				} else {
-					resultData['SystemWithIOPct'] = 0	
-				}					
+            if(listRows[0][i] == "%iowait"){
+                if(data != null ){
+                    resultData['SystemWithIOPct'] = data
+                } else {
+                    resultData['SystemWithIOPct'] = 0    
+                }                    
 
-			}
+            }
 
-			if(listRows[0][i] == "%irq"){
-				if(data != null ){
-					resultData['TimetoInterruptsPct'] = data
-				} else {
-					resultData['TimetoInterruptsPct'] = 0	
-				}	
-			}
+            if(listRows[0][i] == "%irq"){
+                if(data != null ){
+                    resultData['TimetoInterruptsPct'] = data
+                } else {
+                    resultData['TimetoInterruptsPct'] = 0    
+                }    
+            }
 
-			if(listRows[0][i] == "%soft"){
-				if(data != null ){
-					resultData['TimetoSoftwareInterruptPct'] = data
-				} else {
-					resultData['TimetoSoftwareInterruptPct'] = 0	
-				}					
-			}
+            if(listRows[0][i] == "%soft"){
+                if(data != null ){
+                    resultData['TimetoSoftwareInterruptPct'] = data
+                } else {
+                    resultData['TimetoSoftwareInterruptPct'] = 0    
+                }                    
+            }
 
-			if(listRows[0][i] == "%steal"){
-				resultData['StealPct'] = data
-				if(data != null ){
-					resultData['StealPct'] = data
-				} else {
-					resultData['StealPct'] = 0	
-				}						
-			}
+            if(listRows[0][i] == "%steal"){
+                resultData['StealPct'] = data
+                if(data != null ){
+                    resultData['StealPct'] = data
+                } else {
+                    resultData['StealPct'] = 0    
+                }                        
+            }
 
-			if(listRows[0][i] == "%idle"){
-				if(data != null ){
-					resultData['IdlePct'] = data
-				} else {
-					resultData['IdlePct'] = 0	
-				}				
-			}
+            if(listRows[0][i] == "%idle"){
+                if(data != null ){
+                    resultData['IdlePct'] = data
+                } else {
+                    resultData['IdlePct'] = 0    
+                }                
+            }
 
-			if(listRows[0][i] == "intr/s"){
-				if(data != null ){
-					resultData['TotalInterruptsReceivedRateVal'] = data
-				} else {
-					resultData['TotalInterruptsReceivedRateVal'] = 0	
-				}				
-			}
-		}
-		resultData['UsedPct'] = 0
-		if(resultData['UserLevelPct'] != null){
-			resultData['UsedPct'] = resultData['UserLevelPct']
-		} 
-		if(resultData['UserLevelWithNicePriPct'] != null){
-			resultData['UsedPct'] += resultData['UserLevelWithNicePriPct']
-		}
-		if(resultData['SystemLevelPct'] != null){
-			resultData['UsedPct'] += resultData['SystemLevelPct']
-		}	
-		if(resultData['SystemWithIOPct'] != null){
-			resultData['UsedPct'] += resultData['SystemWithIOPct']
-		}	
-		if(resultData['StealPct'] != null){
-			resultData['UsedPct'] += resultData['StealPct']
-		}			
-	}
-	listData.add(resultData)
-	return listData
+            if(listRows[0][i] == "intr/s"){
+                if(data != null ){
+                    resultData['TotalInterruptsReceivedRateVal'] = data
+                } else {
+                    resultData['TotalInterruptsReceivedRateVal'] = 0    
+                }                
+            }
+        }
+        resultData['UsedPct'] = 0
+        if(resultData['UserLevelPct'] != null){
+            resultData['UsedPct'] = resultData['UserLevelPct']
+        } 
+        if(resultData['UserLevelWithNicePriPct'] != null){
+            resultData['UsedPct'] += resultData['UserLevelWithNicePriPct']
+        }
+        if(resultData['SystemLevelPct'] != null){
+            resultData['UsedPct'] += resultData['SystemLevelPct']
+        }    
+        if(resultData['SystemWithIOPct'] != null){
+            resultData['UsedPct'] += resultData['SystemWithIOPct']
+        }    
+        if(resultData['StealPct'] != null){
+            resultData['UsedPct'] += resultData['StealPct']
+        }            
+    }
+    listData.add(resultData)
+    return listData
 }
-
-KEYEXPR = ['_sequence':['NumberTransfersRateVal','NumberBlockReadRateVal','NumberBlockWriteRateVal']]
-KEYEXPR._unit = ["UserLevelPct":"%", "UserLevelWithNicePriPct":"%", "SystemLevelPct":"%", "SystemWithIOPct":"%", "TimetoInterruptsPct":"%", "TimetoSoftwareInterruptPct":"%", "StealPct":"%", "IdlePct":"%", "UsedPct":"%", "TotalInterruptsReceivedRateVal":"count/sec"]
+KEYEXPR = [_sequence:["NumberTransfersRateVal","NumberBlockReadRateVal","NumberBlockWriteRateVal"]]
+KEYEXPR._unit = ["UserLevelPct":"%","UserLevelWithNicePriPct":"%","SystemLevelPct":"%","SystemWithIOPct":"%","TimetoInterruptsPct":"%","TimetoSoftwareInterruptPct":"%","StealPct":"%","IdlePct":"%","UsedPct":"%","TotalInterruptsReceivedRateVal":"count/sec"]
 KEYEXPR._chart = [
-	[
-		"type": "line",
-		"name": "Information Usage CPU",
-		"chart_columns": ["UsedPct", "IdlePct"]
-	],
-	[
-		"type": "area",
-		"name": "Activities of CPU",
-		"chart_columns": ["UserLevelPct", "UserLevelWithNicePriPct", "SystemLevelPct", "SystemWithIOPct", "TimetoInterruptsPct", "TimetoSoftwareInterruptPct", "StealPct"]
-	]
+  [
+    "type": "line",
+    "name": "Information Usage CPU",
+    "chart_columns": [
+      "UsedPct",
+      "IdlePct"
+    ]
+  ],
+  [
+    "type": "area",
+    "name": "Activities of CPU",
+    "chart_columns": [
+      "UserLevelPct",
+      "UserLevelWithNicePriPct",
+      "SystemLevelPct",
+      "SystemWithIOPct",
+      "TimetoInterruptsPct",
+      "TimetoSoftwareInterruptPct",
+      "StealPct"
+    ]
+  ]
 ]
-
 SENDTYPE = "Store"
 RESOURCEID = "Linux/CPU"
-DEST = parameters.dest
+MONITORINGTYPE = "@OS"
 OSINFO = parameters.osinfo
-MONITORINGTYPE = '@OS'
+DEST = parameters.dest
