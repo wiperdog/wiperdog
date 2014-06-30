@@ -17,7 +17,7 @@ FETCHACTION = {
 	def cmdDiskInfo= "df"
 	def dataDiskInfoProc =  procRunner.procExecute(cmdDiskInfo,true)
 	def dataDiskInfo = dataDiskInfoProc.out
-        assert dataDiskInfo != null && dataDiskInfo != "", "Process output is null or empty " + dataDiskInfoProc.err
+        assert dataDiskInfo != null && dataDiskInfo != "", "Process output is null or empty, error information: " + dataDiskInfoProc.err
 	def listHeader = ["FileName","SizeInt","UsedSizeInt","AvailableSizeInt","UsedPct","MountedOnName"]
 	def checkHeader = false
 	def listData = []

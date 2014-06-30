@@ -27,7 +27,7 @@ FETCHACTION = {
 	//data remote
 	def processRet = procRunner.procExecute(command,false)
         def output = processRet.out
-        assert output != null && output != "", "Process output is null or empty, interrupted the job" + processRet.err 
+        assert output != null && output != "", "Process output is null or empty, error information: " + processRet.err 
 	output.eachLine{line->
 		def row = line.trim().split(" ").findAll{!it.trim().equals("")}
 		if(row.size() > 0){

@@ -18,7 +18,7 @@ FETCHACTION = {
 	def output = procRunner.procExecute(command,false)
 	def map = [:]
 	def dataOut = output.out
-	assert dataOut != null && dataOut != "", "Process output is null or empty " + output.err
+	assert dataOut != null && dataOut != "", "Process output is null or empty, error information: " + output.err
  	def data = dataOut.split("\\n\\n")        
 	def resultData = []
 	data.each{d->
