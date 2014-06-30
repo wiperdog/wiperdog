@@ -16,7 +16,7 @@ FETCHACTION = {
 	def cmdOSName = "lsb_release -d"
 	def procData = procRunner.procExecute(cmdOSName,true)
 	def outData = procData.out
-	assert outData != null && outData != "", "Process output is null or empty " + procData.err
+	assert outData != null && outData != "", "Process output is null or empty, error information: " + procData.err
 	//get output data
 	resultData["OSName"] = procData.out.trim().split(":")[1].trim()
 	//Get OS architect
