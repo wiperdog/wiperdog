@@ -99,7 +99,7 @@ KEYEXPR._unit = ["ReadsCumCnt" : "count" , "ReadRequestsCumCnt" : "count","Write
 KEYEXPR._chart = [
 	[
         "type": "line",
-        "name": "Buffer usage(%) information",
+        "name": "Buffer usage percent information",
         "chart_columns": ["UsedPct"],
         "hint_columns": ["UsedSize","TotalSize"]
     ],
