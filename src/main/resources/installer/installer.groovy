@@ -410,6 +410,7 @@ public class WPDInstallerGroovy{
                 sBuff.append("isUbuntu=`uname -a | grep buntu`\n")
                	sBuff.append("if [ ! -n \"\$isUbuntu\" ]\n")  // If is not ubuntu
                 sBuff.append("then\n")
+    			sBuff.append(". ~/.bash_profile\n")
                 sBuff.append("	service_cmd=`which service`\n")
                 sBuff.append("	chkconfig_cmd=`which chkconfig`\n")
                 sBuff.append("	if [ ! -n \$service_cmd ] || [ ! -x \$service_cmd ] || [ ! -n \$chkconfig_cmd ] || [ ! -x \$chkconfig_cmd ]\n")
