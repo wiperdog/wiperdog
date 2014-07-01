@@ -520,7 +520,7 @@ public class SelfExtractorCmd {
 		listCmd.add("taskkill");
     	listCmd.add("/F");
     	listCmd.add("/IM");
-    	listCmd.add("wiperdog_service.exe");
+    	listCmd.add("wiperdog_service*");
     	
     	builder = new ProcessBuilder(listCmd);
 		builder.redirectErrorStream(true);
