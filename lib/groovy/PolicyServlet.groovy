@@ -109,7 +109,7 @@ class ServletPolicy extends HttpServlet{
 	// READ POLICY FILE TO GET POLICY INFORMATION
 	def readFromFileStore(filename){
 		def splittedStr = []
-		def macherPattern = "((if\\()((?:(?!if).)*))(\\n)"
+		def macherPattern = "((if\\()((?:(?!if\\().)*))(\\n)"
 		def pattern = Pattern.compile(macherPattern, Pattern.DOTALL)
 
 		def filePath = POLICY_DIR  + "/" + filename
@@ -123,7 +123,7 @@ class ServletPolicy extends HttpServlet{
 
 			def listpolicy = []
 			def mapPolicy
-			macherPattern = "(if\\()((?:(?!if).)*)([)]{1}\\{.*\\(\\[)(level: )(\\d*)(, message: \"\"\")(.*)(\"\"\"\\]\\))"
+			macherPattern = "(if\\()((?:(?!if\\().)*)([)]{1}\\{.*\\(\\[)(level: )(\\d*)(, message: \"\"\")(.*)(\"\"\"\\]\\))"
 			pattern = Pattern.compile(macherPattern, Pattern.DOTALL);
 			splittedStr.each{str->
 				matcher = pattern.matcher(str);
@@ -161,7 +161,7 @@ class ServletPolicy extends HttpServlet{
 			groupData.each {key, value ->
 				splittedStr = []
 				returnData[key] = []
-				macherPattern = "((if\\()((?:(?!if).)*))(\\n)"
+				macherPattern = "((if\\()((?:(?!if\\().)*))(\\n)"
 				pattern = Pattern.compile(macherPattern, Pattern.DOTALL);
 				matcher = pattern.matcher(value)
 	
@@ -169,7 +169,7 @@ class ServletPolicy extends HttpServlet{
 					splittedStr.add(matcher.group(1))
 				}
 				splittedStr.each { str ->
-					macherPattern = "(if\\()((?:(?!if).)*)([)]{1}\\{.*\\(\\[)(level: )(\\d*)(, message: \"\"\")(.*)(\"\"\"\\]\\))"
+					macherPattern = "(if\\()((?:(?!if\\().)*)([)]{1}\\{.*\\(\\[)(level: )(\\d*)(, message: \"\"\")(.*)(\"\"\"\\]\\))"
 					pattern = Pattern.compile(macherPattern, Pattern.DOTALL);
 					matcher = pattern.matcher(str);
 					while(matcher.find()){
