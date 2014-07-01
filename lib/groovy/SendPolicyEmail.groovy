@@ -23,10 +23,17 @@ public class SendEmailPolicyJob implements Job{
 	def properties = MonitorJobConfigLoader.getProperties()
 	public static void main(String[] args){
 		try {
+			//schedule the job
+			SchedulerFactory schFactory = new StdSchedulerFactory();
+			Scheduler sch = schFactory.getScheduler();
+			
 			// specify the job' s details..
 			JobDetail job =	 JobBuilder.newJob(SendEmailPolicyJob.class)
 									   .withIdentity("SendEmailPolicyJob")
+				                       .storeDurably()
 									   .build();
+			sch.addJob(job, true);
+			
 			def	intervalRunSender = null
 			if( SendEmailPolicyJob.properties.get(ResourceConstants.INTERVAL_SENDER) != null ) {
 				intervalRunSender = Integer.valueOf((SendEmailPolicyJob.properties.get(ResourceConstants.INTERVAL_SENDER)))
@@ -39,11 +46,14 @@ public class SendEmailPolicyJob implements Job{
 											.withIntervalInMinutes(intervalRunSender)
 											.repeatForever())
 											.build();
-			//schedule the job
-			SchedulerFactory schFactory = new StdSchedulerFactory();
-			Scheduler sch = schFactory.getScheduler();
-			sch.scheduleJob(job, trigger);
-			sch.start();
+			TriggerBuilder<? extends Trigger> builder = trigger.getTriggerBuilder();
+			Trigger newTrigger = builder.forJob(job).build();
+			
+			if (sch.getTrigger(trigger.getKey()) != null) {
+				sch.rescheduleJob(trigger.getKey(), newTrigger);
+			} else {
+				sch.scheduleJob(newTrigger);
+			}
       } catch (SchedulerException e) {
          e.printStackTrace();
       }
