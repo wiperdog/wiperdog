@@ -189,6 +189,10 @@ FETCHACTION={
 			tmpRetData = it
 			return
 	}
+	
+	// set value is 0 if the mysql does not contains table that uses ENGINE = 'innodb'
+	tmpRetData['CurrentUsedSizeKB'] = (tmpRetData['CurrentUsedSizeKB'] != null) ? tmpRetData['CurrentUsedSizeKB'] : 0
+	
 	//get used tablespace of innodb tablespace
 	Long usedTBS = tmpRetData['CurrentUsedSizeKB']	
 	Long CurrentTotalSizeKB = totalDataFileSize
