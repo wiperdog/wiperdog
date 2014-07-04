@@ -115,9 +115,9 @@ class MongoDBConnection {
 				mapMongoDb = [:]
 			}
 		} catch(Exception ex) {
-			println ex
+			logger.debug("Can not connect to mongoDB with $mapDetailDestination")
+			logger.debug(ex)
 			mongo = null
-			dbConn = null
 			mapMongoDb = [:]
 		}
 		return mapMongoDb

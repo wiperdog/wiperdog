@@ -418,7 +418,8 @@ public class MongoDBSender implements Sender<Map>{
 	def properties = MonitorJobConfigLoader.getProperties()
 	def destination //String destination
 	def mapDetailDestination = [:] //Map [host:a, port:b, db:c]
-	GMongo mongo;
+	GMongo gmongo;
+	DB db;
 	long sleep_time = Long.valueOf(this.properties.get(ResourceConstants.SLEEP_TIME_MS))
 	
 	public MongoDBSender(String destination, listMongodbInfo) {
@@ -441,6 +442,9 @@ public class MongoDBSender implements Sender<Map>{
 					mapDetailDestination['pass'] = eMongoConnect['pass']
 				}
 			}
+			
+			//Get Connection
+			getConnection()
 		} catch(IndexOutOfBoundsException oobex) {
 			logger.debug("Destination string is in a wrong format!\nFormat must be <host:port/db>, <host/db> or <host/db,username>")
 		}
@@ -449,36 +453,46 @@ public class MongoDBSender implements Sender<Map>{
 	@Override
 	public void send(Object data) {
 	    def data_serialzeDate = serializeDateToSend(data)
-	   	DB db
 		DBObject dbObject = (DBObject) com.mongodb.util.JSON.parse(data_serialzeDate)
+		if((gmongo == null) || (db == null)) {
+			//Get Connection
+			getConnection()
+		}
+		try {
+			def jobName = data.sourceJob
+			def istIid = data.istIid
+			def col = db.getCollection(jobName + "." + istIid)
+			col.insert(dbObject)
+			println "-Done send data to mongo DB at ${mapDetailDestination['host']}-"
+		} catch(Exception ex) {
+			logger.info("Can not save data to MongoDB in ${mapDetailDestination['host']}")
+			logger.info(ex)
+		}
+	}
+	
+	private void getConnection() {
 		for(int i = 0; i < 20; i++) {
 			try {
 				def mongoDBConnectionObj = new MongoDBConnection()
 				def mapMongoDb = mongoDBConnectionObj.createConnection(mapDetailDestination)
-				mongo = mapMongoDb['gmongo']				
+				gmongo = mapMongoDb['gmongo']				
 				db = mapMongoDb['db']
-				if((mongo != null) && (db != null)) {
-					def jobName = data.sourceJob
-					def istIid = data.istIid
-					def col = db.getCollection(jobName + "." + istIid)
-					col.insert(dbObject)
-					// close connection
-					mongoDBConnectionObj.closeConnection(mongo)
-					println "-Done send data to mongo DB at ${mapDetailDestination['host']}-"
+				if((gmongo != null) && (db != null)) {
 					break;
 				} else {
-					println "MongoDBSender: Can't connect to MongoDB !"
+					logger.info("MongoDBSender: Can't connect to MongoDB, retrying... !")
 					Thread.currentThread().sleep(sleep_time)
 				}
 			} catch(MongoException mex) {
-				logger.debug("Could not connect to mongoDB! Sleep before retrying...")
+				logger.info("Could not connect to mongoDB! Sleep before retrying...")
 				Thread.currentThread().sleep(sleep_time)
-			} catch(Exception ex) {
-				logger.debug(ex)
 			}
 		}
+		if((gmongo == null) || (db == null)) {
+			logger.info ("After 20 times try to connect to MongoDB in " + mapDetailDestination['host'] + ". Cannot connect!")
+		}
 	}
-
+	
 	private String serializeDateToSend(data2send) {
 		CustomSerializerFactory sfactory = new CustomSerializerFactory();
 		ObjectMapper mapper = new ObjectMapper();

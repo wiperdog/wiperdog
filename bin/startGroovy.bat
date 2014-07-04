@@ -18,6 +18,8 @@ shift
 set CLASS=%~1
 shift
 
+set JAVA_OPTS=-Xmx1024m -XX:MaxPermSize=512m
+
 if exist "%USERPROFILE%/.groovy/preinit.bat" call "%USERPROFILE%/.groovy/preinit.bat"
 
 @rem Determine the command interpreter to execute the "CD" later
