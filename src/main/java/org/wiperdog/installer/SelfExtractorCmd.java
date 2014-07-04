@@ -278,7 +278,7 @@ public class SelfExtractorCmd {
 				// Set default params
 				for(int i = 0 ; i < defaultParams.size() ; i++ ){
 					if(defaultParams.get(i) == "-j"){
-						strArgs += "-j 13110 ";
+						strArgs += "-j 13111 ";
 					}
 					if(defaultParams.get(i) == "-m"){
 						strArgs += "-m 127.0.0.1 ";
@@ -305,7 +305,7 @@ public class SelfExtractorCmd {
 						strArgs += "-mp testmail@gmail.com ";
 					}
 					if(defaultParams.get(i) == "-s"){
-						strArgs += "-s no ";
+						strArgs += "-s yes ";
 					}
 				}
 			} 
