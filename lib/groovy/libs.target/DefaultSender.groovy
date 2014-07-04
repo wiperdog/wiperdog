@@ -454,7 +454,10 @@ public class MongoDBSender implements Sender<Map>{
 	public void send(Object data) {
 	    def data_serialzeDate = serializeDateToSend(data)
 		DBObject dbObject = (DBObject) com.mongodb.util.JSON.parse(data_serialzeDate)
-		
+		if((gmongo == null) || (db == null)) {
+			//Get Connection
+			getConnection()
+		}
 		try {
 			def jobName = data.sourceJob
 			def istIid = data.istIid
