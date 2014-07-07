@@ -66,7 +66,7 @@ public class SelfExtractorCmd {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}		
-		//Argurments : -d (wiperdog home) ,-j(jetty port),-m(mongodb host),-p(mongodb port),-n(database name),-u(user database),-pw(password database),-mp(mail policy),-s(install as OS service)
+		//Argurments : -d (wiperdog home) ,-j(netty port),-m(mongodb host),-p(mongodb port),-n(database name),-u(user database),-pw(password database),-mp(mail policy),-s(install as OS service)
 		//              -jd (job directory ) , -id (instances directory) , -cd (jobclass directory) 
 		List<String> listParams = new ArrayList<String>();
 		listParams.add("-d");
@@ -148,7 +148,7 @@ public class SelfExtractorCmd {
 	            	}
 	            }
 			} else if ((args.length < 2 && !containParam(args,"-ni")) || (!args[0].trim().equals("-d") && !containParam(args,"-ni")) ) {
-				printInfoLog("Wrong parameter. Usage:\n \t\t java -jar [Installer Jar] -d [INSTALL_PATH>] \n \t\t or \n \t\t java -jar [Installer Jar] -d [INSTALL_PATH] -j [jettyport] -m [mongodb host] -p [mongodb port] -n [mongodb database name] -u [mongodb user name] -pw [mongodb password] -mp [mail policy] -s [yes/no install as OS service]");				
+				printInfoLog("Wrong parameter. Usage:\n \t\t java -jar [Installer Jar] -d [INSTALL_PATH>] \n \t\t or \n \t\t java -jar [Installer Jar] -d [INSTALL_PATH] -j [nettyport] -m [mongodb host] -p [mongodb port] -n [mongodb database name] -u [mongodb user name] -pw [mongodb password] -mp [mail policy] -s [yes/no install as OS service]");				
 				System.exit(0);
 			}else {
 				if(containParam(args,"-d"))
@@ -159,7 +159,7 @@ public class SelfExtractorCmd {
 			String strArgs = "";
 			//Pass all arguments to Groovy class			
 			for(int i = 0; i< args.length; i++ ){				
-			   //Get jetty port from argurment
+			   //Get netty port from argurment
 				if(args[i].equals("-j")) {
 					if( ( args.length > i+1) &&  (args[i+1].trim() != "") && (!listParams.contains(args[i+1].trim()))){
 						if( isNumeric(args[i+1])){
