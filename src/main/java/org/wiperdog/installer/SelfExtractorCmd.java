@@ -98,7 +98,9 @@ public class SelfExtractorCmd {
             			}
             		}
             	}));
-            	printInfoLog("Press any key to start interactive installation or CTRL+C to quit. You can execute default installation with -ni option");	            	
+	        if(!containParam(args, "-ni")){	 
+            		printInfoLog("Press any key to start interactive installation or CTRL+C to quit. You can execute default installation with -ni option");	       
+		}     	
             	String userConfirmInteractiveMode = inp.readLine().trim();
         	}catch(Exception ex){
         		// In case CTRL + C were pressed
