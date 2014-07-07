@@ -9,12 +9,17 @@ import org.wiperdog.installer.SelfExtractorCmd
 import org.wiperdog.installer.internal.InstallerUtil
 import org.wiperdog.installer.internal.InstallerXML
 import org.wiperdog.installer.internal.XMLErrorHandler
-
+import static org.wiperdog.installer.SelfExtractorCmd.getParamValue
+import static org.wiperdog.installer.SelfExtractorCmd.containParam	
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 /**
  * WPDInstallerGroovy is a Groovy class used by SelfExtractorCmd to perform pre-configuration 
  * after installation of wiperdog.
  * @author nguyenvannghia
- *
+ * Email: nghia.n.v2007@gmail.com
  */
 public class WPDInstallerGroovy{
         static File loggingFile = null
@@ -25,9 +30,11 @@ public class WPDInstallerGroovy{
 	static void fileInfoLog(String content) throws Exception{
 		loggingFile.append(content + "\n")		
 	}
+	static final String NONE_INTERACTIVE_PARAM_KEY = "-ni"
     public static void main(String[] installerParam) throws Exception{			
 	
         def params = [:]
+        
         def userConfirm = null		
 		String wiperdogHome = installerParam[0]
 		InputStreamReader converter = new InputStreamReader(System.in)
@@ -50,186 +57,265 @@ public class WPDInstallerGroovy{
 	    WPDInstallerGroovy.printInfoLog("----------------------------------------------------------------")			
 	    WPDInstallerGroovy.printInfoLog("------------------    INSTALLATION     -------------------------")			
 	    WPDInstallerGroovy.printInfoLog("----------------------------------------------------------------")			
-            WPDInstallerGroovy.printInfoLog("Welcome to the installation of " +InstallerXML.getInstance().getAppName()  + " - Version: "+ InstallerXML.getInstance().getAppVersion()) 
-            WPDInstallerGroovy.printInfoLog(InstallerXML.getInstance().getWelcomeMsg() )
-            try {
-				if(installerParam.length == 1){
-						while (userConfirm == null || userConfirm.length() == 0 || !userConfirm.toLowerCase().equalsIgnoreCase("y") ) {
-							userConfirm = null
-							installAsService = InstallerXML.getInstance().getInstallAsOSService()
-							//-- prompt for user input parameters						
-					        WPDInstallerGroovy.printInfoLog("\nGetting input parameters for pre-configured wiperdog, press any key to continue... ") 
-					        def test = inp.readLine()
-					        params['WIPERDOGHOME'] = wiperdogHome							
-					        WPDInstallerGroovy.printInfoLog("Please input Netty port(default set to 13111):")
-					        def tmpNettyPort = "13111"
-					        tmpNettyPort = inp.readLine().trim();
-					        params['netty.port'] = (tmpNettyPort != null && ! tmpNettyPort.equals(""))?tmpNettyPort:'13111';						
-					            
-							WPDInstallerGroovy.printInfoLog("Please input job directory: (default set to ${wiperdogHome}/var/job)")
-							def tmpMonitorjobfwJobDir = ""
-							tmpMonitorjobfwJobDir = inp.readLine().trim();
-							params['monitorjobfw.directory.job'] = (tmpMonitorjobfwJobDir != null && ! tmpMonitorjobfwJobDir.equals(""))?tmpMonitorjobfwJobDir:'${felix.home}/var/job';
-
+        WPDInstallerGroovy.printInfoLog("Welcome to the installation of " +InstallerXML.getInstance().getAppName()  + " - Version: "+ InstallerXML.getInstance().getAppVersion()) 
+        WPDInstallerGroovy.printInfoLog(InstallerXML.getInstance().getWelcomeMsg() )
+        //-- Parameter list
+        List<String> listParams = new ArrayList<String>();
+		listParams.add("-d")
+		listParams.add("-j")
+		listParams.add("-m")
+		listParams.add("-jd")
+		listParams.add("-id")
+		listParams.add("-td")
+		listParams.add("-cd")
+		listParams.add("-p")
+		listParams.add("-n")
+		listParams.add("-u")
+		listParams.add("-pw")
+		listParams.add("-mp")
+		listParams.add("-s")
+		listParams.add("-ni")
+		List<String> listArgs = Arrays.asList(installerParam)		
+		//Get default params not in arguments
+		List<String> listEmptyParams = new ArrayList<String>()
+		for(int i = 1 ; i < listParams.size() ; i++){
+			if(!listArgs.contains(listParams.get(i))){
+				listEmptyParams.add(listParams.get(i))
+			}
+		}
+		def installMode = InstallerXML.getInstance().getInstallMode() 
+        try {
+			if(!containParam(installerParam, NONE_INTERACTIVE_PARAM_KEY)){//INTERACTIVE MODE
+					params['WIPERDOGHOME'] = wiperdogHome														
+					while (userConfirm == null || userConfirm.length() == 0 || !userConfirm.toLowerCase().equalsIgnoreCase("y") ) {
+						userConfirm = null
+						installAsService = InstallerXML.getInstance().getInstallAsOSService()
+				        WPDInstallerGroovy.printInfoLog("\n")					        
+			        	//-- prompt for user input parameters						
+						WPDInstallerGroovy.printInfoLog("\nGetting input parameters for pre-configured wiperdog, press any key to continue... ")
+						def test = inp.readLine()
+						//-j
+						def tmpNettyPort = getParamValue(installerParam,"-j")
+						if(listEmptyParams.contains("-j")){
+				        	WPDInstallerGroovy.printInfoLog("Please input Netty port(default set to 13111):")					        
+				        	tmpNettyPort = inp.readLine().trim()
+				    	}
+				        params['netty.port'] = (tmpNettyPort != null && ! tmpNettyPort.equals(""))?tmpNettyPort:'13111'	
+				        		
+				        //-jd
+				        def tmpMonitorjobfwJobDir = getParamValue(installerParam,"-jd")
+				        if(listEmptyParams.contains("-jd")){
+							WPDInstallerGroovy.printInfoLog("Please input job directory: (default set to ${wiperdogHome}/var/job)")							
+							tmpMonitorjobfwJobDir = inp.readLine().trim()
+						}
+						params['monitorjobfw.directory.job'] = (tmpMonitorjobfwJobDir != null && ! tmpMonitorjobfwJobDir.equals(""))?tmpMonitorjobfwJobDir:'${felix.home}/var/job'
+						
+						//-td
+						def tmpMonitorjobfwTrgDir = getParamValue(installerParam,"-td")
+						if(listEmptyParams.contains("-td")){
 							WPDInstallerGroovy.printInfoLog("Please input trigger directory:(default set to ${wiperdogHome}/var/job)")
-							def tmpMonitorjobfwTrgDir = inp.readLine().trim();
-							params['monitorjobfw.directory.trigger'] = (tmpMonitorjobfwTrgDir != null && ! tmpMonitorjobfwTrgDir.equals(""))?tmpMonitorjobfwTrgDir:'${felix.home}/var/job';
+							tmpMonitorjobfwTrgDir = inp.readLine().trim()
+						}
+						params['monitorjobfw.directory.trigger'] = (tmpMonitorjobfwTrgDir != null && ! tmpMonitorjobfwTrgDir.equals(""))?tmpMonitorjobfwTrgDir:'${felix.home}/var/job'
 
+						//-cd
+						def tmpMonitorjobfwJobClsDir = getParamValue(installerParam,"-cd")
+						if(listEmptyParams.contains("-cd")){
 							WPDInstallerGroovy.printInfoLog("Please input job class directory:(default set to ${wiperdogHome}/var/job)")
-							def tmpMonitorjobfwJobClsDir = inp.readLine().trim();
-							params['monitorjobfw.directory.jobcls'] = (tmpMonitorjobfwJobClsDir != null && ! tmpMonitorjobfwJobClsDir.equals(""))?tmpMonitorjobfwJobClsDir:'${felix.home}/var/job';
-
+							tmpMonitorjobfwJobClsDir = inp.readLine().trim()
+						}
+						params['monitorjobfw.directory.jobcls'] = (tmpMonitorjobfwJobClsDir != null && ! tmpMonitorjobfwJobClsDir.equals(""))?tmpMonitorjobfwJobClsDir:'${felix.home}/var/job'
+						
+						//-id
+						def tmpMonitorjobfwJobInstDir = getParamValue(installerParam,"-id")
+						if(listEmptyParams.contains("-id")){
 							WPDInstallerGroovy.printInfoLog("Please input job instance directory:(default set to ${wiperdogHome}/var/job)")
-							def tmpMonitorjobfwJobInstDir = inp.readLine().trim();
-							params['monitorjobfw.directory.instances'] = (tmpMonitorjobfwJobInstDir != null && ! tmpMonitorjobfwJobInstDir.equals(""))?tmpMonitorjobfwJobInstDir:'${felix.home}/var/job';
-					        WPDInstallerGroovy.printInfoLog("Please input database server (Mongodb) IP address (default set to 127.0.0.1):")
-					        def tmpMonitorjobfwMongodbHost = inp.readLine().trim();
-					        params['monitorjobfw.mongodb.host'] = (tmpMonitorjobfwMongodbHost != null && ! tmpMonitorjobfwMongodbHost.equals(""))?tmpMonitorjobfwMongodbHost:'127.0.0.1';
-					        
-					        WPDInstallerGroovy.printInfoLog("Please input database server port, Mongodb port (default set to 27017):")    
-					        def tmpMonitorjobfwMongodbPort = inp.readLine().trim();
-					        params['monitorjobfw.mongodb.port'] = (tmpMonitorjobfwMongodbPort != null && ! tmpMonitorjobfwMongodbPort.equals(""))?tmpMonitorjobfwMongodbPort:'27017';
-					            
-					        WPDInstallerGroovy.printInfoLog("Please input database name (default set to wiperdog):")
-					        def tmpMonitorjobfwMongodbDbName = inp.readLine().trim();
-					        params['monitorjobfw.mongodb.dbName'] = (tmpMonitorjobfwMongodbDbName != null && ! tmpMonitorjobfwMongodbDbName.equals(""))?tmpMonitorjobfwMongodbDbName:'wiperdog';
-					        
-					        WPDInstallerGroovy.printInfoLog("Please input database server user name, (Mongodb user name, default set to empty):")    
-					        def tmpMonitorjobfwMongodbUser = inp.readLine().trim();
-					        params['monitorjobfw.mongodb.user'] = (tmpMonitorjobfwMongodbUser != null && ! tmpMonitorjobfwMongodbUser.equals(""))?tmpMonitorjobfwMongodbUser:'';
-					        
-					        WPDInstallerGroovy.printInfoLog("Please input database server password, (Mongodb password, default set to empty):") 
-					        def tmpMonitorjobfwMongodbPass = inp.readLine().trim();
-					        params['monitorjobfw.mongodb.pass'] = (tmpMonitorjobfwMongodbPass != null && ! tmpMonitorjobfwMongodbPass.equals(""))?tmpMonitorjobfwMongodbPass:'';
-					        
-					        WPDInstallerGroovy.printInfoLog("Please input mail send data policy, Mail Policy (default set to testmail@gmail.com):")    
-					        def tmpMonitorjobfwMailPolicy = inp.readLine().trim();					        
-					        params['monitorjobfw.mail.toMail'] = (tmpMonitorjobfwMailPolicy != null && ! tmpMonitorjobfwMailPolicy.equals(""))?tmpMonitorjobfwMailPolicy:'testmail@gmail.com';        
-						    
-							def tmpServiceFlag = "null"
+							tmpMonitorjobfwJobInstDir = inp.readLine().trim()
+						}
+						params['monitorjobfw.directory.instances'] = (tmpMonitorjobfwJobInstDir != null && ! tmpMonitorjobfwJobInstDir.equals(""))?tmpMonitorjobfwJobInstDir:'${felix.home}/var/job'
+				        
+				        //-m
+				        def tmpMonitorjobfwMongodbHost = getParamValue(installerParam,"-m")
+				        if(listEmptyParams.contains("-m")){
+					    	WPDInstallerGroovy.printInfoLog("Please input database server (Mongodb) IP address (default set to 127.0.0.1):")
+				        	tmpMonitorjobfwMongodbHost = inp.readLine().trim()
+				        }
+				        params['monitorjobfw.mongodb.host'] = (tmpMonitorjobfwMongodbHost != null && ! tmpMonitorjobfwMongodbHost.equals(""))?tmpMonitorjobfwMongodbHost:'127.0.0.1'
+				        
+				        //-p
+				        def tmpMonitorjobfwMongodbPort = getParamValue(installerParam,"-p")
+				        if(listEmptyParams.contains("-p")){
+				        	WPDInstallerGroovy.printInfoLog("Please input database server port, Mongodb port (default set to 27017):")    
+				        	tmpMonitorjobfwMongodbPort = inp.readLine().trim()
+				        }
+				        params['monitorjobfw.mongodb.port'] = (tmpMonitorjobfwMongodbPort != null && ! tmpMonitorjobfwMongodbPort.equals(""))?tmpMonitorjobfwMongodbPort:'27017'
+				            
+				        //n
+				        def tmpMonitorjobfwMongodbDbName = getParamValue(installerParam,"-n")
+				        if(listEmptyParams.contains("-n")){
+				        	WPDInstallerGroovy.printInfoLog("Please input database name (default set to wiperdog):")
+				        	tmpMonitorjobfwMongodbDbName = inp.readLine().trim()
+				    	}
+				        params['monitorjobfw.mongodb.dbName'] = (tmpMonitorjobfwMongodbDbName != null && ! tmpMonitorjobfwMongodbDbName.equals(""))?tmpMonitorjobfwMongodbDbName:'wiperdog'
+				        
+				        // -u
+				        def tmpMonitorjobfwMongodbUser = getParamValue(installerParam,"-u")
+				        if(listEmptyParams.contains("-u")){
+				        	WPDInstallerGroovy.printInfoLog("Please input database server user name, (Mongodb user name, default set to empty):")    
+				        	tmpMonitorjobfwMongodbUser = inp.readLine().trim()
+				        }
+				        params['monitorjobfw.mongodb.user'] = (tmpMonitorjobfwMongodbUser != null && ! tmpMonitorjobfwMongodbUser.equals(""))?tmpMonitorjobfwMongodbUser:''
+				        
+				        //pw
+				        def tmpMonitorjobfwMongodbPass = getParamValue(installerParam,"-pw")
+				        if(listEmptyParams.contains("-pw")){
+				        	WPDInstallerGroovy.printInfoLog("Please input database server password, (Mongodb password, default set to empty):") 
+				        	tmpMonitorjobfwMongodbPass = inp.readLine().trim()
+				        }
+				        params['monitorjobfw.mongodb.pass'] = (tmpMonitorjobfwMongodbPass != null && ! tmpMonitorjobfwMongodbPass.equals(""))?tmpMonitorjobfwMongodbPass:''
+				        
+				        //mp
+				        def tmpMonitorjobfwMailPolicy = getParamValue(installerParam,"-mp")
+				        if(listEmptyParams.contains("-mp")){
+				        	WPDInstallerGroovy.printInfoLog("Please input mail send data policy, Mail Policy (default set to testmail@gmail.com):")    
+				        	tmpMonitorjobfwMailPolicy = inp.readLine().trim()
+				        }
+				        params['monitorjobfw.mail.toMail'] = (tmpMonitorjobfwMailPolicy != null && ! tmpMonitorjobfwMailPolicy.equals(""))?tmpMonitorjobfwMailPolicy:'testmail@gmail.com'
+				        	
+					    //s
+						def tmpServiceFlag = getParamValue(installerParam,"-s")
+						if(listEmptyParams.contains("-s")){
 	        				while(tmpServiceFlag != "" && tmpServiceFlag != "yes" && tmpServiceFlag != "no"){
 	        					WPDInstallerGroovy.printInfoLog("Do you want to install wiperdog as system service, default set to '"+installAsService+"' (type yes|no), enter for default value:") 
-	        				    tmpServiceFlag = inp.readLine().trim();
+	        				    tmpServiceFlag = inp.readLine().trim()
 	        				}
-        					installAsService = (tmpServiceFlag == null || tmpServiceFlag == "")?installAsService:tmpServiceFlag;
-        					
-							WPDInstallerGroovy.printInfoLog("\n")
-							WPDInstallerGroovy.printInfoLog("Please CONFIRM The following configuration are correct:")
-							WPDInstallerGroovy.printInfoLog("Wiperdog Home:"+ params['WIPERDOGHOME'])
-							WPDInstallerGroovy.printInfoLog("Server Port:"+ params['netty.port'])
-							WPDInstallerGroovy.printInfoLog("Job directory:"+ params['monitorjobfw.directory.job'])
-							WPDInstallerGroovy.printInfoLog("Trigger directory:"+ params['monitorjobfw.directory.trigger'])
-							WPDInstallerGroovy.printInfoLog("Job class directory:"+ params['monitorjobfw.directory.jobcls'])
-							WPDInstallerGroovy.printInfoLog("Job instances directory:"+ params['monitorjobfw.directory.instances'])
-							WPDInstallerGroovy.printInfoLog("Database address:"+ params['monitorjobfw.mongodb.host'])
-							WPDInstallerGroovy.printInfoLog("Database port:"+ params['monitorjobfw.mongodb.port'])
-							WPDInstallerGroovy.printInfoLog("Database name:"+ params['monitorjobfw.mongodb.dbName'])
-							WPDInstallerGroovy.printInfoLog("User name:"+ params['monitorjobfw.mongodb.user'])
-							WPDInstallerGroovy.printInfoLog("Password:"+ params['monitorjobfw.mongodb.pass'])
-							WPDInstallerGroovy.printInfoLog("Mail Policy:"+ params['monitorjobfw.mail.toMail'])
-							WPDInstallerGroovy.printInfoLog("Install as OS service:"+ installAsService)
-							WPDInstallerGroovy.printInfoLog("\n")							
-							while(userConfirm == null || (!userConfirm.toLowerCase().equalsIgnoreCase("y") && !userConfirm.toLowerCase().equalsIgnoreCase("n"))){
-								WPDInstallerGroovy.printInfoLog("Your input are correct(Y|y|N|n):")							
-								userConfirm = inp.readLine().trim()
-							}							
-							WPDInstallerGroovy.fileInfoLog("User confirm input: "+userConfirm)
-						} //-- END while
-				} else {
-					if(installerParam.length > 2) {
-						params['WIPERDOGHOME'] = wiperdogHome
-						for(int i = 1; i< installerParam.length; i++ ){
-						   //Get Netty port from argurment
-							if(installerParam[i].equals('-j')) {
-								params['netty.port'] = installerParam[i+1]
-								i++
-							} 
-						//Get Job directory config from argurment
-						if(installerParam[i].equals('-jd')) {
-							params['monitorjobfw.directory.job'] = installerParam[i+1]
-							i++
-						}
-
-						//Get Trigger directory from argurment
-						if(installerParam[i].equals('-td')) {
-							params['monitorjobfw.directory.trigger'] = installerParam[i+1]
-							i++
-						}
-
-
-						//Get job class directory from argurment
-						if(installerParam[i].equals('-cd')) {
-							params['monitorjobfw.directory.jobcls'] = installerParam[i+1]
-							i++
-						}
-
-
-						//Get instances directory from argurment
-						if(installerParam[i].equals('-id')) {
-							params['monitorjobfw.directory.instances'] = installerParam[i+1]
-							i++
-						}
-							//Get Mongodb Host from argurment
-							if(installerParam[i].equals('-m')) {
-								params['monitorjobfw.mongodb.host'] = installerParam[i+1]
-								i++
-							}
-							//Get Mongodb Port from argurment
-							if(installerParam[i].equals('-p')) {
-								params['monitorjobfw.mongodb.port'] = installerParam[i+1]
-								i++
-							}
-							//Get Mongodb database name from argurment
-							if(installerParam[i].equals('-n')) {
-								params['monitorjobfw.mongodb.dbName'] = installerParam[i+1]
-								i++
-							}
-							//Get Mongodb user name from argurment
-							if(installerParam[i].equals('-u')) {
-								params['monitorjobfw.mongodb.user'] = installerParam[i+1]
-								i++
-							}
-							//Get Mongodb password from argurment
-							if(installerParam[i].equals('-pw')) {
-								params['monitorjobfw.mongodb.pass'] = installerParam[i+1]
-								i++
-							}
-							//Get mail policy from argurment
-							if(installerParam[i].equals('-mp')) {
-								params['monitorjobfw.mail.toMail'] = installerParam[i+1]
-								i++
-							}
-							//Get 
-							if(installerParam[i].equals('-s')) {
-								installAsService = installerParam[i+1]
-								i++
-							}
-						}
-						if(params['monitorjobfw.mongodb.user'] == null){
-							params['monitorjobfw.mongodb.user'] = ''
-						}
-						if(params['monitorjobfw.mongodb.pass'] == null){
-							params['monitorjobfw.mongodb.pass'] = ''
-						}
-						WPDInstallerGroovy.printInfoLog("----------------------------------------------------------------")												
-						WPDInstallerGroovy.printInfoLog("------------------    Wiperdog setting     -------------------------")
+        				}
+    					installAsService = (tmpServiceFlag == null || tmpServiceFlag == "")?installAsService:tmpServiceFlag
+    					WPDInstallerGroovy.printInfoLog("\n")
+						WPDInstallerGroovy.printInfoLog("Please CONFIRM The following configuration are correct:")
 						WPDInstallerGroovy.printInfoLog("Wiperdog Home:"+ params['WIPERDOGHOME'])
 						WPDInstallerGroovy.printInfoLog("Server Port:"+ params['netty.port'])
+						WPDInstallerGroovy.printInfoLog("Job directory:"+ params['monitorjobfw.directory.job'])
+						WPDInstallerGroovy.printInfoLog("Trigger directory:"+ params['monitorjobfw.directory.trigger'])
+						WPDInstallerGroovy.printInfoLog("Job class directory:"+ params['monitorjobfw.directory.jobcls'])
+						WPDInstallerGroovy.printInfoLog("Job instances directory:"+ params['monitorjobfw.directory.instances'])
 						WPDInstallerGroovy.printInfoLog("Database address:"+ params['monitorjobfw.mongodb.host'])
-					WPDInstallerGroovy.printInfoLog("Job directory:"+ params['monitorjobfw.directory.job'])
-					WPDInstallerGroovy.printInfoLog("Trigger directory:"+ params['monitorjobfw.directory.trigger'])
-					WPDInstallerGroovy.printInfoLog("Job class directory:"+ params['monitorjobfw.directory.jobcls'])
-					WPDInstallerGroovy.printInfoLog("Job instances directory:"+ params['monitorjobfw.directory.instances'])
 						WPDInstallerGroovy.printInfoLog("Database port:"+ params['monitorjobfw.mongodb.port'])
 						WPDInstallerGroovy.printInfoLog("Database name:"+ params['monitorjobfw.mongodb.dbName'])
 						WPDInstallerGroovy.printInfoLog("User name:"+ params['monitorjobfw.mongodb.user'])
 						WPDInstallerGroovy.printInfoLog("Password:"+ params['monitorjobfw.mongodb.pass'])
 						WPDInstallerGroovy.printInfoLog("Mail Policy:"+ params['monitorjobfw.mail.toMail'])
-						WPDInstallerGroovy.printInfoLog("Install as OS service:"+ installAsService)						
-					} 
-				}
+						WPDInstallerGroovy.printInfoLog("Install as OS service:"+ installAsService)
+						WPDInstallerGroovy.printInfoLog("\n")
+						while(userConfirm == null || (!userConfirm.toLowerCase().equalsIgnoreCase("y") && !userConfirm.toLowerCase().equalsIgnoreCase("n"))){
+							WPDInstallerGroovy.printInfoLog("Your input are correct(Y|y|N|n):")							
+							userConfirm = inp.readLine().trim()
+						}							
+						WPDInstallerGroovy.fileInfoLog("User confirm input: "+userConfirm)
+					} //-- END while
+				//-- END INTERACTIVE MODE
+				} else {//-- NONE INTERACTIVE MODE
+										 
+					params['WIPERDOGHOME'] = wiperdogHome
+					   //Get Netty port from argurment
+					if(containParam(installerParam,"-j")){ 
+						params['netty.port'] = getParamValue(installerParam,"-j")
+					}else{
+						params['netty.port'] = '13111'
+					}
+						
+					//Get Job directory config from argurment
+					if(containParam(installerParam,"-jd")){
+						params['monitorjobfw.directory.job'] = getParamValue(installerParam,"-jd")						
+					}else{
+						params['monitorjobfw.directory.job'] = '${felix.home}/var/job'
+					}
+						
+
+					//Get Trigger directory from argurment
+					if(containParam(installerParam,'-td')){
+						params['monitorjobfw.directory.trigger'] = SelfExtractorCmd.getParamValue(installerParam,"-td")
+					}else{
+						params['monitorjobfw.directory.trigger'] = '${felix.home}/var/job'
+					}
+						
+					//Get job class directory from argurment
+					if(containParam(installerParam,'-cd')){
+						params['monitorjobfw.directory.jobcls'] = SelfExtractorCmd.getParamValue(installerParam,"-cd")
+					}else{
+						params['monitorjobfw.directory.jobcls'] = '${felix.home}/var/job'
+					}						
+						
+					//Get instances directory from argurment
+					if(containParam(installerParam,'-id')){
+						params['monitorjobfw.directory.instances'] = SelfExtractorCmd.getParamValue(installerParam,"-id")
+					}else{
+						params['monitorjobfw.directory.instances'] = '${felix.home}/var/job'
+					}
+						
+					//Get Mongodb Host from argurment
+					if(containParam(installerParam,'-m')){
+						params['monitorjobfw.mongodb.host'] = getParamValue(installerParam,"-m")
+					}else{
+						params['monitorjobfw.mongodb.host'] = '127.0.0.1'
+					}
+						
+					//Get Mongodb Port from argurment
+					if(containParam(installerParam,'-p')) {
+						params['monitorjobfw.mongodb.port'] = getParamValue(installerParam,"-p")
+					}else{
+						params['monitorjobfw.mongodb.port'] = '27017'
+					}
+					//Get Mongodb database name from argurment
+					if(containParam(installerParam, '-n')) {
+						params['monitorjobfw.mongodb.dbName'] = getParamValue(installerParam,"-n")
+					}else{
+						params['monitorjobfw.mongodb.dbName'] = 'wiperdog'
+					}						
+						
+					//Get Mongodb user name from argurment
+					if(containParam(installerParam,'-u')) {
+						params['monitorjobfw.mongodb.user'] = getParamValue(installerParam,"-u")
+					}else{
+						params['monitorjobfw.mongodb.user'] = ''
+					}
+					//Get Mongodb password from argurment
+					if(containParam(installerParam,'-pw')) {
+						params['monitorjobfw.mongodb.pass'] = getParamValue(installerParam,"-pw")
+					}else{
+						params['monitorjobfw.mongodb.pass'] = ''
+					}
+					//Get mail policy from argurment
+					if(containParam(installerParam,'-mp')) {
+						params['monitorjobfw.mail.toMail'] = getParamValue(installerParam,"-mp")
+					}else{
+						params['monitorjobfw.mail.toMail'] = 'testmail@gmail.com'
+					}
+					//Get 
+					if(containParam(installerParam,'-s')) {
+						installAsService = getParamValue(installerParam,"-s")
+					}else{
+						installAsService = 'yes'
+					}
+					WPDInstallerGroovy.printInfoLog("-----------------------------------------------------------------")
+					WPDInstallerGroovy.printInfoLog("------------------    Wiperdog setting     ----------------------")
+					WPDInstallerGroovy.printInfoLog("-----------------------------------------------------------------")
+					WPDInstallerGroovy.printInfoLog("Wiperdog Home:"+ params['WIPERDOGHOME'])
+					WPDInstallerGroovy.printInfoLog("Server Port:"+ params['netty.port'])
+					WPDInstallerGroovy.printInfoLog("Database address:"+ params['monitorjobfw.mongodb.host'])
+					WPDInstallerGroovy.printInfoLog("Job directory:"+ params['monitorjobfw.directory.job'])
+					WPDInstallerGroovy.printInfoLog("Trigger directory:"+ params['monitorjobfw.directory.trigger'])
+					WPDInstallerGroovy.printInfoLog("Job class directory:"+ params['monitorjobfw.directory.jobcls'])
+					WPDInstallerGroovy.printInfoLog("Job instances directory:"+ params['monitorjobfw.directory.instances'])
+					WPDInstallerGroovy.printInfoLog("Database port:"+ params['monitorjobfw.mongodb.port'])
+					WPDInstallerGroovy.printInfoLog("Database name:"+ params['monitorjobfw.mongodb.dbName'])
+					WPDInstallerGroovy.printInfoLog("User name:"+ params['monitorjobfw.mongodb.user'])
+					WPDInstallerGroovy.printInfoLog("Password:"+ params['monitorjobfw.mongodb.pass'])
+					WPDInstallerGroovy.printInfoLog("Mail Policy:"+ params['monitorjobfw.mail.toMail'])
+					WPDInstallerGroovy.printInfoLog("Install as OS service:"+ installAsService)
+				}//END IF NONE INTERACTIVE MODE
             } catch (Exception ignore) {
-		WPDInstallerGroovy.printInfoLog("Error:"+ ignore)                
+				WPDInstallerGroovy.printInfoLog("Error:"+ ignore)                
             }
         //------------------------------------ CONFIGURE WIPERDOG ------------------------------------------//
          // Configure system.properties for netty.port
@@ -410,7 +496,7 @@ public class WPDInstallerGroovy{
                 sBuff.append("isUbuntu=`uname -a | grep buntu`\n")
                	sBuff.append("if [ ! -n \"\$isUbuntu\" ]\n")  // If is not ubuntu
                 sBuff.append("then\n")
-    			sBuff.append(". ~/.bash_profile\n")
+    		sBuff.append(". ~/.bash_profile\n")
                 sBuff.append("	service_cmd=`which service`\n")
                 sBuff.append("	chkconfig_cmd=`which chkconfig`\n")
                 sBuff.append("	if [ ! -n \$service_cmd ] || [ ! -x \$service_cmd ] || [ ! -n \$chkconfig_cmd ] || [ ! -x \$chkconfig_cmd ]\n")
@@ -507,9 +593,10 @@ public class WPDInstallerGroovy{
                 
             }
             WPDInstallerGroovy.printInfoLog("The installation has been completed successfully! \nPlease use command 'net start/stop wiperdog'(Window) or 'service wiperdog start/stop'(Linux) to control the service.")
-			WPDInstallerGroovy.printInfoLog("For detail installation log, please view the log file at: " + InstallerXML.getInstance().getInstallLogPath())
+	    WPDInstallerGroovy.printInfoLog("For detail installation log, please view the log file at: " + InstallerXML.getInstance().getInstallLogPath())
             WPDInstallerGroovy.printInfoLog("Thank you for choosing Wiperdog!")
          }//-- END install as system service
          WPDInstallerGroovy.printInfoLog("Finish the Wiperdog installation at " + SelfExtractorCmd.df.format(new java.util.Date(System.currentTimeMillis())));
+	 WPDInstallerGroovy.printInfoLog("\n\n")
     }//-- end main
 }

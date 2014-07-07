@@ -21,8 +21,16 @@ public class InstallerXML {
 	private String readmePath = "";
 	private String licensePath = "";
 	private String installLogPath = "";
+	private String installMode = "";
 	
 	public InstallerXML(){}
+	public String getInstallMode() {
+		return installMode;
+	}
+
+	public void setInstallMode(String installMode) {
+		this.installMode = installMode;
+	}
 	
 	public String getInstallLogPath() {
 		return installLogPath;
