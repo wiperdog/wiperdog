@@ -97,17 +97,17 @@ public class SelfExtractorCmd {
             				//Ignore exception for shutdown hook.
             			}
             		}
-            	}));
-	        if(!containParam(args, "-ni")){	 
-            		printInfoLog("Press any key to start interactive installation or CTRL+C to quit. You can execute default installation with -ni option");	       
-		}     	
-            	String userConfirmInteractiveMode = inp.readLine().trim();
+           	}));
         	}catch(Exception ex){
         		// In case CTRL + C were pressed
         		Thread.currentThread().sleep(100);
         	}
 			// check command syntax to configure OUTPUT_FOLDER
 			if (args.length == 0 || containParam(args, "-ni")) {
+				if(args.length == 0){
+           				printInfoLog("Press any key to start interactive installation or CTRL+C to quit. You can execute default installation with -ni option");	       
+            				String userConfirmInteractiveMode = inp.readLine().trim();
+				}
 				//Get current dir
 				String currentDir = System.getProperty("user.dir");
 				
