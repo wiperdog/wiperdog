@@ -296,7 +296,6 @@ public class SelfExtractorCmd {
 				//Get -ni option
 				if(args[i].equals("-ni")) {						
 					strArgs += args[i] + " ";
-					i++;
 				}
 			} 
 			

@@ -32,7 +32,6 @@ public class WPDInstallerGroovy{
 	}
 	static final String NONE_INTERACTIVE_PARAM_KEY = "-ni"
     public static void main(String[] installerParam) throws Exception{			
-	
         def params = [:]
         
         def userConfirm = null		
