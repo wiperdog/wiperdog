@@ -52,7 +52,7 @@ After downloaded packages above, you can simply invoke it as installer, the usag
     Usage:
                  java -jar [Installer Jar] -d [INSTALL_PATH>]
                  or
-                 java -jar [Installer Jar] -d [INSTALL_PATH] -j [jettyport] -m [mongodb host] -p [mongodb port] -n [mongodb database name] -u [mongodb user name] -pw [mongodb password] -mp [mail policy] -s [yes/no install as OS service]
+                 java -jar [Installer Jar] -d [INSTALL_PATH] -j [nettyport] -m [mongodb host] -p [mongodb port] -n [mongodb database name] -u [mongodb user name] -pw [mongodb password] -mp [mail policy] -s [yes/no install as OS service]
 
 the "-d" option can be omitted.  
 The installation process is like as following...   
@@ -82,7 +82,7 @@ The installation process is like as following...
      Thank you for using wiperdog, please follow screen construction to continue the installation
      
      Getting input parameters for pre-configured wiperdog, press any key to continue...
-     Please input Jetty Port(default set to 13111):
+     Please input Netty Port(default set to 13111):
      <---- you can type just ENTER.
      Please input database server (Mongodb) IP address (default set to 127.0.0.1):
      <---- you can type just ENTER.

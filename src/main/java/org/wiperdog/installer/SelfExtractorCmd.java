@@ -166,7 +166,7 @@ public class SelfExtractorCmd {
 							strArgs += "-j " + args[i+1] + " ";
 							i++;
 						} else {
-							printInfoLog( "Jetty port must be number: " + args[i]);								
+							printInfoLog( "Netty port must be number: " + args[i]);								
 							return;
 						}
 					} else {							
