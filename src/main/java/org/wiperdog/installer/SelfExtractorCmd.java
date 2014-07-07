@@ -32,7 +32,7 @@ import java.text.SimpleDateFormat;
  * Self-extractor main class of the installer, it help to peform all major tasks of the installation
  * such as: Self-extracting, run groovy for pre-configure.
  * @author nguyenvannghia
- *
+ * Email: nghia.n.v2007@gmail.com
  */
 public class SelfExtractorCmd {
 	public static String OUTPUT_FOLDER = "";
@@ -82,10 +82,30 @@ public class SelfExtractorCmd {
 		listParams.add("-pw");
 		listParams.add("-mp");
 		listParams.add("-s");
+		listParams.add("-ni");
 		List<String> listArgs = Arrays.asList(args);
-		try {
-			// check command syntax
-			if (args.length == 0) {
+		InputStreamReader converter = new InputStreamReader(System.in);
+	    BufferedReader inp = new BufferedReader(converter, 512);
+	    
+		try {			
+			try{
+            	Runtime.getRuntime().addShutdownHook(new Thread(new Runnable(){
+            		public void run(){
+            			try{
+            				printInfoLog("Installer shutdown...");
+            			}catch(Exception exx){
+            				//Ignore exception for shutdown hook.
+            			}
+            		}
+            	}));
+            	printInfoLog("Press any key to start interactive installation or CTRL+C to quit. You can execute default installation with -ni option");	            	
+            	String userConfirmInteractiveMode = inp.readLine().trim();
+        	}catch(Exception ex){
+        		// In case CTRL + C were pressed
+        		Thread.currentThread().sleep(100);
+        	}
+			// check command syntax to configure OUTPUT_FOLDER
+			if (args.length == 0 || containParam(args, "-ni")) {
 				//Get current dir
 				String currentDir = System.getProperty("user.dir");
 				
@@ -109,204 +129,174 @@ public class SelfExtractorCmd {
 				
 				//Check install or not
 				printInfoLog("You omitted to specify WIPERDOG HOME.");
-				//System.out.println("You omitted to specify WIPERDOG HOME.");
-				InputStreamReader converter = new InputStreamReader(System.in);
-	            BufferedReader inp = new BufferedReader(converter, 512);
+				
 	            String confirmStr = "";
-	            
-	            while ((!confirmStr.toLowerCase().equalsIgnoreCase("y")) && (!confirmStr.toLowerCase().equalsIgnoreCase("n"))) {	            	
-	            	printInfoLog("Are you sure to install wiperdog at " + wiperdogPath + " ? [y/n] :");
-	            	confirmStr = inp.readLine().trim();
-	            	if (confirmStr.toLowerCase().equalsIgnoreCase("y")) {
+	            if(containParam(args, "-ni")){	 
+	            	if(containParam(args, "-d")){
+	            		OUTPUT_FOLDER = getParamValue(args, "-d");
+	            	}else
 	            		OUTPUT_FOLDER = wiperdogPath;
-	            	} else if (confirmStr.toLowerCase().equalsIgnoreCase("n")) {
-	            		System.exit(0);
+	            }else{
+	            	while (confirmStr!=null && (!confirmStr.toLowerCase().equalsIgnoreCase("y") && !confirmStr.toLowerCase().equalsIgnoreCase("n"))) {
+		            	printInfoLog("Do you want to install wiperdog at " + wiperdogPath + " ? [y/n] :");
+		            	confirmStr = inp.readLine().trim();
+		            	if (confirmStr.toLowerCase().equalsIgnoreCase("y")) {
+		            		OUTPUT_FOLDER = wiperdogPath;
+		            	} else if (confirmStr.toLowerCase().equalsIgnoreCase("n")) {
+		            		System.exit(0);
+		            	}
 	            	}
 	            }
-			} else if ((args.length < 2) || (!args[0].trim().equals("-d")) ) {
+			} else if ((args.length < 2 && !containParam(args,"-ni")) || (!args[0].trim().equals("-d") && !containParam(args,"-ni")) ) {
 				printInfoLog("Wrong parameter. Usage:\n \t\t java -jar [Installer Jar] -d [INSTALL_PATH>] \n \t\t or \n \t\t java -jar [Installer Jar] -d [INSTALL_PATH] -j [jettyport] -m [mongodb host] -p [mongodb port] -n [mongodb database name] -u [mongodb user name] -pw [mongodb password] -mp [mail policy] -s [yes/no install as OS service]");				
 				System.exit(0);
-			} else {
-				OUTPUT_FOLDER = (String) args[1];
-			}
-			//Get default params not in arguments
-			List<String> defaultParams = new ArrayList<String>();
-			for(int i = 1 ; i < listParams.size() ; i++){
-				if(!listArgs.contains(listParams.get(i))){
-					defaultParams.add(listParams.get(i));
-				}
-			}
+			}else {
+				if(containParam(args,"-d"))
+					OUTPUT_FOLDER = (String) args[1];
+			}// end if (args.length ==0 || -ni option)
+			
+			//Prepare arguments for Groovy script running
 			String strArgs = "";
-			//Valid arguments
-			if(args.length > 2) {
-				for(int i = 1; i< args.length; i++ ){
-				   //Get jetty port from argurment
-					if(args[i].equals("-j")) {
-						if( ( args.length > i+1) &&  (args[i+1].trim() != "") && (!listParams.contains(args[i+1].trim()))){
-							if( isNumeric(args[i+1])){
-								strArgs += "-j " + args[i+1] + " ";
-								i++;
-							} else {
-								printInfoLog( "Jetty port must be number: " + args[i]);								
-								return;
-							}
-						} else {							
-							printInfoLog("Incorrect value of params: " + args[i]);							
-							return;
-						}
-					}
-					// Get job directory from argurment
-					if (args[i].equals("-jd")) {
-						if ((args.length > i + 1) && (args[i + 1].trim() != "") && (!listParams.contains(args[i + 1].trim()))) {
-							strArgs += "-jd " + args[i + 1] + " ";
+			//Pass all arguments to Groovy class			
+			for(int i = 0; i< args.length; i++ ){				
+			   //Get jetty port from argurment
+				if(args[i].equals("-j")) {
+					if( ( args.length > i+1) &&  (args[i+1].trim() != "") && (!listParams.contains(args[i+1].trim()))){
+						if( isNumeric(args[i+1])){
+							strArgs += "-j " + args[i+1] + " ";
 							i++;
 						} else {
-							printInfoLog("Incorrect value of params: " + args[i]);							
+							printInfoLog( "Jetty port must be number: " + args[i]);								
 							return;
 						}
-					}
-
-					// Get intances directory from argurment
-					if (args[i].equals("-id")) {
-						if ((args.length > i + 1) && (args[i + 1].trim() != "") && (!listParams.contains(args[i + 1].trim()))) {
-							strArgs += "-id " + args[i + 1] + " ";
-							i++;
-						} else {
-							printInfoLog("Incorrect value of params: " + args[i]);							
-							return;
-						}
-					}
-					
-					// Get job class directory from argurment
-					if (args[i].equals("-cd")) {
-						if ((args.length > i + 1) && (args[i + 1].trim() != "") && (!listParams.contains(args[i + 1].trim()))) {
-							strArgs += "-cd " + args[i + 1] + " ";
-							i++;
-						} else {
-							printInfoLog("Incorrect value of params: " + args[i]);
-							return;
-						}
-					}
-					
-					// Get trigger directory from argurment
-					if (args[i].equals("-td")) {
-						if ((args.length > i + 1) && (args[i + 1].trim() != "") && (!listParams.contains(args[i + 1].trim()))) {
-							strArgs += "-td " + args[i + 1] + " ";
-							i++;
-						} else {
-							printInfoLog("Incorrect value of params: " + args[i]);							
-							return;
-						}
-					}
-					//Get Mongodb Host from argurment
-					if(args[i].equals("-m")) {
-						if(( args.length > i+1) && (args[i+1].trim() != "") && (!listParams.contains(args[i+1].trim()))){
-							strArgs += "-m " + args[i+1] + " ";
-							i++;
-						} else {
-							printInfoLog("Incorrect value of params: " + args[i]);
-							return;
-						}
-					}
-					//Get Mongodb Port from argurment
-					if(args[i].equals("-p")) {
-						if( ( args.length > i+1) && (args[i+1].trim() != "") && (!listParams.contains(args[i+1].trim()))){
-							if(isNumeric(args[i+1])){
-								strArgs += "-p " + args[i+1] + " ";
-								i++;
-							} else {
-								printInfoLog("Mongodb port must be number: " + args[i]);
-								return;
-							}
-						} else {
-							printInfoLog("Incorrect value of params: " + args[i]);
-							return;
-						}
-					}
-					//Get Mongodb database name from argurment
-					if(args[i].equals("-n")) {
-						if( ( args.length > i+1) && (args[i+1].trim() != "") && (!listParams.contains(args[i+1].trim()))){
-							strArgs += "-n " + args[i+1] + " ";
-							i++;
-						} else {
-							printInfoLog("Incorrect value of params: " + args[i]);
-							return;
-						}
-					}
-					//Get user connect to database
-					if(args[i].equals("-u")) {
-						if( ( args.length > i+1) && (args[i+1].trim() != "") && (!listParams.contains(args[i+1].trim()))){
-							strArgs += "-u " + args[i+1] + " ";
-							i++;
-						} else {
-							printInfoLog("Incorrect value of params: " + args[i]);
-							return;
-						}
-					}
-					//Get password connect to database
-					String pattern = "[a-zA-Z0-9]+";
-					if(args[i].equals("-pw")) {
-						if( ( args.length > i+1) && (args[i+1].trim() != "") && (!listParams.contains(args[i+1].trim())) && args[i+1].matches(pattern)){
-							strArgs += "-pw " + args[i+1] + " ";
-							i++;
-						} else {
-							printInfoLog("Incorrect value of params: " + args[i]);
-							return;
-						}
-					}
-					//Get mail send to policy
-					if(args[i].equals("-mp")) {
-						if( ( args.length > i+1) && (args[i+1].trim() != "") && (!listParams.contains(args[i+1].trim()))){
-							strArgs += "-mp " + args[i+1] + " ";
-							i++;
-						} else {
-							printInfoLog("Incorrect value of params: " + args[i]);
-							return;
-						}
-					}
-					//Get install wiperdog as service
-					if(args[i].equals("-s")) {
-						if( ( args.length > i+1) && (args[i+1].trim() != "") && (!listParams.contains(args[i+1].trim()))){
-							strArgs += "-s " + args[i+1] + " ";
-							i++;
-						} else {
-							printInfoLog("Incorrect value of params: " + args[i]);
-							return;
-						}
+					} else {							
+						printInfoLog("Incorrect value of params: " + args[i]);							
+						return;
 					}
 				}
-				// Set default params
-				for(int i = 0 ; i < defaultParams.size() ; i++ ){
-					if(defaultParams.get(i) == "-j"){
-						strArgs += "-j 13110 ";
+				// Get job directory from argurment
+				if (args[i].equals("-jd")) {
+					if ((args.length > i + 1) && (args[i + 1].trim() != "") && (!listParams.contains(args[i + 1].trim()))) {
+						strArgs += "-jd " + args[i + 1] + " ";
+						i++;
+					} else {
+						printInfoLog("Incorrect value of params: " + args[i]);							
+						return;
 					}
-					if(defaultParams.get(i) == "-m"){
-						strArgs += "-m 127.0.0.1 ";
+				}
+
+				// Get intances directory from argurment
+				if (args[i].equals("-id")) {
+					if ((args.length > i + 1) && (args[i + 1].trim() != "") && (!listParams.contains(args[i + 1].trim()))) {
+						strArgs += "-id " + args[i + 1] + " ";
+						i++;
+					} else {
+						printInfoLog("Incorrect value of params: " + args[i]);							
+						return;
 					}
-					if (defaultParams.get(i) == "-jd") {
-						strArgs += "-jd ${felix.home}/var/job ";
+				}
+				
+				// Get job class directory from argurment
+				if (args[i].equals("-cd")) {
+					if ((args.length > i + 1) && (args[i + 1].trim() != "") && (!listParams.contains(args[i + 1].trim()))) {
+						strArgs += "-cd " + args[i + 1] + " ";
+						i++;
+					} else {
+						printInfoLog("Incorrect value of params: " + args[i]);
+						return;
 					}
-					if (defaultParams.get(i) == "-id") {
-						strArgs += "-id ${felix.home}/var/job ";
+				}
+				
+				// Get trigger directory from argurment
+				if (args[i].equals("-td")) {
+					if ((args.length > i + 1) && (args[i + 1].trim() != "") && (!listParams.contains(args[i + 1].trim()))) {
+						strArgs += "-td " + args[i + 1] + " ";
+						i++;
+					} else {
+						printInfoLog("Incorrect value of params: " + args[i]);							
+						return;
 					}
-					if (defaultParams.get(i) == "-td") {
-						strArgs += "-td ${felix.home}/var/job ";
+				}
+				//Get Mongodb Host from argurment
+				if(args[i].equals("-m")) {
+					if(( args.length > i+1) && (args[i+1].trim() != "") && (!listParams.contains(args[i+1].trim()))){
+						strArgs += "-m " + args[i+1] + " ";
+						i++;
+					} else {
+						printInfoLog("Incorrect value of params: " + args[i]);
+						return;
 					}
-					if (defaultParams.get(i) == "-cd") {
-						strArgs += "-cd ${felix.home}/var/job ";
+				}
+				//Get Mongodb Port from argurment
+				if(args[i].equals("-p")) {
+					if( ( args.length > i+1) && (args[i+1].trim() != "") && (!listParams.contains(args[i+1].trim()))){
+						if(isNumeric(args[i+1])){
+							strArgs += "-p " + args[i+1] + " ";
+							i++;
+						} else {
+							printInfoLog("Mongodb port must be number: " + args[i]);
+							return;
+						}
+					} else {
+						printInfoLog("Incorrect value of params: " + args[i]);
+						return;
 					}
-					if(defaultParams.get(i) == "-p"){
-						strArgs += "-p 27017 ";
+				}
+				//Get Mongodb database name from argurment
+				if(args[i].equals("-n")) {
+					if( ( args.length > i+1) && (args[i+1].trim() != "") && (!listParams.contains(args[i+1].trim()))){
+						strArgs += "-n " + args[i+1] + " ";
+						i++;
+					} else {
+						printInfoLog("Incorrect value of params: " + args[i]);
+						return;
 					}
-					if(defaultParams.get(i) == "-n"){
-						strArgs += "-n wiperdog ";
+				}
+				//Get user connect to database
+				if(args[i].equals("-u")) {
+					if( ( args.length > i+1) && (args[i+1].trim() != "") && (!listParams.contains(args[i+1].trim()))){
+						strArgs += "-u " + args[i+1] + " ";
+						i++;
+					} else {
+						printInfoLog("Incorrect value of params: " + args[i]);
+						return;
 					}
-					if(defaultParams.get(i) == "-mp"){
-						strArgs += "-mp testmail@gmail.com ";
+				}
+				//Get password connect to database
+				String pattern = "[a-zA-Z0-9]+";
+				if(args[i].equals("-pw")) {
+					if( ( args.length > i+1) && (args[i+1].trim() != "") && (!listParams.contains(args[i+1].trim())) && args[i+1].matches(pattern)){
+						strArgs += "-pw " + args[i+1] + " ";
+						i++;
+					} else {
+						printInfoLog("Incorrect value of params: " + args[i]);
+						return;
 					}
-					if(defaultParams.get(i) == "-s"){
-						strArgs += "-s no ";
+				}
+				//Get mail send to policy
+				if(args[i].equals("-mp")) {
+					if( ( args.length > i+1) && (args[i+1].trim() != "") && (!listParams.contains(args[i+1].trim()))){
+						strArgs += "-mp " + args[i+1] + " ";
+						i++;
+					} else {
+						printInfoLog("Incorrect value of params: " + args[i]);
+						return;
 					}
+				}
+				//Get install wiperdog as service
+				if(args[i].equals("-s")) {
+					if( ( args.length > i+1) && (args[i+1].trim() != "") && (!listParams.contains(args[i+1].trim()))){
+						strArgs += "-s " + args[i+1] + " ";
+						i++;
+					} else {
+						printInfoLog("Incorrect value of params: " + args[i]);
+						return;
+					}
+				}
+				//Get -ni option
+				if(args[i].equals("-ni")) {						
+					strArgs += args[i] + " ";
+					i++;
 				}
 			} 
 			
@@ -340,6 +330,35 @@ public class SelfExtractorCmd {
 				fo.close();
 				e.printStackTrace();
 			}
+			/**
+			 Before running Groovy script:
+			 1. Set log file name for groovy because groovy will have user.dir as WIPERDOG_HOME which is different from 
+			 SelfExtractor user.dir
+			 2. Setup extractor.xml for installation mode based on -d option (args.length = 0 -> without -d option).
+			 We need to change extractor xm schema to define new INSTALLATION_MODE(see element installMode in extractor.xml)
+			 */
+			String logFilePath = LOG_FILE_NAME.replaceAll("\\\\", "/");		
+			try
+	        {
+		        File file = new File(OUTPUT_FOLDER + "/extractor.xml");
+		        BufferedReader reader = new BufferedReader(new FileReader(file));
+		        String line = "", oldtext = "";
+		        while((line = reader.readLine()) != null)
+		        {
+		            oldtext += line + "\n";
+		        }
+		        reader.close();	        		
+		        String tempText = oldtext.replaceAll("INSTALLER_LOG_PATH", logFilePath);	        
+		        String newText = tempText.replaceAll("INSTALL_MODE", (strArgs != null && strArgs.indexOf("-ni") != -1)?"interactive":"silient");
+		        FileWriter writer = new FileWriter(OUTPUT_FOLDER + "/extractor.xml");
+		        writer.write(newText);
+		        writer.close();
+		    }
+		    catch (IOException ioe)
+		    {
+		        ioe.printStackTrace();
+		    }
+		    // run pre-configuration groovy script
 			runGroovyInstaller(newJarPath,strArgs);
 			System.exit(0);
 		} catch (Exception e) {
@@ -352,30 +371,9 @@ public class SelfExtractorCmd {
 	 * @param jarPath path to this Jar file, used in classpath for the java process
 	 * @throws Exception any exception
 	 */
-	static void runGroovyInstaller(String jarPath,String strArgs)throws Exception{		
-		//- risk when user choose the output directory in another volume, which is different from current volume
-		String logFilePath = LOG_FILE_NAME.replaceAll("\\\\", "/");
-		
-		try
-        {
-	        File file = new File(OUTPUT_FOLDER + "/extractor.xml");
-	        BufferedReader reader = new BufferedReader(new FileReader(file));
-	        String line = "", oldtext = "";
-	        while((line = reader.readLine()) != null)
-	            {
-	            oldtext += line + "\n";
-	        }
-	        reader.close();	        		
-	        String newtext = oldtext.replaceAll("INSTALLER_LOG_PATH", logFilePath);	        
-	        FileWriter writer = new FileWriter(OUTPUT_FOLDER + "/extractor.xml");
-	        writer.write(newtext);
-	        writer.close();
-	    }
-	    catch (IOException ioe)
-	        {
-	        ioe.printStackTrace();
-	    }
-		
+	static void runGroovyInstaller(String jarPath, String strArgs)throws Exception{
+		//System.out.println("******************** " + strArgs);
+		//- risk when user choose the output directory in another volume(disk drive), which is different from current volume
 		File workDir = new File(OUTPUT_FOLDER);		
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 		factory.setValidating(true);
@@ -384,7 +382,6 @@ public class SelfExtractorCmd {
 		docBuilder.setErrorHandler(new XMLErrorHandler());
 		Document doc = docBuilder.parse(InstallerUtil.class.getResourceAsStream("/extractor.xml"));
 		InstallerUtil.parseXml(doc.getDocumentElement());
-				
 		
 		if(InstallerXML.getInstance().getRunInstallerSyntax() == null || InstallerXML.getInstance().getRunInstallerSyntax().equals(""))
 			throw new Exception("Cannot run configuration for newly installed Wiperdog");
@@ -414,12 +411,15 @@ public class SelfExtractorCmd {
 						}
 					}
 					listCmd.add(OUTPUT_FOLDER);
-					if (strArgs != "") {
+					if (strArgs != null && !strArgs.equals("")) {
 					    cmdArray = strArgs.split(" ");
 					    for(int i = 0; i < cmdArray.length; i++){
 							listCmd.add(cmdArray[i]);
 						}
 					}
+					/*for(String s:listCmd){
+						System.out.print(s + " ");
+					}*/
 					ProcessBuilder builder = new ProcessBuilder(listCmd);
                     builder.directory(workDir);
 					builder.redirectErrorStream(true);					
@@ -493,12 +493,31 @@ public class SelfExtractorCmd {
        ex.printStackTrace(); 
     }
    }
+    public static String getParamValue(String[] args, String key){
+    	String ret = null;
+    	for(int i=0;i<args.length;i++){
+    		if(args[i] != null &&  args[i].equals(key) && ((i+1) < args.length)){
+    			ret = args[i+1];
+    			break;
+    		}
+    	}
+    	return ret;
+    }
+    public static boolean containParam(String[] args, String key){
+    	boolean ret = false;
+    	for(String s:args){
+    		if(s != null &&  s.equals(key)){
+    			ret = true;    			
+    			break;
+    		}
+    	}
+    	return ret;
+    }
    	public static boolean isNumeric(String string){
 	  return string.matches("-?\\d+(\\.\\d+)?");  
 	}
 
-    public static void stopService() throws Exception{
-    	
+    public static void stopService() throws Exception{    	
     	File workDir = new File(System.getProperty("user.dir"));
     	List<String> listCmd = new LinkedList<String>();
     	listCmd.add("net");
@@ -520,7 +539,7 @@ public class SelfExtractorCmd {
 		listCmd.add("taskkill");
     	listCmd.add("/F");
     	listCmd.add("/IM");
-    	listCmd.add("wiperdog_service.exe");
+    	listCmd.add("wiperdog_service_32bit.exe");
     	
     	builder = new ProcessBuilder(listCmd);
 		builder.redirectErrorStream(true);
@@ -574,10 +593,20 @@ class Redirector implements Runnable {
     	synchronized(in){
 		try {
 			byte[] buf = new byte[1];
+			List<Byte> listByte = new ArrayList<Byte>();
 			while ( in.read(buf) >= 0) {			
+				listByte.add(new Byte(buf[0]));
 				out.write(buf);				
 				out.flush();				
 			}
+			if(listByte.size()>0){
+				byte[] bytes = new byte[listByte.size()];
+				for(int i=0;i<listByte.size();i++){
+					bytes[i] = listByte.get(i).byteValue();
+				}
+				String s = new String(bytes);
+			}
+			
 		} catch (IOException e) {
             	//e.printStackTrace();
 		}     
