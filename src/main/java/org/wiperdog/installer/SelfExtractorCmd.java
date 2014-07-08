@@ -131,7 +131,7 @@ public class SelfExtractorCmd {
 				String wiperdogPath = currentDir + File.separator + wiperdogDirName;
 				
 				//Check install or not
-
+                                printInfoLog("You omitted to specify WIPERDOG HOME.");
 			
 	            String confirmStr = "";
 	            if(containParam(args, "-ni")){	 
