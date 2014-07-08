@@ -84,7 +84,8 @@ public class TestJob extends HttpServlet {
 			//Save to file
 			writeToFile(jobFile, jobContent)
 			if(action == 'run') {
-				String url = "http://localhost:8089/runjob"
+				def restPort = System.getProperty("rest.port")
+				String url = "http://localhost:${restPort}/runjob"
 				HttpClient client = new DefaultHttpClient();
 				// initialze a new builder and give a default URL
 				def postBody = [job: jobFile.getCanonicalPath()]
