@@ -104,10 +104,10 @@ public class SelfExtractorCmd {
         		Thread.currentThread().sleep(100);
         	}
 			// check command syntax to configure OUTPUT_FOLDER
+
 			if (args.length == 0 || containParam(args, "-ni")) {
 				if(args.length == 0){
-           				printInfoLog("Press any key to start interactive installation or CTRL+C to quit. You can execute default installation with -ni option");	       
-            				String userConfirmInteractiveMode = inp.readLine().trim();
+ 					printInfoLog("Press CTRL+C to quit. You can execute default installation with -ni option");
 				}
 				//Get current dir
 				String currentDir = System.getProperty("user.dir");
@@ -131,7 +131,7 @@ public class SelfExtractorCmd {
 				String wiperdogPath = currentDir + File.separator + wiperdogDirName;
 				
 				//Check install or not
-				printInfoLog("You omitted to specify WIPERDOG HOME.");
+
 			
 	            String confirmStr = "";
 	            if(containParam(args, "-ni")){	 
@@ -151,7 +151,7 @@ public class SelfExtractorCmd {
 	            	}
 	            }
 			} else if ((args.length < 2 && !containParam(args,"-ni")) || (!args[0].trim().equals("-d") && !containParam(args,"-ni")) ) {
-				printInfoLog("Wrong parameter. Usage:\n \t\t java -jar [Installer Jar] -d [INSTALL_PATH>] \n \t\t or \n \t\t java -jar [Installer Jar] -d [INSTALL_PATH] -j [nettyport] -m [mongodb host] -p [mongodb port] -n [mongodb database name] -u [mongodb user name] -pw [mongodb password] -mp [mail policy] -s [yes/no install as OS service]");				
+				printInfoLog("Wrong parameter. Usage:\n \t\t java -jar [Installer Jar] \n \t\t or \n \t\t java -jar [Installer Jar] -d [INSTALL_PATH>] \n \t\t or \n \t\t java -jar [Installer Jar] -d [INSTALL_PATH] -j [nettyport] -m [mongodb host] -p [mongodb port] -n [mongodb database name] -u [mongodb user name] -pw [mongodb password] -mp [mail policy] -s [yes/no install as OS service] \n \t\t or \n \t\t java -jar [Installer Jar] -ni [ -d INSTALL_PATH] [-j nettyport] ... ]");				
 				System.exit(0);
 			}else {
 				if(containParam(args,"-d"))
