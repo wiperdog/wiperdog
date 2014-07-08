@@ -24,7 +24,7 @@ public class RestServiceLoader{
 		this.context = ctx;
 		RestExpress server = new RestExpress()
 				.setName("RestExpress")
-				.setPort(8089)
+				.setPort(System.getProperty("rest.port").toInteger())
 				.setDefaultFormat("json")
 				.addMessageObserver(new SimpleConsoleLogMessageObserver());
 		defineRoutes(server);

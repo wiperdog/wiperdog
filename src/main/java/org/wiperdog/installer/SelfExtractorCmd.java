@@ -66,11 +66,12 @@ public class SelfExtractorCmd {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}		
-		//Argurments : -d (wiperdog home) ,-j(netty port),-m(mongodb host),-p(mongodb port),-n(database name),-u(user database),-pw(password database),-mp(mail policy),-s(install as OS service)
+		//Argurments : -d (wiperdog home) ,-j(netty port),-r (restful server port),-m(mongodb host),-p(mongodb port),-n(database name),-u(user database),-pw(password database),-mp(mail policy),-s(install as OS service)
 		//              -jd (job directory ) , -id (instances directory) , -cd (jobclass directory) 
 		List<String> listParams = new ArrayList<String>();
 		listParams.add("-d");
 		listParams.add("-j");
+		listParams.add("-r");
 		listParams.add("-m");
 		listParams.add("-jd");
 		listParams.add("-id");
@@ -176,6 +177,21 @@ public class SelfExtractorCmd {
 						return;
 					}
 				}
+			    //Get restful server port from argurment
+				if(args[i].equals("-r")) {
+					if( ( args.length > i+1) &&  (args[i+1].trim() != "") && (!listParams.contains(args[i+1].trim()))){
+						if( isNumeric(args[i+1])){
+							strArgs += "-r " + args[i+1] + " ";
+							i++;
+						} else {
+							printInfoLog( "Restful server port must be numeric: " + args[i]);								
+							return;
+						}
+					} else {							
+						printInfoLog("Incorrect value of params: " + args[i]);							
+						return;
+					}
+				}
 				// Get job directory from argurment
 				if (args[i].equals("-jd")) {
 					if ((args.length > i + 1) && (args[i + 1].trim() != "") && (!listParams.contains(args[i + 1].trim()))) {
@@ -265,9 +281,9 @@ public class SelfExtractorCmd {
 					}
 				}
 				//Get password connect to database
-				String pattern = "[a-zA-Z0-9]+";
+				//String pattern = "[a-zA-Z0-9]+";
 				if(args[i].equals("-pw")) {
-					if( ( args.length > i+1) && (args[i+1].trim() != "") && (!listParams.contains(args[i+1].trim())) && args[i+1].matches(pattern)){
+					if( ( args.length > i+1) && (args[i+1].trim() != "") && (!listParams.contains(args[i+1].trim())) ){
 						strArgs += "-pw " + args[i+1] + " ";
 						i++;
 					} else {

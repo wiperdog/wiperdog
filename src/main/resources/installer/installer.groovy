@@ -1,6 +1,6 @@
 import java.util.regex.Matcher
 import java.util.regex.Pattern
-
+import groovy.json.JsonBuilder
 import javax.xml.parsers.DocumentBuilder
 import javax.xml.parsers.DocumentBuilderFactory
 
@@ -62,6 +62,7 @@ public class WPDInstallerGroovy{
         List<String> listParams = new ArrayList<String>();
 		listParams.add("-d")
 		listParams.add("-j")
+		listParams.add("-r")
 		listParams.add("-m")
 		listParams.add("-jd")
 		listParams.add("-id")
@@ -100,6 +101,13 @@ public class WPDInstallerGroovy{
 				        	tmpNettyPort = inp.readLine().trim()
 				    	}
 				        params['netty.port'] = (tmpNettyPort != null && ! tmpNettyPort.equals(""))?tmpNettyPort:'13111'	
+						//-r
+						def tmpRestPort = getParamValue(installerParam,"-r")
+						if(listEmptyParams.contains("-r")){
+				        	WPDInstallerGroovy.printInfoLog("Please input Restful service port(default set to 8089):")					        
+				        	tmpRestPort = inp.readLine().trim()
+				    	}
+				        params['rest.port'] = (tmpRestPort != null && ! tmpRestPort.equals(""))?tmpRestPort:'8089'		
 				        		
 				        //-jd
 				        def tmpMonitorjobfwJobDir = getParamValue(installerParam,"-jd")
@@ -194,6 +202,7 @@ public class WPDInstallerGroovy{
 						WPDInstallerGroovy.printInfoLog("Please CONFIRM The following configuration are correct:")
 						WPDInstallerGroovy.printInfoLog("Wiperdog Home:"+ params['WIPERDOGHOME'])
 						WPDInstallerGroovy.printInfoLog("Server Port:"+ params['netty.port'])
+						WPDInstallerGroovy.printInfoLog("Restful Port:"+ params['rest.port'])
 						WPDInstallerGroovy.printInfoLog("Job directory:"+ params['monitorjobfw.directory.job'])
 						WPDInstallerGroovy.printInfoLog("Trigger directory:"+ params['monitorjobfw.directory.trigger'])
 						WPDInstallerGroovy.printInfoLog("Job class directory:"+ params['monitorjobfw.directory.jobcls'])
@@ -222,7 +231,14 @@ public class WPDInstallerGroovy{
 					}else{
 						params['netty.port'] = '13111'
 					}
-						
+
+					   //Get Restful port from argurment
+					if(containParam(installerParam,"-r")){ 
+						params['rest.port'] = getParamValue(installerParam,"-r")
+					}else{
+						params['rest.port'] = '8089'
+					}
+												
 					//Get Job directory config from argurment
 					if(containParam(installerParam,"-jd")){
 						params['monitorjobfw.directory.job'] = getParamValue(installerParam,"-jd")						
@@ -301,11 +317,12 @@ public class WPDInstallerGroovy{
 					WPDInstallerGroovy.printInfoLog("-----------------------------------------------------------------")
 					WPDInstallerGroovy.printInfoLog("Wiperdog Home:"+ params['WIPERDOGHOME'])
 					WPDInstallerGroovy.printInfoLog("Server Port:"+ params['netty.port'])
-					WPDInstallerGroovy.printInfoLog("Database address:"+ params['monitorjobfw.mongodb.host'])
+					WPDInstallerGroovy.printInfoLog("Restful Port:"+ params['rest.port'])
 					WPDInstallerGroovy.printInfoLog("Job directory:"+ params['monitorjobfw.directory.job'])
 					WPDInstallerGroovy.printInfoLog("Trigger directory:"+ params['monitorjobfw.directory.trigger'])
 					WPDInstallerGroovy.printInfoLog("Job class directory:"+ params['monitorjobfw.directory.jobcls'])
 					WPDInstallerGroovy.printInfoLog("Job instances directory:"+ params['monitorjobfw.directory.instances'])
+					WPDInstallerGroovy.printInfoLog("Database address:"+ params['monitorjobfw.mongodb.host'])
 					WPDInstallerGroovy.printInfoLog("Database port:"+ params['monitorjobfw.mongodb.port'])
 					WPDInstallerGroovy.printInfoLog("Database name:"+ params['monitorjobfw.mongodb.dbName'])
 					WPDInstallerGroovy.printInfoLog("User name:"+ params['monitorjobfw.mongodb.user'])
@@ -317,6 +334,26 @@ public class WPDInstallerGroovy{
 				WPDInstallerGroovy.printInfoLog("Error:"+ ignore)                
             }
         //------------------------------------ CONFIGURE WIPERDOG ------------------------------------------//
+		//Write coresponding MongoDB information to default.params
+		def defaultParams = new File("var/conf/default.params")
+		def shell = new GroovyShell()
+		def defParamsObject = shell.evaluate(defaultParams)
+		if(defParamsObject != null )  {
+			def dest = defParamsObject["dest"]
+			if(dest != null) {
+				dest = dest.collect {
+					if(it.getAt("mongoDB") != null) {
+						it = ["mongoDB" : "${params['monitorjobfw.mongodb.host']}:${params['monitorjobfw.mongodb.port']}/${params['monitorjobfw.mongodb.dbName']}"]
+					} else {
+						it
+					}
+				}
+				defParamsObject['dest'] = dest
+			}
+			def builder = new JsonBuilder(defParamsObject)
+			def stringToFile = builder.toPrettyString().replaceAll("\\{\\s*\\}","[:]").replace("{","[").replace("}","]")
+			defaultParams.setText(stringToFile)
+		}
          // Configure system.properties for netty.port
         def configFile = new File("etc/system.properties")
         def fileText = configFile.text 
@@ -331,7 +368,18 @@ public class WPDInstallerGroovy{
         }                
         configFile.write(newFileText)
         
-        //def newFileText = fileText.replaceAll(/_netty.port/, params['netty.port'])                
+         // Configure system.properties for rest.port
+        configFile = new File("etc/system.properties")
+        fileText = configFile.text 
+        
+        newFileText = ""
+        macherPattern = "(rest.port=)((?:(?!\\n).)*)"
+        pattern = Pattern.compile(macherPattern, Pattern.DOTALL);
+        matcher = pattern.matcher(fileText);
+        while(matcher.find())
+        {
+            newFileText = fileText.replace(matcher.group(1) + matcher.group(2), matcher.group(1) + params['rest.port'])
+        }                
         configFile.write(newFileText)
          /*
               3. Configure monitorjobfw.cfg for 
