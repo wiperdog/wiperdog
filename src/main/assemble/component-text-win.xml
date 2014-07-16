@@ -76,13 +76,5 @@
       <source>EXTERNALS</source>
       <lineEnding>windows</lineEnding>
     </file>
-    <file>
-      <source>uninstaller.bat</source>
-      <lineEnding>windows</lineEnding>
-    </file>
-    <file>
-      <source>uninstall.groovy</source>
-      <lineEnding>windows</lineEnding>
-    </file>
   </files>
 </component>

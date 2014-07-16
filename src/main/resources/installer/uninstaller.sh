@@ -1,6 +1,5 @@
 #!/bin/bash
-
-BASEDIR="$( cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BASEDIR="$( cd "$(dirname "${BASH_SOURCE[0]}")" && cd .. && pwd)"
 PARENT=$BASEDIR/..
 echo BASEDIR $BASEDIR
 #~ Check if wiperdog service has been installed
@@ -30,16 +29,7 @@ then
 	done
 fi
 
-#~ Confirm remove files
-delete_files=FALSE
-while true; do
-	read -p "Do you want to delete all wiperdog's files? (y/n)" ynfile
-	case $ynfile in 
-		[Yy] ) delete_files=TRUE; break;;
-		[Nn] ) delete_files=FALSE; break;;
-		*);;
-	esac
-done
+
 
 #~ Confirm remove data in mongoDB
 delete_data=FALSE
@@ -48,6 +38,17 @@ while true; do
 	case $ynmongo in 
 		[Yy] ) delete_data=TRUE; break;;
 		[Nn] ) delete_data=FALSE; break;;
+		*);;
+	esac
+done
+
+#~ Confirm remove files
+delete_files=FALSE
+while true; do
+	read -p "Do you want to delete all wiperdog's files? (y/n)" ynfile
+	case $ynfile in 
+		[Yy] ) delete_files=TRUE; break;;
+		[Nn] ) delete_files=FALSE; break;;
 		*);;
 	esac
 done
@@ -72,10 +73,9 @@ done
 
 if [ "$continue" = "TRUE" ]
 then
-    java -DWIPERDOG_HOME=$BASEDIR -classpath $BASEDIR/lib/java/bundle.a/groovy-all-2.2.1.jar:$BASEDIR/lib/java/bundle.a/ivy-2.4.0-rc1.jar groovy.ui.GroovyMain $BASEDIR/uninstall.groovy $uninstall_service $delete_data $delete_files
+    java -DWIPERDOG_HOME=$BASEDIR -classpath ".:$BASEDIR/lib/java/bundle.a/*" groovy.ui.GroovyMain $BASEDIR/installer/uninstall.groovy $uninstall_service $delete_data $delete_files
 
 	#$BASEDIR/bin/groovy -DWIPERDOG_HOME=$BASEDIR -classpath lib/java/bundle.a/groovy-all-2.2.1.jar:lib/java/bundle.a/ivy-2.4.0-rc1.jar $BASEDIR/uninstall.groovy $uninstall_service $delete_data $delete_files
 	#$BASEDIR/bin/groovy -DWIPERDOG_HOME=$BASEDIR $BASEDIR/uninstall.groovy $uninstall_service $delete_data $delete_files
 
 fi
-

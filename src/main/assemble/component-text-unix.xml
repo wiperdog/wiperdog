@@ -72,13 +72,5 @@
       <source>EXTERNALS</source>
       <lineEnding>unix</lineEnding>
     </file>
-    <file>
-      <source>uninstaller.sh</source>
-      <lineEnding>unix</lineEnding>
-    </file>
-    <file>
-      <source>uninstall.groovy</source>
-      <lineEnding>unix</lineEnding>
-    </file>
   </files>
 </component>
