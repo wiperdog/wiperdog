@@ -36,6 +36,7 @@ if "%CHECKSERVICE%"=="TRUE" (
 
 
 :MAIN_PROG	
+::Confirm remove wiperdog data
 SET delete_data=FALSE
 :WHILE_MONGO
 SET /P confirm_delete_data=Do you want to delete all wiperdog's data in mongodb? (y/n)
@@ -73,7 +74,7 @@ IF "%confirm_delete_files%"=="y" (
 )
 IF "%confirm_delete_files%"=="n" (
   SET delete_files=FALSE
-  GOTO MAIN_PROG2
+  GOTO MAIN_PROG3
 )
 IF "%confirm_delete_files%"=="N" (
   SET delete_files=FALSE
