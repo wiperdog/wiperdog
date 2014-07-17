@@ -149,8 +149,8 @@ class Uninstaller {
 							try{
 
 								if(add != null && dbName != null ) {
-									mongo = new Mongo(add)
-									db = mongo.getDB(dbName)
+									def mongo = new Mongo(add)
+									def db = mongo.getDB(dbName)
 									db.dropDatabase()
 									printInfoLog("*** WIPERDOG'S MONGODB DATA REMOVED...")
 								}
