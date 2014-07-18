@@ -1,26 +1,71 @@
 @Grapes(@Grab(group='org.mongodb',module='mongo-java-driver',version='2.12.2'))
-
+	
+import java.io.BufferedReader
+import java.io.InputStreamReader
 import com.mongodb.*
-def uninstaller = new Uninstaller()
 
-def rmService = (this.args[0] == "TRUE")?true:false
-def rmMongoData = (this.args[1] == "TRUE")?true:false
-def rmFiles = (this.args[2] == "TRUE")?true:false
+def buffReader = new BufferedReader(new InputStreamReader(System.in))
+def serviceState = this.args[0]
+def rmService
+if(serviceState == "TRUE") {
+	println "Do you want to remove Wiperdog service? (y/n)"
+	rmService = buffReader.readLine()
+	while(rmService != "y" && rmService != "n" && rmService != "Y" && rmService != "N") {
+		println "Do you want to remove Wiperdog service? (y/n)"
+		rmService = buffReader.readLine()
+	}
+}
 
-if(rmService){
-	uninstaller.uninstallService()
+println "Do you want to delete all wiperdog's data in mongodb? (y/n)"
+def rmMongoData = buffReader.readLine()
+while(rmMongoData != "y" && rmMongoData != "n" && rmMongoData != "Y" && rmMongoData != "N") {
+	println "Do you want to delete all wiperdog's data in mongodb? (y/n)"
+	rmMongoData = buffReader.readLine()
 }
-sleep 2
-if(rmMongoData){
-	uninstaller.uninstallMongoData()
+
+
+println "Do you want to delete all wiperdog's files? (y/n)"
+def rmFiles = buffReader.readLine()
+while(rmFiles != "y" && rmFiles != "n" && rmFiles != "Y" && rmFiles != "N") {
+	println "Do you want to delete all wiperdog's files? (y/n)"
+	rmFiles = buffReader.readLine()
 }
-sleep 2
-if(rmFiles){
-	uninstaller.uninstallFile()
+
+
+
+println "======================================================================================"
+println "You decide to uninstall the followings:"
+if(rmService == "Y" || rmService == "y"){
+	println "Uninstall service: ${rmService}"
 }
-sleep 2
-uninstaller.printInfoLog("*** WIPERDOG UNINSTALLED SUCCESSFULL !")
-uninstaller.printInfoLog("*** Uninstall log file put at : ${uninstaller.logfile.getCanonicalPath()}")
+println "Delete data in mongodb: ${rmMongoData}"
+println "Delete Wiperdog's files: ${rmFiles}"
+println "======================================================================================="
+println "Press any key to continue or CTRL+C to exit..."
+
+def goFoward = buffReader.readLine()
+if(goFoward == "") {
+	def uninstaller = new Uninstaller()
+
+	//def rmService = (this.args[0] == "TRUE")?true:false
+	//def rmMongoData = (this.args[1] == "TRUE")?true:false
+	//def rmFiles = (this.args[2] == "TRUE")?true:false
+
+	if(rmService == "Y" || rmService == "y"){
+		uninstaller.uninstallService()
+	}
+	sleep 2
+	if(rmMongoData == "Y" || rmMongoData == "y"){
+		uninstaller.uninstallMongoData()
+	}
+	sleep 2
+	if(rmFiles == "Y" || rmFiles == "y"){
+		uninstaller.uninstallFile()
+	}
+	sleep 2
+	uninstaller.printInfoLog("*** WIPERDOG UNINSTALLED SUCCESSFULL !")
+	uninstaller.printInfoLog("*** Uninstall log file put at : ${uninstaller.logfile.getCanonicalPath()}")
+}
 class Uninstaller {
 	def logfile =  new File(System.getProperty("WIPERDOG_HOME") + "/../WiperdogUninstaller.log");  
 	def fileOutputStream = new FileOutputStream(logfile);
