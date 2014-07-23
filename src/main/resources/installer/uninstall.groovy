@@ -50,7 +50,9 @@ println "You decide to uninstall the followings:"
 if(rmService == "Y" || rmService == "y"){
 	println "Uninstall service: ${rmService}"
 }
-println "Delete data in mongodb: ${rmMongoData}"
+if(rmMongoData != null ) {
+	println "Delete data in mongodb: ${rmMongoData}"
+}
 println "Delete Wiperdog's files: ${rmFiles}"
 println "======================================================================================="
 println "Press any key to continue or CTRL+C to exit..."
