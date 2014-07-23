@@ -517,7 +517,7 @@ public class SelfExtractorCmd {
 	           }
 	            fos.flush();
 	            fos.close();
-	            if (fileName.startsWith("bin")) {
+	            if (fileName.startsWith("bin") || fileName.endsWith(".sh")) {
 	            	newFile.setExecutable(true);
 	            }
     		}
