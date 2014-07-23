@@ -7,6 +7,7 @@ import com.mongodb.*
 def buffReader = new BufferedReader(new InputStreamReader(System.in))
 def serviceState = this.args[0]
 def rmService
+//Asking user for remove Wiperdog's service
 if(serviceState == "TRUE") {
 	println "Do you want to remove Wiperdog service? (y/n)"
 	rmService = buffReader.readLine()
@@ -15,23 +16,34 @@ if(serviceState == "TRUE") {
 		rmService = buffReader.readLine()
 	}
 }
-
-println "Do you want to delete all wiperdog's data in mongodb? (y/n)"
-def rmMongoData = buffReader.readLine()
-while(rmMongoData != "y" && rmMongoData != "n" && rmMongoData != "Y" && rmMongoData != "N") {
-	println "Do you want to delete all wiperdog's data in mongodb? (y/n)"
-	rmMongoData = buffReader.readLine()
+def uninstaller = new Uninstaller()
+def rmMongoData = null
+//Asking user for remove Wiperdog's data
+File paramFile = new File(System.getProperty("WIPERDOG_HOME") +  "/var/conf/default.params")
+def mongoDbInfo = uninstaller.checkMongoDBHost(paramFile)
+//Checking mongodb host , if host is localhost -> asking user to remove ,otherwise ,do not remove it
+if(mongoDbInfo != null && mongoDbInfo["host"] != null && mongoDbInfo["port"]  != null && mongoDbInfo["dbName"] != null) {
+	if("localhost".equals(mongoDbInfo["host"]) || "127.0.0.1".equals(mongoDbInfo["host"])) {
+		println "Do you want to delete all wiperdog's data in mongodb? (y/n)"
+		rmMongoData = buffReader.readLine()
+		while(rmMongoData != "y" && rmMongoData != "n" && rmMongoData != "Y" && rmMongoData != "N") {
+			println "Do you want to delete all wiperdog's data in mongodb? (y/n)"
+			rmMongoData = buffReader.readLine()
+		}
+	} else {
+		println "*** Wiperdog data put at : ${mongoDbInfo['host']} . We do not remove it !"
+	}
 }
 
 
+
+//Asking user for remove Wiperdog's files
 println "Do you want to delete all wiperdog's files? (y/n)"
 def rmFiles = buffReader.readLine()
 while(rmFiles != "y" && rmFiles != "n" && rmFiles != "Y" && rmFiles != "N") {
 	println "Do you want to delete all wiperdog's files? (y/n)"
 	rmFiles = buffReader.readLine()
 }
-
-
 
 println "======================================================================================"
 println "You decide to uninstall the followings:"
@@ -45,18 +57,13 @@ println "Press any key to continue or CTRL+C to exit..."
 
 def goFoward = buffReader.readLine()
 if(goFoward == "") {
-	def uninstaller = new Uninstaller()
-
-	//def rmService = (this.args[0] == "TRUE")?true:false
-	//def rmMongoData = (this.args[1] == "TRUE")?true:false
-	//def rmFiles = (this.args[2] == "TRUE")?true:false
 
 	if(rmService == "Y" || rmService == "y"){
 		uninstaller.uninstallService()
 	}
 	sleep 2
 	if(rmMongoData == "Y" || rmMongoData == "y"){
-		uninstaller.uninstallMongoData()
+		uninstaller.uninstallMongoData(mongoDbInfo["host"],mongoDbInfo["port"],mongoDbInfo["dbName"])
 	}
 	sleep 2
 	if(rmFiles == "Y" || rmFiles == "y"){
@@ -144,10 +151,8 @@ class Uninstaller {
 			listCmd.add("delete")
 			listCmd.add("wiperdog")
 			executeCommand(listCmd)
-			printInfoLog("*** WIPERDOG'S SERVICE REMOVED !")
-
 		}
-		
+		printInfoLog("*** WIPERDOG'S SERVICE REMOVED !")
 	}
 
 	def uninstallFile(){
@@ -173,41 +178,53 @@ class Uninstaller {
 		printInfoLog("Delete $path: " + path.delete())
 	}
 
-	def uninstallMongoData(){
-		printInfoLog("*** REMOVE MONGODB DATA...")
-		// Remove data 
-		File paramFile = new File(System.getProperty("WIPERDOG_HOME") +  "/var/conf/default.params")
+	Object checkMongoDBHost(File paramFile) {
+		
 		if(paramFile.exists()){
 			def param = (new GroovyShell()).evaluate(paramFile)
 			if(param != null){
 				//Check dest param map: dest: [ [ file: "stdout" ], [mongoDB: "localhost:27017/wiperdog" ] ]
 				if(param.dest != null && param.dest instanceof List){
+					def mongoDbInfo = [:]
 					param.dest.each{des->
 						//Check config: [mongoDB: "localhost:27017/wiperdog"] 
 						if(des.mongoDB != null){
-							def add 
-							def dbName 
 							if(des.mongoDB.contains("/")){
-								add = des.mongoDB.substring(0,des.mongoDB.indexOf("/") )
-								dbName = des.mongoDB.substring(des.mongoDB.lastIndexOf("/") + 1)
-							}
-							try{
-
-								if(add != null && dbName != null ) {
-									def mongo = new Mongo(add)
-									def db = mongo.getDB(dbName)
-									db.dropDatabase()
-									printInfoLog("*** WIPERDOG'S MONGODB DATA REMOVED...")
-								}
-							}catch(ex){
-								printInfoLog("Failed to delete wiperdog's data from MongoDB at ${add}... Please delete manually !")
+								def host = des.mongoDB.substring(0,des.mongoDB.indexOf(":") )
+								def port = des.mongoDB.substring(des.mongoDB.indexOf(":") + 1,des.mongoDB.indexOf("/") )
+								def dbName = des.mongoDB.substring(des.mongoDB.lastIndexOf("/") + 1)
+								mongoDbInfo["host"] = host
+								mongoDbInfo["port"] = port
+								mongoDbInfo["dbName"] = dbName
 							}
 						}
-					}
+					}	
+					return mongoDbInfo
+			
+				} else {
+					printInfoLog("[Error] - Failed to get MongoDB host : Destination configuration not found in : ${paramFile.getAbsolutePath()} ")
+					return null
 				}
 			}	
 		} else {
-			printInfoLog("Failed to delete wiperdog's data from MongoDB : Params file not existed : ${paramFile.getAbsolutePath()} ")
+			printInfoLog("[Error] - Failed to get MongoDB host : Params file not existed : ${paramFile.getAbsolutePath()} ")
+			return null
 		}
 	}
+
+	def uninstallMongoData(host,port,dbName){
+		printInfoLog("*** REMOVE MONGODB DATA...")
+		if(host != null && dbName != null ) {
+			try{
+				def mongo = new Mongo(host,Integer.parseInt(port))
+				def db = mongo.getDB(dbName)
+				db.dropDatabase()
+				printInfoLog("*** WIPERDOG'S MONGODB DATA REMOVED...")
+			}catch(ex){
+				ex.printStackTrace()
+				printInfoLog("[Error] - Failed to delete wiperdog's data from MongoDB at ${host}... Please delete manually !")
+			}
+		}
+	}
+
 }

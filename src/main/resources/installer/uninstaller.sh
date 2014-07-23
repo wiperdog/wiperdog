@@ -1,7 +1,6 @@
 #!/bin/bash
 BASEDIR="$( cd "$(dirname "${BASH_SOURCE[0]}")" && cd .. && pwd)"
 PARENT=$BASEDIR/..
-echo BASEDIR $BASEDIR
 #~ Check if wiperdog service has been installed
 CHECKSERVICE="unrecognized"
 CHECKSERVICE=$(service wiperdog status)

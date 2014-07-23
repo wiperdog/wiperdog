@@ -11,5 +11,4 @@ IF "%WIPER_SERVICE_STATUS%"=="" (
   SET CHECKSERVICE="TRUE"
 )
 
-echo %CHECKSERVICE%
 %PARENT%\bin\groovy.bat -DWIPERDOG_HOME=%PARENT% --classpath %PARENT%\lib\java\bundle.a %PARENT%\installer\uninstall.groovy %CHECKSERVICE%
