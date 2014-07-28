@@ -104,7 +104,7 @@ class LogFileInformation extends HttpServlet{
 			java.io.RandomAccessFile f = new RandomAccessFile(file, "r")
 			ByteArrayOutputStream bout = new ByteArrayOutputStream()
 			long length = f.length()
-			for (long p = length - 1; p > 0 && lines.size() < numOfLines; p--) {
+			for (long p = length - 1; p >= 0 && lines.size() < numOfLines; p--) {
 				f.seek(p);
 				int b = f.read();
 				if (b == 10) {
@@ -116,6 +116,11 @@ class LogFileInformation extends HttpServlet{
 					bout.write(b);
 				}
 			}
+			//Adding last bout
+			if(bout.size() > 0) {
+				lines.add(0, getLine(bout));
+				bout.reset();
+			}		
 		}catch (Exception ex){
 			println ex
 		}
