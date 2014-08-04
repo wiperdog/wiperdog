@@ -21,6 +21,9 @@ public class SendEmailPolicyJob implements Job{
 	// Mail sender run after every INTERVAL_SENDER minutes
 	static final INTERVAL_SENDER = 1
 	def properties = MonitorJobConfigLoader.getProperties()
+	static mapMongoDb = MongoDBConnection.getWiperdogConnection()
+	static mongo
+	static db
 	public static void main(String[] args){
 		try {
 			//schedule the job
@@ -62,9 +65,14 @@ public class SendEmailPolicyJob implements Job{
   public void execute(JobExecutionContext jExeCtx) throws JobExecutionException {
 		// TODO Auto-generated method stub
 		try{
-			def mapMongoDb = MongoDBConnection.getWiperdogConnection()
-			def mongo = mapMongoDb['gmongo']
-			def db = mapMongoDb['db']
+
+			if(mongo == null && mapMongoDb['gmongo'] != null) {
+				mongo = mapMongoDb['gmongo']
+			}
+			if(db == null && mapMongoDb['db'] != null) {
+				db = mapMongoDb['db']
+			}
+
 			if(db != null){
 				def coll = db.getCollection(SendEmailPolicyJob.MONGO_COLLECTION)
 				def message = ""
