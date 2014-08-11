@@ -8,6 +8,7 @@ import org.apache.felix.framework.util.Util;
 import org.osgi.framework.Constants;
 import org.osgi.framework.launch.Framework;
 import org.osgi.framework.launch.FrameworkFactory;
+import java.lang.management.ManagementFactory
 
 public class WiperDogBoot{
 	private static Framework m_fwk = null;
@@ -54,6 +55,14 @@ public class WiperDogBoot{
 
 
 	public static void main(String[] args) throws Exception {
+		// save pid for control stop
+		def procName = ManagementFactory.getRuntimeMXBean().getName()
+		def pid = procName.substring(0,procName.indexOf("@"))
+		def pidFile = new File("wiperdog.pid")
+		if(!pidFile.exists()) {
+			pidFile.createNewFile()
+		}
+		pidFile.setText(pid)
 		// Load system properties.
 		WiperDogBoot.loadSystemProperties()
 		
