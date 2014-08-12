@@ -11,7 +11,7 @@
  */
 JOB = [ name: "MySQL.Database_Structure.Parameter" ]
 QUERY='''
-		SELECT G.`VARIABLE_NAME` As VariableNameTxt, G.`VARIABLE_VALUE` As VariableValueTxt FROM information_schema.GLOBAL_VARIABLES G;
+		SELECT G.`VARIABLE_NAME` As VariableNameTxt, REPLACE(G.`VARIABLE_VALUE`,"\\\\","/") As VariableValueTxt FROM information_schema.GLOBAL_VARIABLES G;
 	'''
 KEYEXPR = ["VariableNameTxt"]
 SENDTYPE = "Store"
