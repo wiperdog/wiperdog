@@ -1,65 +1,102 @@
 /**
- * Monitoring properties of system.<br/>
- * @targetVersion Ubuntu 12.04
- * @return get properties of OS.
- * @returnParam OSName The name of the OS.
- * @returnParam OSArchName The type of the OS as 64bit/32bit.
- * @returnParam OSUserCnt The total amount of user in the OS.
- * @returnParam OSHostName The host name of the OS.
- * @returnParam OSInstallDate The date time of the OS installed.
- */
+* Monitoring properties of system.<br/>
+* @targetVersion Ubuntu 12.04
+* @return get properties of OS.
+* @returnParam OSName The name of the OS.
+* @returnParam OSArchName The type of the OS as 64bit/32bit.
+* @returnParam OSUserCnt The total amount of user in the OS.
+* @returnParam OSHostName The host name of the OS.
+* @returnParam OSInstallDate The date time of the OS installed.
+*/
 JOB = [name:"OS.OS_Information_Linux"]
 FETCHACTION = {
-        def finalReturn = []
-	def resultData = [:]
-	//Get OS Name
-	def cmdOSName = "lsb_release -d"
-	def procData = procRunner.procExecute(cmdOSName,true)
-	def outData = procData.out
-	assert outData != null && outData != "", "Process output is null or empty, error information: " + procData.err
-	//get output data
-	resultData["OSName"] = procData.out.trim().split(":")[1].trim()
-	//Get OS architect
-	def cmdOSArch = "/bin/uname -m"
-	procData = procRunner.procExecute(cmdOSArch,true)
-	resultData["OSArchName"] = procData.out.trim()
-	//Count number of users 
-	def cmdOSUserCount = "cat /etc/passwd"
-	procData = procRunner.procExecute(cmdOSUserCount,true)
-	def numOfUser = 0
-	
-	procData.out.eachLine{
-		if(it.trim() != ""){
-			numOfUser++ 
-		}
-	}
-	resultData["OSUserCnt"] = numOfUser
-	//Get host name
-	def cmdOSHostname = "hostname"
-	procData = procRunner.procExecute(cmdOSHostname,true)
-	resultData["OSHostName"] = procData.out.trim()
-	//Get os install date 
-	def cmdOSInstDate = 'ls -lct /etc '
-	 
-	def lastLine = null	
-	procData = procRunner.procExecute(cmdOSInstDate,true)
-	procData.out.eachLine{
-		if(it.trim() != ""){
-			lastLine = it
-		}
-	}
-	def dataDate = lastLine.trim().split(" ")
-	dataDate = dataDate.findAll{!it.trim().equals("")}
-	if(dataDate[6].toLong() < 10 ){
-		dataDate[6] = "0"+dataDate[6]
-	}
-	resultData["OSInstallDate"] = dataDate[5] + "-" + dataDate[6] + "-" +dataDate[7] 
-	java.text.SimpleDateFormat sf = new java.text.SimpleDateFormat("MMM-dd-yyyy")
-	def date = sf.parse(resultData["OSInstallDate"])
-	sf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-	resultData["OSInstallDate"] = sf.format(date)	
-        finalReturn.add(resultData)
-	return finalReturn
+         def finalReturn = []
+ 	def resultData = [:]
+ 	//Get OS Name
+ 	def cmdOSName = "lsb_release -d"
+ 	def procData = procRunner.procExecute(cmdOSName,true)
+ 	def outData = procData.out
+ 	assert outData != null && outData != "", "Process output is null or empty, error information: " + procData.err
+ 	//get output data
+ 	resultData["OSName"] = procData.out.trim().split(":")[1].trim()
++
+ 	//Get OS architect
+ 	def cmdOSArch = "/bin/uname -m"
+ 	procData = procRunner.procExecute(cmdOSArch,true)
+-	resultData["OSArchName"] = procData.out.trim()
++	if(procData.exitVal == 0) {
++		resultData["OSArchName"] = procData.out.trim()
++	} else {
++		resultData["OSArchName"] = ""
++	}
++
+ 	//Count number of users 
+ 	def cmdOSUserCount = "cat /etc/passwd"
+ 	procData = procRunner.procExecute(cmdOSUserCount,true)
+ 	def numOfUser = 0
+-	
+-	procData.out.eachLine{
+-		if(it.trim() != ""){
+-			numOfUser++ 
++	if(procData.exitVal == 0) {
++		procData.out.eachLine{
++			if(it.trim() != ""){
++				numOfUser++ 
++			}
+ 		}
+ 	}
+ 	resultData["OSUserCnt"] = numOfUser
++
+ 	//Get host name
+ 	def cmdOSHostname = "hostname"
+ 	procData = procRunner.procExecute(cmdOSHostname,true)
+-	resultData["OSHostName"] = procData.out.trim()
+-	//Get os install date 
+-	def cmdOSInstDate = 'ls -lct /etc '
+-	 
+-	def lastLine = null	
++	if(procData.exitVal == 0) {
++		resultData["OSHostName"] = procData.out.trim()
++	} else {
++		resultData["OSHostName"] = ""
++	}
++
++	//Get OS install date 
++	def cmdOSInstDate = 'sudo /sbin/tune2fs -l /dev/sda1'
++	def lastLine = ""
++	def OSInstallDate = ""
+ 	procData = procRunner.procExecute(cmdOSInstDate,true)
+-	procData.out.eachLine{
+-		if(it.trim() != ""){
+-			lastLine = it
++	//check status of command process
++	if(procData.exitVal == 0) {
++		procData.out.eachLine{
++			if(it.trim() != "" && it.contains("Filesystem created")){
++				lastLine = it
++			}
++		}
++		def dataDate = lastLine.trim().split("Filesystem created:")
++		//add data of OSInstallDate
++		if(dataDate[1] != null && dataDate[1].trim() != ""){
++			OSInstallDate = dataDate[1].trim()
+ 		}
+ 	}
+-	def dataDate = lastLine.trim().split(" ")
+-	dataDate = dataDate.findAll{!it.trim().equals("")}
+-	if(dataDate[6].toLong() < 10 ){
+-		dataDate[6] = "0"+dataDate[6]
+-	}
+-	resultData["OSInstallDate"] = dataDate[5] + "-" + dataDate[6] + "-" +dataDate[7] 
+-	java.text.SimpleDateFormat sf = new java.text.SimpleDateFormat("MMM-dd-yyyy")
+-	def date = sf.parse(resultData["OSInstallDate"])
+-	sf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+-	resultData["OSInstallDate"] = sf.format(date)	
++	resultData["OSInstallDate"] = OSInstallDate
++
++	//add data to final result
+    finalReturn.add(resultData)
+ 	return finalReturn
 }
 
 SENDTYPE = "Store"

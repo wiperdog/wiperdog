@@ -34,11 +34,7 @@ public class JobDeclared extends HttpServlet {
 			def listHeaderJob = []
 			def config_file = new File(MonitorJobConfigLoader.getProperties().get(ResourceConstants.USE_FOR_XWIKI))
 			def config_info = (new GroovyShell()).evaluate(config_file)
-			config_info['MonitoringType'].each{morTyp->
-				listHeaderJob.add(morTyp.replaceAll('@',''))
-			}
-			//listHeaderJob.add(config_info['MonitoringType'].replaceAll('@',''))
-			listHeaderJob.add(config_info['DbType'].keySet())
+			listHeaderJob = config_info['DbType'].keySet()
 			return listHeaderJob
 		}
 		
