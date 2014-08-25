@@ -58,7 +58,7 @@ public class WiperDogBoot{
 		// save pid for control stop
 		def procName = ManagementFactory.getRuntimeMXBean().getName()
 		def pid = procName.substring(0,procName.indexOf("@"))
-		def pidFile = new File("wiperdog.pid")
+		def pidFile = new File("wiperdog_${pid}.pid")
 		if(!pidFile.exists()) {
 			pidFile.createNewFile()
 		}
