@@ -30,20 +30,15 @@ public class JobDeclared extends HttpServlet {
 		errorMsg = ""
 		def job_dir = new File(JOB_DIR)
 		try{
-		def getListHeader = {
-			def listHeaderJob = []
-			def config_file = new File(MonitorJobConfigLoader.getProperties().get(ResourceConstants.USE_FOR_XWIKI))
-			def config_info = (new GroovyShell()).evaluate(config_file)
-			config_info['MonitoringType'].each{morTyp->
-				listHeaderJob.add(morTyp.replaceAll('@',''))
+			def getListHeader = {
+				def listHeaderJob = []
+				def config_file = new File(MonitorJobConfigLoader.getProperties().get(ResourceConstants.USE_FOR_XWIKI))
+				def config_info = (new GroovyShell()).evaluate(config_file)
+				listHeaderJob = config_info['DbType'].keySet()
+				return listHeaderJob
 			}
-			//listHeaderJob.add(config_info['MonitoringType'].replaceAll('@',''))
-			listHeaderJob.add(config_info['DbType'].keySet())
-			return listHeaderJob
-		}
-		
-		def listHeaderJob = getListHeader()
-		
+			
+			def listHeaderJob = getListHeader()
 			def strMorType = req.getParameter("morType")
 			
 			def checkInOthersGroup = { fileName , list ->

@@ -24,7 +24,7 @@ public class RestServiceLoader{
 		this.context = ctx;
 		RestExpress server = new RestExpress()
 				.setName("RestExpress")
-				.setPort(System.getProperty("rest.port").toInteger())
+				.setPort(8089)
 				.setDefaultFormat("json")
 				.addMessageObserver(new SimpleConsoleLogMessageObserver());
 		defineRoutes(server);
@@ -50,6 +50,31 @@ public class RestServiceLoader{
 		// Menugenerator RestAPI service
 		def menuGeneratorRestService = new MenuGeneratorRestService()
 		server.uri("/menuGenerator", menuGeneratorRestService).method(HttpMethod.GET)
+		
+		def realtimeService = new RealtimeService()
+		server.uri("/realtime/{jobname}/{istIid}", realtimeService).method(HttpMethod.GET)
+		
+		def realtimeLivetableService = new RealtimeLiveTableService()
+		server.uri("/realtimeLivetable/{jobname}/{istIid}", realtimeLivetableService).method(HttpMethod.GET)
+		
+		def policyStringService = new PolicyStringService()
+		server.uri("/PolicyString", policyStringService).method(HttpMethod.POST)
+		
+		def monitorDataService = new MonitoringDataService()
+		server.uri("/monitoringData/{job}/{istIid}", monitorDataService).method(HttpMethod.GET)
+
+		def liveTableAdapter = new LivetableDataAdapter()
+		server.uri("/liveTableAdapter", liveTableAdapter).method(HttpMethod.GET)
+
+		def chooseJobPolicy = new ChooseJobPolicy()
+		server.uri("/ChooseJobPolicy/{jobname}", chooseJobPolicy).alias("/ChooseJobPolicy").method(HttpMethod.GET)
+
+		def msgPolicy = new MsgPolicy()
+		server.uri("/msgPolicy/{action}", msgPolicy).method(HttpMethod.GET)
+
+		def lastAccum = new LastAccumulation()
+		server.uri("/LastAccumulation", lastAccum).method(HttpMethod.GET)
+
 	}
 
 }

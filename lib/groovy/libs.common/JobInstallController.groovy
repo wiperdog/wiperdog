@@ -52,8 +52,6 @@ class JobInstallController{
 		return listData
 	}
 	public String update(Request request, Response response){
-
-		println "update"
 		return "update_METHOD"
 	}
 
@@ -104,7 +102,6 @@ class JobInstallController{
 		return responseData
 	}
 	public String delete(Request request, Response response){
-		println "delete"
 		return "delete_METHOD"
 	}
 	public boolean copyFile(File sourceFile,File dest){
