@@ -17,12 +17,10 @@ class DbmsInfoRestService {
 	}
 
 	public def create(Request request, Response response){
-		println "create"
 		return "create_METHOD"
 	}
 
 	public String update(Request request, Response response){
-		println "update"
 		return "update_METHOD"
 	}
 
@@ -43,7 +41,6 @@ class DbmsInfoRestService {
 	}
 
 	public String delete(Request request, Response response){
-		println "delete"
 		return "delete_METHOD"
 	}
 }

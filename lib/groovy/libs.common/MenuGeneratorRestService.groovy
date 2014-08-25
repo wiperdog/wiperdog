@@ -9,7 +9,6 @@ class MenuGeneratorRestService {
 	}
 
 	public String update(Request request, Response response){
-		println "update"
 		return "update_METHOD"
 	}
 
@@ -29,7 +28,6 @@ class MenuGeneratorRestService {
 	}
 
 	public String delete(Request request, Response response){
-		println "delete"
 		return "delete_METHOD"
 	}
 	
