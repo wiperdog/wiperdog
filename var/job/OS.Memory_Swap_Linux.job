@@ -23,11 +23,10 @@
  */
 JOB = [name:"OS.Memory_Swap_Linux"]
 FETCHACTION = {
-	 def command = "cat /proc/meminfo"
+	 File file = new File("/proc/meminfo")
+	 def output = file.getText()
 	 def listData = []
-	 //data remote
-	 def outputProc = procRunner.procExecute(command,false)
-	 def output = outputProc.out
+
 	 assert output != null && output != "", "Process output is null or empty, error information: " + outputProc.err
 	 def result = output.split('\n').inject([:]) { map, token ->
 		// process with data not empty
@@ -101,12 +100,12 @@ KEYEXPR._unit = ["MemTotalKB":"KB", "MemFreeKB":"KB", "MemUsedKB":"KB", "Buffers
 KEYEXPR._chart = [
 	[
 		"type": "pie",
-		"name": "Memory Usage Linux ",
+		"name": "Memory Usage Linux",
 		"chart_columns": ["MemUsedKB","MemFreeKB"]
 	],
 	[
 		"type": "pie",
-		"name": "Swap Usage Linux ",
+		"name": "Swap Usage Linux",
 		"chart_columns": ["SwapUsedKB","SwapFreeKB"]
 	],
 	[

@@ -20,9 +20,8 @@
 JOB = [name:"OS.CPU_Linux"]
 
 FETCHACTION = {
-	def command = "cat /proc/stat"
-	def output =  procRunner.procExecute(command,true)
-	def data = output.out
+	File file = new File("/proc/stat")
+	def data = file.getText()
         assert data != null && data != "", "Process output is null or empty, error information: " + output.err
 	def flag = true
 	def tmpData

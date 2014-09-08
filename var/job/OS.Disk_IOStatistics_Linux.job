@@ -20,9 +20,9 @@
  */
 JOB = [name:"OS.Disk_IOStatistics_Linux"]
 FETCHACTION = {
-	def cmdDiskInfo= "cat /proc/diskstats"
-	def dataDiskInfoProc =  procRunner.procExecute(cmdDiskInfo,true)
-	def dataDiskInfo = dataDiskInfoProc.out
+	File file = new File("/proc/diskstats")
+	def dataDiskInfo = file.getText()
+
         assert dataDiskInfo != null && dataDiskInfo != "", "Process output is null or empty, error information: " + dataDiskInfoProc.err
 	def flag = true
 	def tmpData
