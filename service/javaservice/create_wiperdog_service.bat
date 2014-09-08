@@ -2,8 +2,6 @@
 SETLOCAL EnableDelayedExpansion
 if "%~1" == "" goto show_instructions
 SET WIPERDOG_HOME=%~1
-echo Param %WIPERDOG_HOME% "%~1"
-
 REM Check OS 64 bit or 32 bit
 if "%PROCESSOR_ARCHITECTURE%"=="AMD64" goto WIN_64bit
 SET JAVASERVICE_STUB=%WIPERDOG_HOME%\bin\wiperdog_service_32bit.exe
@@ -16,24 +14,29 @@ SET JAVASERVICE_STUB=%WIPERDOG_HOME%\bin\wiperdog_service_64bit.exe
 SET SERVICE_NAME=Wiperdog
 SET GROOVY_SCRIPT=%WIPERDOG_HOME%\bin\service.groovy
 SET LOGS_FOLDER=%WIPERDOG_HOME%\log
-
-echo.
 echo.
 echo INSTALLING %SERVICE_NAME%
-echo.
-echo JavaService executable is %JAVASERVICE_STUB%
-echo Service name is %SERVICE_NAME%
-echo GROOVY target is %GROOVY_SCRIPT%
-echo LOGS folder is %LOGS_FOLDER%
-echo.
-echo JAVA_HOME is %JAVA_HOME%
-echo.
+echo + JavaService executable is %JAVASERVICE_STUB%
+echo + Service name is %SERVICE_NAME%
+echo + GROOVY target is %GROOVY_SCRIPT%
+echo + LOGS folder is %LOGS_FOLDER%
+echo + JAVA_HOME is %JAVA_HOME%
 echo.
 if not exist "%WIPERDOG_HOME%"\log md "%WIPERDOG_HOME%"\log
 REM stoping service
-net stop "%SERVICE_NAME%"
+rem net stop "%SERVICE_NAME%" 
+echo **Try to stop Wiperdog service.. 
+sc stop %SERVICE_NAME% > nul
+:CHECK_SERVICE
+for /F "tokens=3 delims=: " %%H in ('sc query %SERVICE_NAME% ^| findstr "        STATE"') do (
+  if /I "%%H" NEQ "STOPPED" (
+    echo|set /p="."
+   timeout /t 3 > nul
+   GOTO CHECK_SERVICE
+  )
+)
+echo **Try to uninstalling Wiperdog service if exitsted..
 "%JAVASERVICE_STUB%" -uninstall "%SERVICE_NAME%"
-
 REM check JDK/JRE
 if exist "%JAVA_HOME%"\bin\client GOTO SET_JRE_CLIENT_DLL
 if exist "%JAVA_HOME%"\bin\server GOTO SET_JRE_SERVER_DLL
@@ -72,6 +75,7 @@ GOTO START_MAIN_APP
 
 :START_MAIN_APP
 echo.
+echo **Try to installing Wiperdog service ..
 REM for JDK only "%JAVASERVICE_STUB%" -install "%SERVICE_NAME%" "%JAVA_HOME%"\jre\bin\server\jvm.dll ^
 REM below for using JRE
 "%JAVASERVICE_STUB%" -install "%SERVICE_NAME%" "%JVM_DLL%" ^
