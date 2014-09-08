@@ -38,7 +38,7 @@ public class SelfExtractorCmd {
 	public static String OUTPUT_FOLDER = "";
 	
 	public static final String LOG_FILE_NAME = System.getProperty("user.dir")+"/WiperdogInstaller.log";  
-	public static SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd hh:mm:ss.S");
+	public static SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.S");
 	public static File loggingFile = new File(LOG_FILE_NAME);	
 	public static FileOutputStream  fo = null;
 	
