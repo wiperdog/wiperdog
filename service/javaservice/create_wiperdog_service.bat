@@ -30,8 +30,6 @@ sc stop %SERVICE_NAME% > nul
 :CHECK_SERVICE
 for /F "tokens=3 delims=: " %%H in ('sc query %SERVICE_NAME% ^| findstr "        STATE"') do (
   if /I "%%H" NEQ "STOPPED" (
-    echo|set /p="."
-   timeout /t 3 > nul
    GOTO CHECK_SERVICE
   )
 )

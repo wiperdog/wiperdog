@@ -631,7 +631,7 @@ public class WPDInstallerGroovy{
                 builder.directory(workDir);
                 builder.redirectErrorStream(true);					
                 Process proc = builder.start();
-                //proc.waitFor() //-- cause error if wiperdog_service.exe has been used by another process
+                proc.waitFor() //-- cause error if wiperdog_service.exe has been used by another process
                 
                 def errorStr = proc.err.text
                 def outputStr = proc.in.text
