@@ -645,5 +645,6 @@ public class WPDInstallerGroovy{
          }//-- END install as system service
          WPDInstallerGroovy.printInfoLog("Finish the Wiperdog installation at " + SelfExtractorCmd.df.format(new java.util.Date(System.currentTimeMillis())));
 	 WPDInstallerGroovy.printInfoLog("\n\n")
+	 Thread.sleep(1000)
     }//-- end main
 }
