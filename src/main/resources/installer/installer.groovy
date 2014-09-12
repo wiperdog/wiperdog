@@ -631,7 +631,7 @@ public class WPDInstallerGroovy{
                 builder.directory(workDir);
                 builder.redirectErrorStream(true);					
                 Process proc = builder.start();
-                //proc.waitFor() //-- cause error if wiperdog_service.exe has been used by another process
+                proc.waitFor() //-- cause error if wiperdog_service.exe has been used by another process
                 
                 def errorStr = proc.err.text
                 def outputStr = proc.in.text
@@ -645,5 +645,6 @@ public class WPDInstallerGroovy{
          }//-- END install as system service
          WPDInstallerGroovy.printInfoLog("Finish the Wiperdog installation at " + SelfExtractorCmd.df.format(new java.util.Date(System.currentTimeMillis())));
 	 WPDInstallerGroovy.printInfoLog("\n\n")
+	 Thread.sleep(1000)
     }//-- end main
 }
