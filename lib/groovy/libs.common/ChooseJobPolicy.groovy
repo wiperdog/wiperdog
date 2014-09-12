@@ -29,6 +29,7 @@ class ChooseJobPolicy {
 		return "DELETE";
 	}
 	def read(Request request, Response response){
+		def returnData = [:]
 		try {
 			//gmongoObject = services.MongoDBConnection
 			//gmongoObject.getConnection(services.WiperdogConfig.getDataFromConfig())
@@ -40,7 +41,6 @@ class ChooseJobPolicy {
 			def slurper = new JsonSlurper()
 			def builder
 			response.setContentType('application/json')
-			def returnData = [:]
 			def jobName = request.getUrlDecodedHeader("jobName")
 			if(jobName == null || jobName == "") {
 				def mapNameAndType = [:]
