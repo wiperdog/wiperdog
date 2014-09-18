@@ -9,6 +9,12 @@ import javax.servlet.http.HttpServletResponse
 import groovy.json.*
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
 
 public class JobDeclared extends HttpServlet {
 	static final String JOB_DIR = MonitorJobConfigLoader.getProperties().get(ResourceConstants.JOB_DIRECTORY)
@@ -152,13 +158,33 @@ public class JobDeclared extends HttpServlet {
 				builder = new JsonBuilder(resultRet)
 				out.print(builder.toString())
 			}else if(object.COMMAND == "Write"){
-				// command = Write -> Write job's file
-				if(!(writeDataToJobFile(object) && writeDataToInstanceFile(object) && writeDataToParamFile(object))){
-					errorMsg = "Error when post data: Fail to write files!"
-				} else {
-					message = [status:"OK", message:"Finish process successfully"]
+
+				def action = object.action
+
+				if("run"==action){
+					def objData = runTestJob(object)
+		                       if(objData != null && objData.data != null) {
+ 	 	                                message = [status:"OK", message: objData.data]
+		                        } else {
+		                                if(objData != null && objData.log != null ) {
+							message = [status:"Failed", message: objData.log]
+		                                } else {
+							message = [status:"Failed", message: "Failed to run job - Unknown error"]
+		                                }
+		                        }
 					builder = new JsonBuilder(message)
 					out.print(builder.toString())
+
+				}else if("save"==action){
+
+					// command = Write -> Write job's file
+					if(!(writeDataToJobFile(object) && writeDataToInstanceFile(object) && writeDataToParamFile(object))){
+						errorMsg = "Error when post data: Fail to write files!"
+					} else {
+						message = [status:"OK", message:"Finish process successfully"]
+						builder = new JsonBuilder(message)
+						out.print(builder.toString())
+					}
 				}
 			}else{
 				errorMsg = "Error when post data: Command is not valid!"
@@ -177,22 +203,129 @@ public class JobDeclared extends HttpServlet {
 		}
 	}
 
+	def runTestJob(data){
+		def testResult = ""
+		def objData
+
+		try {
+			def jobContent = getJobData(data)
+			def jobFileName = getJobFileName(data.JOB.jobName, data.JOB.jobFileName, "/tmpTestJob")
+
+			File jobDir = new File(JOB_DIR+"/tmpTestJob")
+			if(!jobDir.exists()){
+				jobDir.mkdirs()
+			}
+
+			def jobFile = new File(jobFileName)
+			if(!jobFile.exists()){
+				jobFile.createNewFile()
+			}
+
+			//Save to file
+			writeToFile(jobFileName, jobContent)
+
+			def restPort = System.getProperty("rest.port")
+
+			String url = "http://localhost:${restPort}/runjob"
+
+			HttpClient client = new DefaultHttpClient();
+			// initialze a new builder and give a default URL
+
+			def postBody = [job: jobFile.getCanonicalPath()]
+			def strBody = (new JsonBuilder(postBody)).toString()
+			HttpPost post = new HttpPost(url);
+
+			post.addHeader("accept", "application/json");
+			post.addHeader("Connection", "close");
+			post.addHeader("Access-Control-Allow-Origin", "*")
+			StringEntity se = new StringEntity(strBody); 
+			post.setEntity(se);
+
+			def response = client.execute(post);
+	        	def responseData = getTextFromStream(response.getEntity().getContent())
+			def slurperTest = new JsonSlurper()
+	        	objData = slurperTest.parseText(responseData)
+			jobFile.delete()
+		}
+		catch(Exception e) {
+			e.printStackTrace()
+			objData = e.toString()
+		}
+		return objData
+	}
+
 	boolean writeDataToJobFile(data){
+
+		if(data.JOB.jobName != null){
+			def jobStr = getJobData(data)
+			def jobFileName = getJobFileName(data.JOB.jobName, data.JOB.jobFileName)
+
+			// Set Job's String into file
+                        writeToFile(jobFileName, jobStr)
+		}else{
+                        println "Job's name is required!"
+                        return false
+		}
+
+                return true
+
+	}
+
+        def getTextFromStream (InputStream inputStream ){
+
+                BufferedReader rd = new BufferedReader(new InputStreamReader(inputStream));
+                StringBuffer result = new StringBuffer();
+                String line = null;
+                def returnStr = ""
+                while ((line = rd.readLine()) != null) {
+                        returnStr+= line
+                }
+                inputStream.close()
+                return returnStr
+        }
+
+	String getJobFileName(jobName, fileName, tmpDir){
+
+		def jobFileName
+
+                // Process Job File
+                if(fileName != null){
+                        if (fileName ==~ ".*\\.job") {
+                                jobFileName = JOB_DIR + tmpDir + "/${fileName}"
+                        } else {
+                                jobFileName = JOB_DIR + tmpDir + "/${fileName}.job"
+                        }
+                }else{
+                        jobFileName = JOB_DIR + tmpDir + "/${jobName}.job"
+                }
+
+		return jobFileName
+	}
+
+
+	String getJobFileName(jobName, fileName){
+
+		def jobFileName
+
+                // Process Job File
+                if(fileName != null){
+                        if (fileName ==~ ".*\\.job") {
+                                jobFileName = JOB_DIR + "/${fileName}"
+                        } else {
+                                jobFileName = JOB_DIR + "/${fileName}.job"
+                        }
+                }else{
+                        jobFileName = JOB_DIR + "/${jobName}.job"
+                }
+
+		return jobFileName
+	}
+
+	String getJobData(data){
 		def jobStr = ""
 		def jobData = data.JOB
-		if(jobData.jobName != null){
-			// Process Job File
-			String fileName
-			if(jobData.jobFileName != null){
-				String s = jobData.jobFileName
-				if (jobData.jobFileName ==~ ".*\\.job") {
-					fileName = JOB_DIR + "/${jobData.jobFileName}"
-				} else {
-					fileName = JOB_DIR + "/${jobData.jobFileName}.job"
-				}
-			}else{
-				fileName = JOB_DIR + "/${jobData.jobName}.job"
-			}
+
+			String fileName = getJobFileName(jobData.jobName, jobData.jobFileName)
 
 			// Process Comment
 			if(jobData.commentForJob != null){
@@ -346,13 +479,7 @@ public class JobDeclared extends HttpServlet {
 				jobStr += "DEST = parameters.dest\n"
 			}
 
-			// Set Job's String into file
-			writeToFile(fileName, jobStr)
-		}else{
-			println "Job's name is required!"
-			return false
-		}
-		return true
+		return jobStr
 	}
 
 	boolean writeDataToInstanceFile(data){
