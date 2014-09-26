@@ -33,7 +33,11 @@ FETCHACTION = {
 			resultData = [:]
 			tmpData = line.trim().split(" ").findAll{!it.trim().equals("")}
 			for(int i=0; i<headerData.size(); i++){
-				resultData[headerData[i]] = tmpData[i+1].toLong()/100
+				if(tmpData[i+1] != null) {
+					resultData[headerData[i]] = tmpData[i+1].toLong()/100
+				} else {
+					 resultData[headerData[i]] = 0
+				}
 			}
 			listData.add(resultData)
 			flag = false
