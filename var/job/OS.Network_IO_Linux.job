@@ -1,140 +1,149 @@
 /**
- * Monitoring I/O of network.<br/>
+ * Monitoring network device status information.<br/>
  * <p>
- * Display status of the currently active interfaces.<br/>
- * Need run job by user have full privileges or root.<br/>
+ * Display which network devices are avaiable in OS and how much traffic was routed over those devices.<br/>
  * </p>
  * @targetVersion Ubuntu 12.04
- * @return get information for network in use.
- * @returnParam NetworkCardName The name of the interface.
- * @returnParam ReceivedPacketsCnt The number of packets have been received.
- * @returnParam TransferedPacketsCnt The number of packets have been transmitted.
- * @returnParam ReceivedBytes The total amount of data have been received.
- * @returnParam TransferedBytes The total amount of data have been transmitted.
+ * @return get interfaces statistics.
+ * @returnParam InterfaceName Interface name.
+ * @returnParam ReceiveBytes The total number of bytes of data received by interface.
+ * @returnParam ReceivePacketsCnt The total number of packets of data received by interface.
+ * @returnParam ReceiveErrsCnt The total number of receive errors detected by the device driver.
+ * @returnParam ReceiveDropCnt The total number of packets dropped by the device driver.
+ * @returnParam ReceiveFifoCnt The number of FIFO buffer errors.
+ * @returnParam ReceiveFrameCnt The number of packet framing errors.
+ * @returnParam ReceiveCompressedCnt The number of compressed packets received by the device driver.
+ * @returnParam ReceiveMulticastCnt The number of multicast frames received by the device driver.
+ * @returnParam TransmitBytes The total number of bytes of data transmitted by interface.
+ * @returnParam TransmitPacketsCnt The total number of packets of data transmitted by interface.
+ * @returnParam TransmitErrsCnt The total number of transmit errors detected by the device driver.
+ * @returnParam TransmitDropCnt The total number of packets dropped by the device driver.
+ * @returnParam TransmitFifoCnt The number of FIFO buffer errors.
+ * @returnParam TransmitCollsCnt The number of collisions detected on the interface
+ * @returnParam TransmitCarrierCnt The number of carrier losses detected by the device driver.
+ * @returnParam TransmitCompressedCnt The number of compressed packets transmitted by the device driver.
  */
 JOB = [name:"OS.Network_IO_Linux"]
 FETCHACTION = {
-	def command = '/sbin/ifconfig'
-	def output = procRunner.procExecute(command,false)
-	def map = [:]
-	def dataOut = output.out
+	File file = new File("/proc/net/dev")
+	def dataOut = file.getText()
+
 	assert dataOut != null && dataOut != "", "Process output is null or empty, error information: " + output.err
- 	def data = dataOut.split("\\n\\n")        
+ 	def data = dataOut.replace(":", " ").split("\n")
+	def tmpData
+	def tmpHeader = []
+	def header = []
+	def tmpValue = []
 	def resultData = []
-	data.each{d->
-		def checkHeader = false
-		def tmpMapRX = [:]
-		def tmpMapTX = [:]
-		def networkCard = ""
-		def mapData = [:]
-		d.eachLine{
-			if(it.trim() != ""){
-				if(!checkHeader){
-					checkHeader = true
-					mapData["NetworkCardName"] = it.trim().split(" ")[0]
-				} else {
-					if(it.contains("RX packets")){
-						def dataRX = ((it.trim()).split(" ") as List)
-						for(int i = 1 ; i< dataRX.size() ; i++){
-							def item = dataRX[i].split(":")
-							tmpMapRX[item[0]] = item[1].toLong()
-						}
-						tmpMapRX.each{ key,value ->
-							if(key.trim().equals("packets")){
-								mapData["ReceivedPacketsCnt"] = value
-							}
-						}
-					}
-					if(it.contains("TX packets")){
-						def dataTX = ((it.trim()).split(" ") as List)
-						for(int i = 1 ; i< dataTX.size() ; i++){
-							def item = dataTX[i].split(":")
-							tmpMapTX[item[0]] = item[1].toLong()
-						}
-						tmpMapTX.each{ key,value ->
-							if(key.trim().equals("packets")){
-								mapData["TransferedPacketsCnt"] = value
-							}
-						}
-					}
-					if(it.contains("RX byte")){
-						def dataBytes = it.split("  ")
-						dataBytes.each{ dbyte->
-							if(dbyte.contains("RX")){
-								def idx =  dbyte.split(":")[1].indexOf("(")
-								//tmpMapRX["bytes"] = dbyte.split(":")[1].substring(0,idx).toLong()
-								mapData["ReceivedBytes"] = dbyte.split(":")[1].substring(0,idx).toLong()
-							}
-							if(dbyte.contains("TX")){
-								def idx =  dbyte.split(":")[1].indexOf("(")
-								mapData["TransferedBytes"] = dbyte.split(":")[1].substring(0,idx).toLong()
-							}
-						}
-					}
+	def strHeader = ""
+
+	// process data input
+	data.each{tmp->
+		if(tmp.contains("|")){
+			tmpData = tmp.trim().split("\\|")
+			tmpHeader.add(tmpData)
+		} else {
+			tmpData = []
+			tmpData = tmp.trim().split(" ").findAll{!it.trim().equals("")}
+			tmpValue.add(tmpData)
+		}
+	}
+
+	// get header of data
+	for(int i=0; i<tmpHeader[0].size(); i++){
+		tmpData = tmpHeader[1][i].split(" ").findAll{!it.trim().equals("")}
+		if(tmpData.size() == 1) {
+			strHeader = tmpHeader[0][i].trim().replace("-","") + tmpHeader[1][i].trim() + "Name"
+			header.add(strHeader)
+		} else {
+			tmpData.each{
+				strHeader = tmpHeader[0][i].trim() + it.trim().capitalize()
+				if(!strHeader.contains("Bytes")){
+					strHeader += "Cnt"
 				}
+				header.add(strHeader)
 			}
 		}
-		resultData.add(mapData)
+	}
+
+	// add header to value corresponding
+	for(int i=0; i<tmpValue.size(); i++){
+		tmpData = [:]
+		for(int j=0; j<header.size(); j++){
+			if(j == 0) {
+				// interface name
+				tmpData[header[j]] = tmpValue[i][j]
+			} else {
+				// value of interface
+				tmpData[header[j]] = tmpValue[i][j].toLong()
+			}
+		}
+		// data final
+		resultData.add(tmpData)
 	}
 	return resultData
 }
+
 ACCUMULATE = {
   	assert interval != null && interval != 0, "First time, we cannot return meaningful values"
   	if(prevOUTPUT != null) {
     	OUTPUT.each { rec ->
 	      	def checkExists = false
 	      	prevOUTPUT.each { prevREC ->
-	        	if (prevREC.NetworkCardName == rec.NetworkCardName) {
+	        	if (prevREC.InterfaceName == rec.InterfaceName) {
 	        		// Received Packets
-	          		rec['DiffReceivedPacketsVal'] = rec['ReceivedPacketsCnt'] - prevREC['ReceivedPacketsCnt']
-	          		rec['ReceivedPacketsPerSecPct'] = rec['DiffReceivedPacketsVal'] / interval
-	          		// Transfered Packets
-	          		rec['DiffTransferedPacketsVal'] = rec['TransferedPacketsCnt'] - prevREC['TransferedPacketsCnt']
-	          		rec['TransferedPacketsPerSecPct'] = rec['DiffTransferedPacketsVal'] / interval
+	          		rec['DiffReceivedPacketsVal'] = rec['ReceivePacketsCnt'] - prevREC['ReceivePacketsCnt']
+	          		rec['ReceivedPacketsRateVal'] = rec['DiffReceivedPacketsVal'] / interval
+	          		// Transmitted Packets
+	          		rec['DiffTransmittedPacketsVal'] = rec['TransmitPacketsCnt'] - prevREC['TransmitPacketsCnt']
+	          		rec['TransmittedPacketsRateVal'] = rec['DiffTransmittedPacketsVal'] / interval
 	          		// Received Bytes
-	          		rec['DiffReceivedBytesVal'] = rec['ReceivedBytes'] - prevREC['ReceivedBytes']
-	          		rec['ReceivedBytesPerSecPct'] = rec['DiffReceivedBytesVal'] / interval
-	          		// Transfered Bytes
-	          		rec['DiffTransferedBytesVal'] = rec['TransferedBytes'] - prevREC['TransferedBytes']
-	          		rec['TransferedBytesPerSecPct'] = rec['DiffTransferedBytesVal'] / interval
+	          		rec['DiffReceivedBytesVal'] = rec['ReceiveBytes'] - prevREC['ReceiveBytes']
+	          		rec['ReceivedBytesRateVal'] = rec['DiffReceivedBytesVal'] / interval
+	          		// Transmitted Bytes
+	          		rec['DiffTransmittedBytesVal'] = rec['TransmitBytes'] - prevREC['TransmitBytes']
+	          		rec['TransmittedBytesRateVal'] = rec['DiffTransmittedBytesVal'] / interval
 	          		checkExists = true
 	        	}
 	      	}
 	      	if(!checkExists) {
 	      		// Received Packets
-          		rec['DiffReceivedPacketsVal'] = rec['ReceivedPacketsCnt']
-          		rec['ReceivedPacketsPerSecPct'] = rec['DiffReceivedPacketsVal'] / interval
-          		// Transfered Packets
-          		rec['DiffTransferedPacketsVal'] = rec['TransferedPacketsCnt']
-          		rec['TransferedPacketsPerSecPct'] = rec['DiffTransferedPacketsVal'] / interval
+          		rec['DiffReceivedPacketsVal'] = rec['ReceivePacketsCnt']
+          		rec['ReceivedPacketsRateVal'] = rec['DiffReceivedPacketsVal'] / interval
+          		// Transmitted Packets
+          		rec['DiffTransmittedPacketsVal'] = rec['TransmitPacketsCnt']
+          		rec['TransmittedPacketsRateVal'] = rec['DiffTransmittedPacketsVal'] / interval
           		// Received Bytes
-          		rec['DiffReceivedBytesVal'] = rec['ReceivedBytes']
-          		rec['ReceivedBytesPerSecPct'] = rec['DiffReceivedBytesVal'] / interval
-          		// Transfered Bytes
-          		rec['DiffTransferedBytesVal'] = rec['TransferedBytes']
-          		rec['TransferedBytesPerSecPct'] = rec['DiffTransferedBytesVal'] / interval
+          		rec['DiffReceivedBytesVal'] = rec['ReceiveBytes']
+          		rec['ReceivedBytesRateVal'] = rec['DiffReceivedBytesVal'] / interval
+          		// Transmitted Bytes
+          		rec['DiffTransmittedBytesVal'] = rec['TransmitBytes']
+          		rec['TransmittedBytesRateVal'] = rec['DiffTransmittedBytesVal'] / interval
 	      	}
     	}
   	}
 }
 
-KEYEXPR = [_root:["NetworkCardName"], _sequence:["ReceivedPacketsCnt","TransferedPacketsCnt"]]
+KEYEXPR = [_root:["InterfaceName"], _sequence:["ReceivePacketsCnt","TransmitPacketsCnt"]]
 KEYEXPR._unit = [
-		"ReceivedPacketsCnt" : "count", "DiffReceivedPacketsVal": "count/interval", "ReceivedPacketsPerSecPct": "count/sec",
-		"TransferedPacketsCnt":"count", "DiffTransferedPacketsVal": "count/interval", "TransferedPacketsPerSecPct": "count/sec",
-		"ReceivedBytes":"byte", "DiffReceivedBytesVal": "byte/interval", "ReceivedBytesPerSecPct": "byte/sec",
-		"TransferedBytes":"byte", "DiffTransferedBytesVal": "byte/interval", "TransferedBytesPerSecPct": "byte/sec"
+		"ReceivePacketsCnt": "count", "DiffReceivedPacketsVal": "count/interval", "ReceivedPacketsRateVal": "count/sec",
+		"TransmitPacketsCnt":"count", "DiffTransmittedPacketsVal": "count/interval", "TransmittedPacketsRateVal": "count/sec",
+		"ReceiveBytes":"byte", "DiffReceivedBytesVal": "byte/interval", "ReceivedBytesRateVal": "byte/sec",
+		"TransmitPacketsCnt":"byte", "DiffTransmittedBytesVal": "byte/interval", "TransmittedBytesRateVal": "byte/sec",
+		"ReceiveErrsCnt": "count", "ReceiveDropCnt": "count", "ReceiveFifoCnt": "count", "ReceiveFrameCnt": "count", 
+		"ReceiveCompressedCnt": "count", "ReceiveMulticastCnt": "count", "TransmitErrsCnt": "count", "TransmitDropCnt": "count", 
+		"TransmitFifoCnt": "count", "TransmitCollsCnt": "count", "TransmitCarrierCnt": "count", "TransmitCompressedCnt": "count"
 	]
 KEYEXPR._chart = [
     [
         "type": "line",
         "name": "Network I/O Linux - Packets transfering",
-        "chart_columns": ["DiffReceivedPacketsVal", "DiffTransferedPacketsVal"]
+        "chart_columns": ["DiffReceivedPacketsVal", "DiffTransmittedPacketsVal"]
     ],
     [
         "type": "line",
         "name": "Network I/O Linux - Bytes transfering",
-        "chart_columns": ["DiffReceivedBytesVal", "DiffTransferedBytesVal"]
+        "chart_columns": ["DiffReceivedBytesVal", "DiffTransmittedBytesVal"]
     ]
 ]
 SENDTYPE = "Store"

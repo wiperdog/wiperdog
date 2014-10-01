@@ -1,0 +1,60 @@
+/**
+ * Monitoring filesystem disk space usage.<br/>
+ * <p>
+ * Display the I/O statistics of block devices.<br/>
+ * </p>
+ * @targetVersion Ubuntu 12.04
+ * @return get information of disk space available on the filesystem.
+ * @returnParam Name The name of disk space.
+ * @returnParam ReadCompletedCnt The total number of reads complete
+ * @returnParam ReadMergedCnt Read which are adjacent to each other may be merged for efficiency.
+ * @returnParam SectorsReadCnt The total number of sectors read successfully.
+ * @returnParam SpentReadingMs The total number of milliseconds spent by all reads.
+ * @returnParam WritesCompletedCnt The total number of writes completed successfully.
+ * @returnParam WritesMergedCnt Write which are adjacent to each other may be merged for efficiency.
+ * @returnParam SectorsWrittenCnt The total number of sectors written successfully.
+ * @returnParam SpentWrittingMs The total number of milliseconds spent by all writes.
+ * @returnParam IOCurrentlyCnt The only field that should go to zero. Incremented as requests are given to appropriate struct request_queue and decremented as they finish.
+ * @returnParam SpendDoingIOMs The value increases so long as IOCurrently is nonzero.
+ * @returnParam WeightedSpendDoingIOMs The value increases at each I/O start, I/O completion, I/O merge or read of these stats by the number of I/Os in progress.
+ */
+JOB = [name:"OS.Disk_IOStatistics_Linux"]
+FETCHACTION = {
+	File file = new File("/proc/diskstats")
+	def dataDiskInfo = file.getText()
+
+        assert dataDiskInfo != null && dataDiskInfo != "", "Process output is null or empty, error information: " + dataDiskInfoProc.err
+	def flag = true
+	def tmpData
+	def resultData
+	def listData = []
+	dataDiskInfo.eachLine{line->
+		if(line.contains("sda")) {
+			resultData = [:]
+			tmpData = line.trim().split(" ").findAll{!it.trim().equals("")}
+			resultData["Name"] = (tmpData[2] != null) ? tmpData[2] : ""
+			resultData["ReadCompletedCnt"] = (tmpData[3] != null) ? tmpData[3].toInteger() : 0
+			resultData["ReadMergedCnt"] = (tmpData[4] != null) ? tmpData[4].toInteger() : 0
+			resultData["SectorsReadCnt"] = (tmpData[5] != null) ? tmpData[5].toInteger() : 0
+			resultData["SpentReadingMs"] = (tmpData[6] != null) ? tmpData[6].toInteger() : 0
+			resultData["WritesCompletedCnt"] = (tmpData[7] != null) ? tmpData[7].toInteger() : 0
+			resultData["WritesMergedCnt"] = (tmpData[8] != null) ? tmpData[8].toInteger() : 0
+			resultData["SectorsWrittenCnt"] = (tmpData[9] != null) ? tmpData[9].toInteger() : 0
+			resultData["SpentWrittingMs"] = (tmpData[10] != null) ? tmpData[10].toInteger() : 0
+			resultData["IOCurrentlyCnt"] = (tmpData[11] != null) ? tmpData[11].toInteger() : 0
+			resultData["SpendDoingIOMs"] = (tmpData[12] != null) ? tmpData[12].toInteger() : 0
+			resultData["WeightedSpendDoingIOMs"] = (tmpData[13] != null) ? tmpData[13].toInteger() : 0
+			listData.add(resultData)
+		}
+	}
+	return listData
+}
+
+KEYEXPR = ['_root':['Name'], '_sequence':['SpendDoingIOMs','SpentReadingMs','SpentWrittingMs']]
+KEYEXPR._unit = ["ReadCompletedCnt":"count", "ReadMergedCnt":"count", "SectorsReadCnt":"count", "SpentReadingMs":"ms", "WritesCompletedCnt":"count", "WritesMergedCnt":"count", "SectorsWrittenCnt":"count", "SpentWrittingMs":"ms", "IOCurrentlyCnt":"count", "SpendDoingIOMs":"ms", "WeightedSpendDoingIOMs":"ms"]
+
+SENDTYPE = "Store"
+RESOURCEID = "Linux/DiskIO"
+DEST = parameters.dest
+OSINFO = parameters.osinfo
+MONITORINGTYPE = '@OS'

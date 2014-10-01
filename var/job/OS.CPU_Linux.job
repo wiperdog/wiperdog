@@ -1,154 +1,60 @@
 /**
- * Monitoring CPU statistics.<br/>
+ * Monitoring CPU usage.<br/>
  * <p>
- * Global average activities among all processors are also reported.<br/>
- * Need to install mpstat with command: sudo apt-get install mpstat.<br/>
+ * Information about the amount of time the CPU has spent performing different kinds of work.<br/>
  * </p>
  * @targetVersion Ubuntu 12.04
  * @return get informations on the use of cpu.
- * @returnParam UserLevelPct Show the percentage of CPU utilization that occurred while executing at the user level (application).
- * @returnParam UserLevelWithNicePriPct Show the percentage of CPU utilization that occurred while executing at the user level with nice priority.
- * @returnParam SystemLevelPct Show the percentage of CPU utilization that occurred while executing at the system level (kernel). Note that this does not include the time spent servicing interrupts or softirqs.
- * @returnParam SystemWithIOPct Show the percentage of time that the CPU or CPUs were idle during which the system had an outstanding disk I/O request.
- * @returnParam TimetoInterruptsPct Show the percentage of time spent by the CPU or CPUs to service interrupts.
- * @returnParam TimetoSoftwareInterruptPct Show the percentage of time spent by the CPU or CPUs to service softirqs.
- * @returnParam StealPct Show the percentage of time spent in involuntary wait by the virtual CPU or CPUs while the hypervisor was servicing another virtual processor.
- * @returnParam IdlePct Show the percentage of time that the CPU or CPUs were idle and the system did not have an outstanding disk I/O request.
- * @returnParam UsedPct The percentage of CPU used.
- * @returnParam TotalInterruptsReceivedRateVal Show the total number of interrupts received per second by the CPU or CPUs.
+ * @returnParam UserSpentSec Normal processes executing in user mode
+ * @returnParam NiceSpentSec Niced processes executing in user mode
+ * @returnParam SystemSpentSec Processes executing in kernel mode
+ * @returnParam IdleSpentSec Twiddling thumbs
+ * @returnParam IowaitSpentSec Waiting for I/O to complete
+ * @returnParam IrgSpentSec Servicing interrupts
+ * @returnParam SoftIrqSpentSec Servicing softirqs
+ * @returnParam StealSpentSec Involuntary wait
+ * @returnParam GuestSpentSec Running a normal guest
+ * @returnParam GuestNiceSpentSec Running a niced guest
  */
+
 JOB = [name:"OS.CPU_Linux"]
 
 FETCHACTION = {
-	def command = "mpstat"
-	def resultData = [:]
+	File file = new File("/proc/stat")
+	def data = file.getText()
+        assert data != null && data != "", "Process output is null or empty, error information: " + output.err
+	def flag = true
+	def tmpData
+	def resultData
 	def listData = []
-	def listRows = []
-	//data remote
-	def processRet = procRunner.procExecute(command,false)
-        def output = processRet.out
-        assert output != null && output != "", "Process output is null or empty, error information: " + processRet.err 
-	output.eachLine{line->
-		def row = line.trim().split(" ").findAll{!it.trim().equals("")}
-		if(row.size() > 0){
-			listRows.add(row)
-		}
-	}
-	//remove row title
-	listRows.remove(0)
-	if(listRows.size() == 2){
-		for(int i=3; i< listRows[0].size(); i++){
-			def data = Double.parseDouble(listRows[1][i])
-			if(listRows[0][i] == "%usr" || listRows[0][i] == "%user"){
-				if(data != null ){
-					resultData['UserLevelPct'] = data
+	def headerData = ["UserSpentSec", "NiceSpentSec", "SystemSpentSec", "IdleSpentSec", "IowaitSpentSec", "IrgSpentSec", "SoftIrqSpentSec", "StealSpentSec", "GuestSpentSec", "GuestNiceSpentSec"]
+	data.eachLine{line->
+		if(line.contains("cpu") && flag) {
+			resultData = [:]
+			tmpData = line.trim().split(" ").findAll{!it.trim().equals("")}
+			for(int i=0; i<headerData.size(); i++){
+				if(tmpData[i+1] != null) {
+					resultData[headerData[i]] = tmpData[i+1].toLong()/100
 				} else {
-					resultData['UserLevelPct'] = 0
+					 resultData[headerData[i]] = 0
 				}
 			}
-
-			if(listRows[0][i] == "%nice"){
-				if(data != null ){
-					resultData['UserLevelWithNicePriPct'] = data
-				} else {
-					resultData['UserLevelWithNicePriPct'] = 0	
-				}			
-			}
-
-			if(listRows[0][i] == "%sys"){
-				if(data != null ){
-					resultData['SystemLevelPct'] = data
-				} else {
-					resultData['SystemLevelPct'] = 0	
-				}							
-			}
-
-			if(listRows[0][i] == "%iowait"){
-				if(data != null ){
-					resultData['SystemWithIOPct'] = data
-				} else {
-					resultData['SystemWithIOPct'] = 0	
-				}					
-
-			}
-
-			if(listRows[0][i] == "%irq"){
-				if(data != null ){
-					resultData['TimetoInterruptsPct'] = data
-				} else {
-					resultData['TimetoInterruptsPct'] = 0	
-				}	
-			}
-
-			if(listRows[0][i] == "%soft"){
-				if(data != null ){
-					resultData['TimetoSoftwareInterruptPct'] = data
-				} else {
-					resultData['TimetoSoftwareInterruptPct'] = 0	
-				}					
-			}
-
-			if(listRows[0][i] == "%steal"){
-				resultData['StealPct'] = data
-				if(data != null ){
-					resultData['StealPct'] = data
-				} else {
-					resultData['StealPct'] = 0	
-				}						
-			}
-
-			if(listRows[0][i] == "%idle"){
-				if(data != null ){
-					resultData['IdlePct'] = data
-				} else {
-					resultData['IdlePct'] = 0	
-				}				
-			}
-
-			if(listRows[0][i] == "intr/s"){
-				if(data != null ){
-					resultData['TotalInterruptsReceivedRateVal'] = data
-				} else {
-					resultData['TotalInterruptsReceivedRateVal'] = 0	
-				}				
-			}
+			listData.add(resultData)
+			flag = false
 		}
-		resultData['UsedPct'] = 0
-		if(resultData['UserLevelPct'] != null){
-			resultData['UsedPct'] = resultData['UserLevelPct']
-		} 
-		if(resultData['UserLevelWithNicePriPct'] != null){
-			resultData['UsedPct'] += resultData['UserLevelWithNicePriPct']
-		}
-		if(resultData['SystemLevelPct'] != null){
-			resultData['UsedPct'] += resultData['SystemLevelPct']
-		}	
-		if(resultData['SystemWithIOPct'] != null){
-			resultData['UsedPct'] += resultData['SystemWithIOPct']
-		}	
-		if(resultData['StealPct'] != null){
-			resultData['UsedPct'] += resultData['StealPct']
-		}			
 	}
-	listData.add(resultData)
 	return listData
 }
 
-KEYEXPR = ['_sequence':['NumberTransfersRateVal','NumberBlockReadRateVal','NumberBlockWriteRateVal']]
-KEYEXPR._unit = ["UserLevelPct":"%", "UserLevelWithNicePriPct":"%", "SystemLevelPct":"%", "SystemWithIOPct":"%", "TimetoInterruptsPct":"%", "TimetoSoftwareInterruptPct":"%", "StealPct":"%", "IdlePct":"%", "UsedPct":"%", "TotalInterruptsReceivedRateVal":"count/sec"]
+KEYEXPR = ['_sequence':['SystemSpentSec','UserSpentSec','IowaitSpentSec']]
+KEYEXPR._unit = ["UserSpentSec":"sec", "NiceSpentSec":"sec", "SystemSpentSec":"sec", "IdleSpentSec":"sec", "IowaitSpentSec":"sec", "IrgSpentSec":"sec", "SoftIrqSpentSec":"sec", "StealSpentSec":"sec", "GuestSpentSec":"sec", "GuestNiceSpentSec":"sec"]
 KEYEXPR._chart = [
 	[
 		"type": "line",
-		"name": "Information Usage CPU",
-		"chart_columns": ["UsedPct", "IdlePct"]
-	],
-	[
-		"type": "area",
 		"name": "Activities of CPU",
-		"chart_columns": ["UserLevelPct", "UserLevelWithNicePriPct", "SystemLevelPct", "SystemWithIOPct", "TimetoInterruptsPct", "TimetoSoftwareInterruptPct", "StealPct"]
+		"chart_columns": ["UserSpentSec", "NiceSpentSec", "SystemSpentSec", "IdleSpentSec", "IowaitSpentSec", "IrgSpentSec", "SoftIrqSpentSec", "StealSpentSec", "GuestSpentSec", "GuestNiceSpentSec"]
 	]
 ]
-
 SENDTYPE = "Store"
 RESOURCEID = "Linux/CPU"
 DEST = parameters.dest
