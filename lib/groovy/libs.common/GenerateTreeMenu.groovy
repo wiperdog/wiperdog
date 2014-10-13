@@ -45,21 +45,26 @@ class GenerateTreeMenu {
 	 * @Return list_job
 	 */
 	public static getListJobFromMongo() {
+	
 		def tmp = []
 		def list_job = []
-	    def mongoDBConn = MongoDBConnection.getWiperdogConnection()
-	    def collections = mongoDBConn.db.getCollectionNames()
-	    for(def collection in collections) {
-			if(collection.lastIndexOf(".") > 0 && collection.split("\\.").size() > 2) {
-				def jobname = collection.substring(0, collection.lastIndexOf("."))
-				if(!list_job.contains(jobname)){
-					list_job.add(jobname)
-				}
-			} else {
-				if(!list_job.contains(collection)) {
-					list_job.add(collection)
+		try {
+			def mongoDBConn = MongoDBConnection.getWiperdogConnection()
+			def collections = mongoDBConn.db.getCollectionNames()
+			for(def collection in collections) {
+				if(collection.lastIndexOf(".") > 0 && collection.split("\\.").size() > 2) {
+					def jobname = collection.substring(0, collection.lastIndexOf("."))
+					if(!list_job.contains(jobname)){
+						list_job.add(jobname)
+					}
+				} else {
+					if(!collection.contains("system.indexes")  && !list_job.contains(collection)) {
+						list_job.add(collection)
+					}
 				}
 			}
+		} catch(Exception ex){
+			return null
 		}
 		//mongoDBConn.close()
 		return list_job
