@@ -422,11 +422,14 @@ public class JobDeclared extends HttpServlet {
 				def KEYEXPRData = getKeyExprData(jobData.KEYEXPR)
 
 				if((KEYEXPRData.keyExpr != "[:]")
-					|| (KEYEXPRData.keyExpr == "[:]" && (KEYEXPRData.keyExprUnit != "" || KEYEXPRData.keyExprChart != ""))){
+					|| (KEYEXPRData.keyExpr == "[:]" && (KEYEXPRData.keyExprUnit != "" || KEYEXPRData.keyExprDes != "" || KEYEXPRData.keyExprChart != ""))){
 					jobStr += "KEYEXPR = " + KEYEXPRData.keyExpr + "\n"
 				}
 				if(KEYEXPRData.keyExprUnit != "" && KEYEXPRData.keyExprUnit != "[[:]]"){
 					jobStr += "KEYEXPR._unit = " + KEYEXPRData.keyExprUnit + "\n"
+				}
+				if(KEYEXPRData.keyExprDes != "" && KEYEXPRData.keyExprDes != "[[:]]"){
+					jobStr += "KEYEXPR._description = " + KEYEXPRData.keyExprDes + "\n"
 				}
 				if(KEYEXPRData.keyExprChart != "" && KEYEXPRData.keyExprChart != "[]"){
 					jobStr += "KEYEXPR._chart = " + KEYEXPRData.keyExprChart + "\n"
@@ -602,6 +605,7 @@ public class JobDeclared extends HttpServlet {
 		def keyExprStr = "[:]"
 		def keyExprUnitStr = ""
 		def keyExprChartStr = ""
+		def keyExprDesStr = ""
 
 		GroovyShell shell = new GroovyShell()
 		if(KEYEXPR != null){
@@ -641,6 +645,12 @@ public class JobDeclared extends HttpServlet {
 				keyExprUnitStr = regularExpressionValidate(keyExprUnitStr)
 			}
 
+			// Get KEYEXPR._description
+			if(KEYEXPR._description != null && KEYEXPR._description != "[:]" && KEYEXPR._description != "" && KEYEXPR._description != "[\"\n\"]"){
+				keyExprDesStr = KEYEXPR._description
+				keyExprDesStr = regularExpressionValidate(keyExprDesStr)
+			}
+
 			// Get KEYEXPR._chart
 			if(KEYEXPR._chart != [:]){
 				def chartMap = convertChartFormat(KEYEXPR._chart)
@@ -648,7 +658,7 @@ public class JobDeclared extends HttpServlet {
 				keyExprChartStr = regularExpressionValidate(keyExprChartStr)
 			}
 		}
-		return [keyExpr:keyExprStr, keyExprChart:keyExprChartStr, keyExprUnit:keyExprUnitStr]
+		return [keyExpr:keyExprStr, keyExprChart:keyExprChartStr, keyExprUnit:keyExprUnitStr, keyExprDes:keyExprDesStr]
 	}
 
 	def convertChartFormat(dataChart){
