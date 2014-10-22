@@ -58,7 +58,7 @@ class GenerateTreeMenu {
 						list_job.add(jobname)
 					}
 				} else {
-					if(!collection.contains("system.indexes")  && !list_job.contains(collection)) {
+					if(!collection.contains("system.") && !collection.contains("policy_message") && !list_job.contains(collection)) {
 						list_job.add(collection)
 					}
 				}
