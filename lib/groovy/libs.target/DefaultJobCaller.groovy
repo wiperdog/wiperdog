@@ -347,6 +347,9 @@ class DefaultJobCaller {
 				if(strDbType == ResourceConstants.MYSQL) {
 					strDbTypeDriver = ResourceConstants.DEF_MYSQL_DRIVER
 				}
+				if(strDbType == ResourceConstants.MARIA) {
+					strDbTypeDriver = ResourceConstants.DEF_MARIA_DRIVER
+				}
 				if(strDbType == ResourceConstants.POSTGRES) {
 					strDbTypeDriver = ResourceConstants.DEF_POSTGRES_DRIVER
 				}

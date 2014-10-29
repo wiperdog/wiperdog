@@ -29,6 +29,8 @@ class ResourceConstants{
 	/** EncryptedDBConnectionSourceImpl **/
 	public static final String DEF_ORACLE_DRIVER = "oracle.jdbc.driver.OracleDriver"
 	public static final String DEF_MYSQL_DRIVER = "com.mysql.jdbc.Driver";
+	public static final String DEF_MARIA_DRIVER = "com.mysql.jdbc.Driver";
+
 	public static final String DEF_POSTGRES_DRIVER = "org.postgresql.Driver";
 	public static final String DEF_SQLS_DRIVER = "com.microsoft.sqlserver.jdbc.SQLServerDriver";
 	public static final String MESSAGE_FILE_DIRECTORY= "monitorjobfw.diretory.messagefile"
@@ -53,6 +55,7 @@ class ResourceConstants{
 	public static final String OSINFO = "OSINFO"
 	public static final String ORACLE = "@ORA"
 	public static final String MYSQL= "@MYSQL"
+	public static final String MARIA= "@MARIA"
 	public static final String POSTGRES = "@PGSQL"
 	public static final String SQLS = "@MSSQL"	
 	public static final String DEFAULTUSER = "#DEFAULTUSER"	

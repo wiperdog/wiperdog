@@ -153,6 +153,9 @@ public class EncryptedDBConnectionSourceImpl extends IDBConnectionSource{
 			case ResourceConstants.MYSQL:
 				driverString = ResourceConstants.DEF_MYSQL_DRIVER
 				break;
+			case ResourceConstants.MARIA:
+				driverString = ResourceConstants.DEF_MARIA_DRIVER
+				break;
 			case ResourceConstants.POSTGRES:
 				driverString = ResourceConstants.DEF_POSTGRES_DRIVER
 				break;
@@ -239,6 +242,11 @@ public class EncryptedDBConnectionSourceImpl extends IDBConnectionSource{
 			defaultData = listParams.MYSQL.default
 			sqlData = listParams.MYSQL.getData.sql
 			appendData = listParams.MYSQL.getData.append
+			istParmas = getParamsData(defaultData,sqlConnection,sqlData,appendData)
+		} else if(dbtype == ResourceConstants.MARIA) {
+			defaultData = listParams.MARIA.default
+			sqlData = listParams.MARIA.getData.sql
+			appendData = listParams.MARIA.getData.append
 			istParmas = getParamsData(defaultData,sqlConnection,sqlData,appendData)
 		} else if(dbtype == ResourceConstants.POSTGRES) {
 			defaultData = listParams.POSTGRES.default
