@@ -1,0 +1,47 @@
+/**
+ * Monitoring plugins which has been installed into system.
+ * <p>
+ * Monitoring plugins which has been installed into system.
+ * </p> 
+ * @targetVersion 10
+ * @return statistics information for Maria DB system's plugin
+ * @returnParam PluginNm Name of the plugin.
+ * @returnParam PluginVersionTxt Version from the plugin's general type descriptor.
+ * @returnParam PluginStatusTxt Plugin status, one of ACTIVE, INACTIVE, DISABLED or DELETED.
+ * @returnParam PluginTypeTxt Plugin type; STORAGE ENGINE, INFORMATION_SCHEMA, AUTHENTICATION, REPLICATION, DAEMON or AUDIT.
+ * @returnParam PluginTypeVersionTxt Version from the plugin's type-specific descriptor.
+ * @returnParam PluginLibraryTxt Plugin's shared object file name, located in the directory specified by the plugin_dir system variable, 
+ *                               and used by the INSTALL PLUGIN and UNINSTALL PLUGIN statements. NULL if the plugin is complied in and cannot be uninstalled.
+ * @returnParam PluginLibraryVersionTxt Version from the plugin's API interface.
+ * @returnParam PluginAuthorTxt Author of the plugin.
+ * @returnParam PluginDescriptionTxt  Description.
+ * @returnParam PluginLicenseTxt Plugin's licence.
+ * @returnParam PluginLoadOptionTxt How the plugin was loaded; one of OFF, ON, FORCE or FORCE_PLUS_PERMANENT. See Installing Plugins.
+ */
+JOB = [name:"Maria.Database_Plugin"]
+FETCHACTION = {
+	 
+	def query = """
+		SELECT 
+			A.PLUGIN_NAME as PluginNm,	 
+			A.PLUGIN_VERSION as PluginVersionTxt,
+			A.PLUGIN_STATUS as PluginStatusTxt,
+			A.PLUGIN_TYPE as PluginTypeTxt,
+			A.PLUGIN_TYPE_VERSION as PluginTypeVersionTxt,
+			A.PLUGIN_LIBRARY as PluginLibraryTxt,
+			A.PLUGIN_LIBRARY_VERSION as PluginLibraryVersionTxt,
+			A.PLUGIN_AUTHOR as PluginAuthorTxt,
+			A.PLUGIN_DESCRIPTION as PluginDescriptionTxt,
+			A.PLUGIN_LICENSE as PluginLicenseTxt,
+			A.LOAD_OPTION as PluginLoadOptionTxt
+		FROM 
+		  INFORMATION_SCHEMA.PLUGINS A
+		;
+	"""
+	def resultData = sql.rows(query)
+}
+SENDTYPE = "Store"
+DBTYPE = "@MARIA"
+DEST = parameters.dest
+MONITORINGTYPE = "@DB"
+RESOURCEID = "Sr/MariaPluginsStats"

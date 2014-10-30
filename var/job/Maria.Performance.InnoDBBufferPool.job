@@ -1,0 +1,166 @@
+/**
+ * InnoDB バッファ プールレシオの監視。<br/>
+ * 
+ * @targetVersion From 5.0
+ * @return InnoDBのバッファプール比
+ * @returnParam ReadRequestsCumCnt バッファから ロジック読む回数
+ * @returnParam ReadsCumCnt 物理の読む回数
+ * @returnParam HitRatioPct ヒット読むレシオ
+ * @returnParam WriteRequestsCumCnt バッファ プールに リクエスト書いた回数
+ * @returnParam WaitFreeCumCnt  書くため待つ回数
+ * @returnParam WaitFreeRatioPct 書くため待つレシオ
+ * @returnParam PagesTotalCnt ページ数
+ * @returnParam PagesFreeCnt フリーページ数
+ * @returnParam PagesDataCnt データのページ数
+ * @returnParam PagesDirtyCnt  汚いページ数
+ * @returnParam BufferUsedRatioPct ユーズドバッフレシオ
+ * @returnParam DirtyRatioPct dirtyレシオ
+ * @returnParam ReadRequestsCnt 前監視回から今回までバッファからロジック読む回数
+ * @returnParam ReadRequestsRateDbl 前監視回から今回までバッファから一秒のロジック読む回数
+ * @returnParam ReadsCnt 前監視回から今回まで物理の読む回数
+ * @returnParam ReadsRateDbl 前監視回から今回まで一秒の物理の読む回数
+ * @returnParam WriteRequestsCnt 前監視回から今回までバッファ プールに リクエスト書いた回数
+ * @returnParam WriteRequestsRateDbl 前監視回から今回まで一秒のバッファ プールに リクエスト書いた回数
+ * @returnParam WaitFreeCnt 前監視回から今回まで書くため待つ回数
+ * @returnParam WaitFreeRateDbl 前監視回から今回まで一秒の書くため待つ回数
+ */
+JOB = [name:"Maria.Performance.InnoDBBufferPool"]
+FETCHACTION={
+		def prev_innodb_buffer_pool_read_requests = PERSISTENTDATA['ReadRequestsCumCnt'] != null ? PERSISTENTDATA['ReadRequestsCumCnt'] : 0
+		def prev_innodb_buffer_pool_reads = PERSISTENTDATA['ReadsCumCnt'] != null ? PERSISTENTDATA['ReadsCumCnt'] : 0
+		def prev_innodb_buffer_pool_write_requests = PERSISTENTDATA['WriteRequestsCumCnt'] != null ? PERSISTENTDATA['WriteRequestsCumCnt'] : 0
+		def prev_innodb_buffer_pool_wait_free = PERSISTENTDATA['WaitFreeCumCnt'] != null ? PERSISTENTDATA['WaitFreeCumCnt'] : 0
+		def prev_innodb_buffer_pool_pages_data = PERSISTENTDATA['PagesDataCnt'] != null ? PERSISTENTDATA['PagesDataCnt'] : 0
+		def prev_innodb_buffer_pool_pages_dirty = PERSISTENTDATA['PagesDirtyCnt'] != null ? PERSISTENTDATA['PagesDirtyCnt'] : 0
+		
+		def resultData = [:]
+		
+		//-- Check innodb engine is enabled
+		//-- YES 
+		def haveInnodb = sql.rows("SELECT Support FROM information_schema.ENGINES WHERE ENGINE = 'InnoDB'")[0]['Support']
+		//-- OFF
+		def ignoreBuiltinInnodb = sql.rows("SHOW VARIABLES LIKE 'ignore_builtin_innodb'")[0]['value']
+		assert (!haveInnodb.equals('NO') && ignoreBuiltinInnodb.equals('OFF')), "Configuration error, INNODB Engine may be disabled"
+		
+		def data = sql.rows('''
+				 SELECT
+ 				 A.ReadRequestsCumCnt,
+ 				 B.ReadsCumCnt,
+ 				 C.WriteRequestsCumCnt,
+ 				 D.WaitFreeCumCnt,
+ 				 E.PagesTotalCnt,
+  		  		 F.PagesFreeCnt,
+  				 G.PagesDataCnt,
+  				 G2.PagesMiscCnt,
+  				 H.PagesDirtyCnt
+				 FROM
+  				 (SELECT GS.variable_value as ReadRequestsCumCnt FROM information_schema.global_status GS WHERE GS.variable_name = 'innodb_buffer_pool_read_requests') A,
+ 				 (SELECT GS.variable_value as ReadsCumCnt FROM information_schema.global_status GS WHERE GS.variable_name = 'innodb_buffer_pool_reads') B,
+  				 (SELECT GS.variable_value as WriteRequestsCumCnt FROM information_schema.global_status GS WHERE GS.variable_name = 'innodb_buffer_pool_write_requests') C,
+  				 (SELECT GS.variable_value as WaitFreeCumCnt FROM information_schema.global_status GS WHERE GS.variable_name = 'innodb_buffer_pool_wait_free') D,
+ 				 (SELECT GS.variable_value as PagesTotalCnt FROM information_schema.global_status GS WHERE GS.variable_name = 'innodb_buffer_pool_pages_total') E,
+				 (SELECT GS.variable_value as PagesFreeCnt FROM information_schema.global_status GS WHERE GS.variable_name = 'innodb_buffer_pool_pages_free') F,
+  				 (SELECT GS.variable_value as PagesDataCnt FROM information_schema.global_status GS WHERE GS.variable_name = 'innodb_buffer_pool_pages_data') G,
+  				 (SELECT GS.variable_value as PagesMiscCnt FROM information_schema.global_status GS WHERE GS.variable_name = 'Innodb_buffer_pool_pages_misc') G2,
+  				 (SELECT GS.variable_value as PagesDirtyCnt FROM information_schema.global_status GS WHERE GS.variable_name = 'innodb_buffer_pool_pages_dirty') H;
+			''')
+		
+		resultData['ReadRequestsCumCnt'] = Long.parseLong(data[0]['ReadRequestsCumCnt'])
+		resultData['ReadsCumCnt'] = Long.parseLong(data[0]['ReadsCumCnt'])
+		resultData['WriteRequestsCumCnt'] = Long.parseLong(data[0]['WriteRequestsCumCnt'])
+		resultData['WaitFreeCumCnt'] = Long.parseLong(data[0]['WaitFreeCumCnt'])
+		resultData['PagesTotalCnt'] = Long.parseLong(data[0]['PagesTotalCnt'])
+		resultData['PagesFreeCnt'] = Long.parseLong(data[0]['PagesFreeCnt'])
+		resultData['PagesDataCnt'] = Long.parseLong(data[0]['PagesDataCnt'])
+		resultData['PagesMiscCnt'] = Long.parseLong(data[0]['PagesMiscCnt'])
+		resultData['PagesDirtyCnt'] = Long.parseLong(data[0]['PagesDirtyCnt'])
+		
+		//Set PERSISTENTDATA
+		PERSISTENTDATA['ReadRequestsCumCnt'] = resultData['ReadRequestsCumCnt']
+		PERSISTENTDATA['ReadsCumCnt'] = resultData['ReadsCumCnt']
+		PERSISTENTDATA['WriteRequestsCumCnt'] = resultData['WriteRequestsCumCnt']
+		PERSISTENTDATA['WaitFreeCumCnt'] = resultData['WaitFreeCumCnt']
+		PERSISTENTDATA['PagesDataCnt'] = resultData['PagesDataCnt']
+		PERSISTENTDATA['PagesMiscCnt'] = resultData['PagesMiscCnt']
+		PERSISTENTDATA['PagesDirtyCnt'] = resultData['PagesDirtyCnt']
+		
+		assert interval != null, "This is the first execution time, interval is null, quit the job"
+		
+		resultData['ReadRequestsCnt'] = resultData['ReadRequestsCumCnt'] - prev_innodb_buffer_pool_read_requests
+		resultData['ReadsCnt'] = resultData['ReadsCumCnt'] - prev_innodb_buffer_pool_reads
+		
+		resultData['WriteRequestsCnt'] = resultData['WriteRequestsCumCnt'] - prev_innodb_buffer_pool_write_requests
+		resultData['WaitFreeCnt'] = resultData['WaitFreeCumCnt'] - prev_innodb_buffer_pool_wait_free
+		
+		
+		resultData['ReadRequestsRateDbl'] = resultData['PagesDirtyCnt'] / interval	
+		resultData['ReadsRateDbl'] = resultData['ReadsCnt'] / interval
+		resultData['WriteRequestsRateDbl'] = resultData['WriteRequestsCnt'] / interval
+		resultData['WaitFreeRateDbl'] = resultData['WaitFreeCnt'] / interval
+		
+		if((resultData['ReadRequestsCumCnt'] + resultData['ReadsCumCnt']) == 0){
+			resultData['HitRatioPct'] = null
+		} else {
+			resultData['HitRatioPct'] = resultData['ReadRequestsCumCnt'] / (resultData['ReadRequestsCumCnt'] + resultData['ReadsCumCnt']) * 100
+		}
+		if(resultData['WriteRequestsCumCnt']== 0 ){
+			resultData['WaitFreeRatioPct'] = null
+		} else {
+			resultData['WaitFreeRatioPct']= resultData['WaitFreeCumCnt'] / resultData['WriteRequestsCumCnt'] * 100
+		}
+		if(resultData['PagesTotalCnt'] == 0){
+			resultData['BufferUsedRatioPct'] = null
+		} else {
+			resultData['BufferUsedRatioPct']= resultData['PagesDataCnt'] / resultData['PagesTotalCnt'] * 100
+		}
+		if(resultData['PagesDataCnt'] == 0){
+			resultData['DirtyRatioPct'] = null
+		} else {
+			resultData['DirtyRatioPct'] = resultData['PagesDirtyCnt'] / resultData['PagesDataCnt'] * 100
+		}
+		
+		
+		def updateResultData = []
+		updateResultData.add(resultData)
+		return updateResultData
+}
+KEYEXPR = [_sequence:["BufferUsedRatioPct","PagesDataCnt","PagesTotalCnt"]]
+KEYEXPR._unit = ["ReadRequestsCumCnt" : "count" , "ReadsCumCnt" : "count" , "WriteRequestsCumCnt" : "count" , "WaitFreeCumCnt" : "count" ,"PagesTotalCnt" : "pages" 
+	,"PagesFreeCnt" :"pages" ,"PagesDataCnt":"pages" , "PagesDirtyCnt" : "pages"  ,"PagesMiscCnt":"pages", "ReadRequestsRateDbl" : "count/sec" 
+	, "ReadsRateDbl" : "count/sec" ,"WriteRequestsRateDbl" : "count/sec" , "WaitFreeRateDbl" : "count/sec" , "HitRatioPct" : "%" 
+	,"WaitFreeRatioPct" : "%" , "BufferUsedRatioPct" : "%" , "DirtyRatioPct" : "%" , "ReadRequestsCnt" : "count/interval" 
+	, "ReadsCnt" : "count/interval" , "WriteRequestsCnt" : "count/interval" , "WaitFreeCnt" : "count/interval"]
+KEYEXPR._chart = [
+    [
+        "type": "line",
+        "name": "Percentage of buffer hit ratio",
+        "chart_columns": ["HitRatioPct"]
+    ],
+    [
+        "type": "line",
+        "name": "Percentage of buffer used ratio",
+        "chart_columns": ["BufferUsedRatioPct"]
+    ],
+    [
+        "type": "line",
+        "name": "Percentage of buffer dirty ratio",
+        "chart_columns": ["DirtyRatioPct"]
+    ],
+    [
+        "type": "area",
+        "name": "Buffer pool components",
+        "chart_columns": ["PagesDataCnt", "PagesMiscCnt", "PagesFreeCnt"]
+    ],
+    [
+        "type": "area",
+        "name": "Buffer pool activity",
+        "chart_columns": ["ReadRequestsCnt","WriteRequestsCnt"]
+    ]
+    
+]
+SENDTYPE = "Store"
+DBTYPE = "@MYSQL"
+//DBTYPE = "@MARIA"
+DEST = parameters.dest
+MONITORINGTYPE = "@DB"
+RESOURCEID = "Pf/MariaInnoBuffPool"

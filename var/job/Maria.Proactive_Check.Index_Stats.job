@@ -1,0 +1,48 @@
+/**
+ * Monitoring  the table index usage.
+ * <p>
+ * Monitoring index read activities. for all table in all schema You need to enable global varibale 'userstat' by setting:
+ * SET GLOBAL userstat=1 or put this setting into file my.cnf (in [mysqld] session)
+ * </p> 
+ * @targetVersion 10
+ * @return statistics information for index read activities (table information_schema. INDEX_STATISTICS).
+ * @returnParam TableSchemaNm The schema (database) name.
+ * @returnParam TableNm The table name.
+ * @returnParam IndexNm The index name (as visible in SHOW CREATE TABLE).
+ * @returnParam RowReadCnt The number of rows read from this index.
+ */
+JOB = [name:"Maria.Proactive_Check.Index_Stats"]
+FETCHACTION = {
+	def query = """
+		SELECT 
+			A.TABLE_SCHEMA as TableSchemaNm,
+			A.TABLE_NAME    as TableNm,
+			A.INDEX_NAME    as IndexNm,
+			A.ROWS_READ     as RowReadCnt
+		FROM 
+		  INFORMATION_SCHEMA.INDEX_STATISTICS A
+		;
+	"""
+	def resultData = sql.rows(query)
+}
+ACCUMULATE = {
+	assert interval != null : "First time ,we can not get meaniningful values"
+	assert (prevOUTPUT != null && prevOUTPUT[0] != null ) : "Can not get previous monitoring data !"
+	OUTPUT.each{ rec ->
+		rec['RowReadDiffCnt'] = rec['RowReadCnt'] - prevOUTPUT[0]['RowReadCnt']		
+	}
+}
+KEYEXPR=[_sequence:["TableSchemaNm", "TableNm", "IndexNm"]]
+KEYEXPR._unit = ["RowReadCnt": "count", "RowReadDiffCnt": "count/interval" ]
+KEYEXPR._chart = [
+    [
+        "type": "line",
+        "name": "Index Reading Statistics",
+        "chart_columns": ["TableSchemaNm", "TableNm", "IndexNm","RowReadDiffCnt"]
+    ]
+]
+SENDTYPE = "Store"
+DBTYPE = "@MARIA"
+DEST = parameters.dest
+MONITORINGTYPE = "@DB"
+RESOURCEID = "Sr/MariaIndexReadStats"
