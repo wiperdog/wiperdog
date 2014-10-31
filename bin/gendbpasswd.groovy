@@ -22,7 +22,8 @@ public class AES {
 			'@ORA' ,
 			'@MYSQL' ,
 			'@PGSQL' ,
-			'@MSSQL'
+			'@MSSQL',
+			'@MARIA'
 		]
 		def DBType = null
 		def username = null
@@ -92,7 +93,7 @@ public class AES {
 			}
 
 			if (!DBTypeList.contains(DBType)) {
-				println "DBType is incorrect. DBType may accept following value: @ORA , @MYSQL ,@PGSQL ,@MSSQL"
+				println "DBType is incorrect. DBType may accept following value: @ORA , @MYSQL ,@MARIA ,@PGSQL ,@MSSQL"
 				return
 			}
 			try {
@@ -191,7 +192,7 @@ public class AES {
 			}
 			def checkValidData = true
 			tmpListOfMaps.find{
-				//check if DBTYPE in ['@ORA' , '@MYSQL' ,'@PGSQL' ,'@MSSQL']
+				//check if DBTYPE in ['@ORA' , '@MYSQL' ,'@PGSQL' ,'@MSSQL','@MARIA']
 				def dbType = escapeChar(it['DBTYPE'])
 				def userName = escapeChar(it['USERNAME'])
 				def passwordCSV = it['PASSWORD']
@@ -204,7 +205,7 @@ public class AES {
 					return  true
 				}
 				if(!DBTypeList.contains(dbType)){
-					println "DBType is incorrect. DBType may accept following value: @ORA , @MYSQL ,@PGSQL ,@MSSQL - " + "Line : ${(tmpListOfMaps.indexOf(it) + 2)}"
+					println "DBType is incorrect. DBType may accept following value: @ORA , @MYSQL ,@MARIA ,@PGSQL ,@MSSQL - " + "Line : ${(tmpListOfMaps.indexOf(it) + 2)}"
 					checkValidData = false
 					return true
 				}
