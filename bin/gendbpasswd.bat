@@ -29,7 +29,7 @@ if %ARGS_COUNT% == 2 (
 				 ECHO Incorrect parameters !!!
 				 ECHO Correct format of commmand: gendbpasswd -t DBType -u username [-h hostId] [-s sid]  
 				 ECHO								OR gendbpasswd -f "File csv contains user/password information"
-				 ECHO     DBType may accept following value:  @ORA , @MYSQL ,@PGSQL ,@MSSQL
+				 ECHO     DBType may accept following value:  @ORA , @MYSQL ,@MARIA,@PGSQL ,@MSSQL
 				 ECHO      Example : gendbpasswd -t @ORA -u username -h hostId -s piex
 				 ECHO                gendbpasswd -f "C:\path\dbpassword.csv"
 				 PAUSE

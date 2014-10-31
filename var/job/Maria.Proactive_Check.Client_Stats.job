@@ -1,0 +1,100 @@
+/**
+ * Monitoring  client activities on Maria server
+ * <p>
+ * Monitoring client activities. You need to enable global varibale 'userstat' by setting:
+ * SET GLOBAL userstat=1 or put this setting into file my.cnf (in [mysqld] session)
+ * </p> 
+ * @targetVersion 10
+ * @return statistics information for clients activities (table information_schema. CLIENT_STATISTICS).
+ * @returnParam ClientId	The IP address or hostname the connection originated from.
+ * @returnParam TotalConnectedCnt The number of connections created for this client.
+ * @returnParam CurrentConnectedCnt The number of concurrent connections for this client.
+ * @returnParam ConnectedTimeAt_bin The cumulative number of seconds elapsed while there were connections from this client.
+ * @returnParam BusyTimeDbl The cumulative number of seconds there was activity on connections from this client.
+ * @returnParam CPUTimeDbl The cumulative CPU time elapsed while servicing this client's connections.
+ * @returnParam ByteReceivedLong The long number of received bytes
+ * @returnParam ByteSentLong The long number of received sent
+ * @returnParam BinlogByteWrittenLong The long number of bytes has been written by mysql_bin_log
+ * @returnParam RowReadLong The long number of rows read by client activities
+ * @returnParam RowSentLong The long number of rows sent by client activities
+ * @returnParam RowsDeletedLong The number of rows deleted by this client's connections.
+ * @returnParam RowInsertedLong The number of rows inserted by this client's connections.
+ * @returnParam RowUpdatedLong The number of rows updated by this client's connections.
+ * @returnParam SelectCommandsLong The number of SELECT commands executed from this client's connections.
+ * @returnParam UpdateCommandsLong The number of UPDATE commands executed from this client's connections.
+ * @returnParam OtherCommands The number of other commands executed from this client's connections.
+ * @returnParam CommitTransactionLong The number of COMMIT commands issued by this client's connections.
+ * @returnParam RollbackTransactionsLong The number of ROLLBACK commands issued by this client's connections.
+ * @returnParam DeniedConnectionsLong The number of connections denied to this client.
+ * @returnParam LostConnectionsLong The number of this client's connections that were terminated uncleanly.
+ * @returnParam AccessDeniedLong The number of times this client's connections issued commands that were denied.
+ * @returnParam EmptyQueriesLong The number of times this client's connections sent queries that returned no results to the server.
+ */
+JOB = [name:"Maria.Proactive_Check.Client_Stats"]
+FETCHACTION = {
+	def query = """
+		SELECT 
+			A.CLIENT as ClientId,
+			A.TOTAL_CONNECTIONS as TotalConnectedCnt,
+			A.CONCURRENT_CONNECTIONS as CurrentConnectedCnt,
+			A.CONNECTED_TIME as ConnectedTimeAt_bin,
+			A.BUSY_TIME as BusyTimeDbl,
+			A.CPU_TIME as CPUTimeDbl,
+			A.BYTES_RECEIVED as ByteReceivedLong,
+			A.BYTES_SENT as ByteSentLong,
+			A.BINLOG_BYTES_WRITTEN as BinlogByteWrittenLong,
+			A.ROWS_READ as RowReadLong,
+			A.ROWS_SENT as RowSentLong,
+			A.ROWS_DELETED as RowsDeletedLong,
+			A.ROWS_INSERTED as RowInsertedLong,
+			A.ROWS_UPDATED as RowUpdatedLong,
+			A.SELECT_COMMANDS as SelectCommandsLong,
+			A.UPDATE_COMMANDS as UpdateCommandsLong,
+			A.OTHER_COMMANDS as OtherCommands,
+			A.COMMIT_TRANSACTIONS as CommitTransactionLong,
+			A.ROLLBACK_TRANSACTIONS as RollbackTransactionsLong,
+			A.DENIED_CONNECTIONS as DeniedConnectionsLong,
+			A.LOST_CONNECTIONS as LostConnectionsLong,
+			A.ACCESS_DENIED as AccessDeniedLong,
+			A.EMPTY_QUERIES as EmptyQueriesLong
+
+		FROM 
+		  INFORMATION_SCHEMA.CLIENT_STATISTICS A
+		;
+	"""
+	def resultData = sql.rows(query)
+}
+ACCUMULATE = {
+	assert interval != null : "First time ,we can not get meaniningful values"
+	assert (prevOUTPUT != null && prevOUTPUT[0] != null ) : "Can not get previous monitoring data !"
+	OUTPUT.each{ rec ->
+		rec['ConnectionDiffCnt'] = rec['TotalConnectedCnt'] - prevOUTPUT[0]['TotalConnectedCnt']
+		rec['DeniedConnectionsDiffLong'] = rec['DeniedConnectionsLong'] - prevOUTPUT[0]['DeniedConnectionsLong']
+		rec['LostConnectionsDiffLong'] = rec['LostConnectionsLong'] - prevOUTPUT[0]['LostConnectionsLong']
+		rec['AccessDeniedDiffLong'] = rec['AccessDeniedLong'] - prevOUTPUT[0]['AccessDeniedLong']
+	}
+}
+KEYEXPR=[_sequence:["ClientNm"]]
+KEYEXPR._unit = ["TotalConnectedCnt": "count", "CurrentConnectedCnt": "count", 
+		 "ConnectedTimeAt_bin": "sec", "BusyTimeDbl": "sec",
+		 "CPUTimeDbl":"sec","ByteReceivedLong":"byte",
+		 "ByteSentLong":"byte","BinlogByteWrittenLong":"byte","RowReadLong":"count","RowSentLong":"count","RowsDeletedLong":"count",
+		 "RowInsertedLong":"count","RowUpdatedLong":"count",
+		 "SelectCommandsLong":"count","UpdateCommandsLong":"count","OtherCommands":"count",
+		 "CommitTransactionLong":"count","RollbackTransactionsLong":"count",
+		 "DeniedConnectionsLong":"count","LostConnectionsLong":"count", "AccessDeniedLong":"count", "EmptyQueriesLong":"count",
+		 "ConnectionDiffCnt":"count/interval", "DeniedConnectionsDiffLong":"count/interval",
+	 	 "LostConnectionsDiffLong":"count/interval", "AccessDeniedDiffLong":"count/interval"
+		 ]
+KEYEXPR._chart = [
+    [
+        "type": "line",
+        "name": "Client Statistics Information",
+        "chart_columns": ["ConnectionDiffCnt","DeniedConnectionsDiffLong","LostConnectionsDiffLong","AccessDeniedDiffLong"]
+    ]
+]
+SENDTYPE = "Store"
+DBTYPE = "@MARIA"
+DEST = parameters.dest
+MONITORINGTYPE = "@DB"
+RESOURCEID = "Sr/MariaClientActStats"

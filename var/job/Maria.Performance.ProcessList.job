@@ -1,0 +1,69 @@
+/**
+ * Monitoring current process which is running at time of monitoring
+ * <p>
+ *     Monitoring current process which is running at time of monitoring
+ * </p> 
+ * @targetVersion 10
+ * @return  Information of current running process at the time of monitoring
+ * @returnParam ProcessId  Connection identifier.	
+ * @returnParam UserNm MariaDB User.
+ * @returnParam HostNm Connecting host.	
+ * @returnParam DatabaseNm Default database, or NULL if none.	
+ * @returnParam CommandTypeTxt Type of command running, corresponding to the Com_ status variables.
+ * @returnParam StateTxt Current state of the thread.	
+ * @returnParam InfoTxt Statement the thread is executing, or NULL if none.
+ * @returnParam RunningTimeAt_bin Time in milliseconds with microsecond precision 
+ *                               that the thread has been in its current state (see more).  Since MariaDB 5.1.
+ * @returnParam StageInt The stage the process is currently in.	Since MariaDB 5.3.
+ * @returnParam MaxStateInt The maximum number of stages.	MariaDB 5.3
+ * @returnParam ProgressPct  The progress of the process within the current stage (0-100%).	MariaDB 5.3
+ * @returnParam MemoryUsedLong Memory used by the thread.	MariaDB 10.0.1
+ * @returnParam ExaminedRowCnt Rows examined by the thread.	MariaDB 10.0.1
+ * @returnParam QueryId Query ID.	MariaDB 10.0.5
+ */
+JOB = [name:"Maria.Performance.ProcessList"]
+FETCHACTION = {
+	def query = """
+		SELECT 
+			A.ID as ProcessId,
+			A.USER as UserNm,
+			A.HOST asHostNm,
+			A.DB as DatabaseNm,
+			A.COMMAND as CommandTypeTxt,
+			A.STATE as StateTxt,
+			A.INFO as InfoTxt,
+			A.TIME_MS as RunningTimeAt_bin,
+			A.STAGE as StageInt,
+			A.MAX_STAGE as MaxStateInt,
+			A.PROGRESS as ProgressPct,
+			A.MEMORY_USED as MemoryUsedByte,
+			A.EXAMINED_ROWS as ExaminedRowCnt,
+			A.QUERY_ID as QueryId
+		FROM 
+			INFORMATION_SCHEMA.PROCESSLIST A
+		WHERE  A.INFO NOT LIKE '%/* SQL by PIEX MONITORJOB */%'  ORDER BY A.TIME_MS DESC;		
+	"""
+	def resultData = sql.rows(query)
+}
+ACCUMULATE = {
+	assert interval != null : "First time ,we can not get meaniningful values"
+	assert (prevOUTPUT != null && prevOUTPUT[0] != null ) : "Can not get previous monitoring data !"
+	OUTPUT.each{ rec ->
+		rec['MemoryUsedDiffByte'] = rec['MemoryUsedByte'] - prevOUTPUT[0]['MemoryUsedByte']
+		rec['ExaminedRowDiffCnt'] = rec['ExaminedRowCnt'] - prevOUTPUT[0]['ExaminedRowCnt']
+	}
+}
+KEYEXPR=[_sequence:["ProcessId", "QueryId"]]
+KEYEXPR._unit = ["RunningTimeAt_bin": "ms","MemoryUsedByte":"byte", "ExaminedRowCnt":"count" ]
+KEYEXPR._chart = [
+    [
+        "type": "line",
+        "name": "Current User Process List",
+        "chart_columns": ["RunningTimeAt_bin","MemoryUsedByte","ExaminedRowCnt"]
+    ]
+]
+SENDTYPE = "Store"
+DBTYPE = "@MARIA"
+DEST = parameters.dest
+MONITORINGTYPE = "@DB"
+RESOURCEID = "Sr/MariaProcessList"

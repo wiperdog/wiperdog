@@ -30,7 +30,7 @@ else
 	echo Incorrect parameters !!!
 	echo Correct format of commmand: gendbpasswd -t DBType -u username [-h hostId] [-s sid]
 	echo								OR gendbpasswd -f "File csv contains user/password information"
-	echo     DBType may accept following value:  @ORA , @MYSQL ,@PGSQL ,@MSSQL
+	echo     DBType may accept following value:  @ORA , @MYSQL ,@MARIA ,@PGSQL ,@MSSQL
 	echo      Example : gendbpasswd -t @ORA -u username -h hostId -s piex
 fi
 fi
