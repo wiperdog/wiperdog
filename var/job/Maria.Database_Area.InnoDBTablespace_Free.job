@@ -263,7 +263,6 @@ KEYEXPR._chart = [
     ]    
 ]
 DBTYPE = "@MARIA"
-//DBTYPE = "@MYSQL"
 SENDTYPE = "Store"
 MONITORINGTYPE = "@DB"
 RESOURCEID = "As/MariaInnoTbsFree"

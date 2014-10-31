@@ -159,8 +159,7 @@ KEYEXPR._chart = [
     
 ]
 SENDTYPE = "Store"
-DBTYPE = "@MYSQL"
-//DBTYPE = "@MARIA"
+DBTYPE = "@MARIA"
 DEST = parameters.dest
 MONITORINGTYPE = "@DB"
 RESOURCEID = "Pf/MariaInnoBuffPool"
