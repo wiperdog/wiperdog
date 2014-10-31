@@ -20,7 +20,6 @@
  */
 JOB = [name:"Maria.Performance.SQLHighLoad"]
 FETCHACTION= {
-println "------------------------------------------------------------------------------"
 	// STEP 1: get list detail of query that executed from table slow_log
 	def limitParam = parameters.limit != null ? parameters.limit : 0
 	def limit = 0
@@ -41,7 +40,6 @@ println "-----------------------------------------------------------------------
 		limit = limitParam
 	}
 	def listSlowLogData = []
-	println ":::::::::::::::::: LAST EXEC " + lastexecution
 	if (lastexecution != null) {
 		def sqlSlowLog = """
 			#PIEX MySQL SQLHighLoad
