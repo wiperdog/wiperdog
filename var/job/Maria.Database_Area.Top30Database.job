@@ -377,7 +377,7 @@ KEYEXPR._chart =
 ]
 
 
-DBTYPE = "@MYSQL"
+DBTYPE = "@MARIA"
 SENDTYPE = "Subtyped"
 MONITORINGTYPE = "@DB"
 RESOURCEID = "As/MariaTopNDb"

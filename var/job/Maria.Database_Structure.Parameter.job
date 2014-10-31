@@ -17,5 +17,5 @@ KEYEXPR = ["VariableNameTxt"]
 SENDTYPE = "Store"
 MONITORINGTYPE = "@DB"
 RESOURCEID = "Sr/MariaParameter"
-DBTYPE = "@MYSQL"
+DBTYPE = "@MARIA"
 DEST = parameters.dest
