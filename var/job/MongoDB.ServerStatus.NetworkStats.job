@@ -1,0 +1,45 @@
+JOB = [ name: "MongoDB.ServerStatus.NetworkStats" ]
+
+FETCHACTION={
+	def finalData = [:]
+	def mapDataServerStatus = sql.command("serverStatus")
+	// Connections
+	def mapConnections = [:]
+	mapConnections['CurrentNum'] = mapDataServerStatus['connections']['current']
+	mapConnections['AvailableNum'] = mapDataServerStatus['connections']['available']
+	mapConnections['TotalCreatedNum'] = mapDataServerStatus['connections']['totalCreated']
+	finalData['Connections'] = mapConnections
+	// Network
+	def mapNetwork = [:]
+	mapNetwork['BytesInBytes'] = mapDataServerStatus['network']['bytesIn']
+	mapNetwork['BytesOutBytes'] = mapDataServerStatus['network']['bytesOut']
+	mapNetwork['NumRequestsNum'] = mapDataServerStatus['network']['numRequests']
+	finalData['Network'] = mapNetwork
+	// Cursors
+	def mapCursors = [:]
+	mapCursors['TotalOpenNum'] = mapDataServerStatus['cursors']['totalOpen']
+	mapCursors['ClientCursorsSizeNum'] = mapDataServerStatus['cursors']['clientCursors_size']
+	mapCursors['TimedOutNum'] = mapDataServerStatus['cursors']['timedOut']
+	finalData['Cursors'] = mapCursors
+	// Dur
+	def mapDur = [:]
+	mapDur['CommitsNum'] = mapDataServerStatus['dur']['commits']
+	mapDur['JournaledMB'] = mapDataServerStatus['dur']['journaledMB']
+	mapDur['WriteToDataFilesMB'] = mapDataServerStatus['dur']['writeToDataFilesMB']
+	mapDur['CompressionNum'] = mapDataServerStatus['dur']['compression']
+	mapDur['CommitsInWriteLockNum'] = mapDataServerStatus['dur']['commitsInWriteLock']
+	mapDur['EarlyCommitsNum'] = mapDataServerStatus['dur']['earlyCommits']
+	def mapTimeMs = [:]
+	mapTimeMs['DtMs'] = mapDataServerStatus['dur']['timeMs']['dt']
+	mapTimeMs['PrepLogBufferMs'] = mapDataServerStatus['dur']['timeMs']['prepLogBuffer']
+	mapTimeMs['PrepLogBufferMs'] = mapDataServerStatus['dur']['timeMs']['prepLogBuffer']
+	mapTimeMs['WriteToDataFilesMs'] = mapDataServerStatus['dur']['timeMs']['writeToDataFiles']
+	mapTimeMs['RemapPrivateViewMs'] = mapDataServerStatus['dur']['timeMs']['remapPrivateView']
+	mapDur['TimeMs'] = mapTimeMs
+	finalData['Dur'] = mapDur
+	return finalData
+}
+
+SENDTYPE = "Gathered"
+DBTYPE = "@MONGO"
+DEST = parameters.dest

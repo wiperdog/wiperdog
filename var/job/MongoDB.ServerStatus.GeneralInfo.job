@@ -1,0 +1,36 @@
+JOB = [ name: "MongoDB.ServerStatus.GeneralInfo" ]
+
+FETCHACTION = {
+	def finalData = [:]
+	def mapDataServerStatus = sql.command("serverStatus")
+	finalData['HostStr'] = mapDataServerStatus['host']
+	finalData['VersionStr'] = mapDataServerStatus['version']
+	finalData['ProcessStr'] = mapDataServerStatus['process']
+	finalData['PidNum'] = mapDataServerStatus['pid']
+	finalData['UptimeTm'] = mapDataServerStatus['uptime']
+	finalData['LocalTimeTm'] = mapDataServerStatus['localTime']
+	def mapAssert = [:]
+	def mapExtraInfo = [:]
+	def mapIndexCounters = [:]
+	mapAssert['RegularNum'] = mapDataServerStatus['asserts']['regular']
+	mapAssert['WarningNum'] = mapDataServerStatus['asserts']['warning']
+	mapAssert['MsgNum'] = mapDataServerStatus['asserts']['msg']
+	mapAssert['UserNum'] = mapDataServerStatus['asserts']['user']
+	mapAssert['RolloversNum'] = mapDataServerStatus['asserts']['rollovers']
+	finalData['Asserts'] = mapAssert
+	mapExtraInfo['NoteStr'] = mapDataServerStatus['extra_info']['note']
+	mapExtraInfo['HeapUsageBytes'] = mapDataServerStatus['extra_info']['heap_usage_bytes']
+	mapExtraInfo['PageFaultsNum'] = mapDataServerStatus['extra_info']['page_faults']
+	finalData['ExtraInfo'] = mapExtraInfo
+	mapIndexCounters['AccessesNum'] = mapDataServerStatus['indexCounters']['accesses']
+	mapIndexCounters['HitsNum'] = mapDataServerStatus['indexCounters']['hits']
+	mapIndexCounters['MissesNum'] = mapDataServerStatus['indexCounters']['misses']
+	mapIndexCounters['ResetsNum'] = mapDataServerStatus['indexCounters']['resets']
+	mapIndexCounters['MissRatioNum'] = mapDataServerStatus['indexCounters']['missRatio']
+	finalData['IndexCounters'] = mapIndexCounters
+	return finalData
+}
+
+SENDTYPE = "Gathered"
+DBTYPE = "@MONGO"
+DEST = parameters.dest

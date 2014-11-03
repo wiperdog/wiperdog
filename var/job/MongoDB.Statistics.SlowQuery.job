@@ -1,0 +1,59 @@
+/**
+ * Precondition:
+ * Config to get slow query information in /etc/mongod.conf
+ *     profile = 1
+ *     slowms = 100
+ * Or run command before run job: db.setProfilingLevel(level, slowms), in that: 
+ *     level = 0 => off. No profiling
+ *     level = 1 => on. Only includes "slow" operations
+ *     level = 2 => on. Includes all operations
+ */
+JOB = [ name: "MongoDB.Statistics.SlowQuery" ]	
+
+FETCHACTION = {
+	def finalData = []
+	def listDatabases = sql.command("listDatabases")
+	def slowMsVal = sql.command("profile")['slowms']
+	listDatabases['databases'].each { dbName ->
+		def dbMongo = gmongo.getDB(dbName['name'])
+		def collSystemProfile = dbMongo.getCollection("system.profile")
+		collSystemProfile.find().each {row ->
+			if (row['millis'] > slowMsVal) {
+				def mapRowSuffix = [:]
+				mapRowSuffix['OperationStr'] = row['op']
+				mapRowSuffix['NamespaceStr'] = row['ns']
+				if (row['query'] != null) {
+					mapRowSuffix['QueryStr'] = row['query']
+				}
+				if (row['command'] != null) {
+					mapRowSuffix['CommandStr'] = row['command']
+				}
+				mapRowSuffix['DocumentsToReturnNum'] = row['ntoreturn']
+				mapRowSuffix['DocumentsToSkipNum'] = row['ntoskip']
+				mapRowSuffix['DocumentsScannedNum'] = row['nscanned']
+				mapRowSuffix['KeyUpdatesNum'] = row['keyUpdates']
+				mapRowSuffix['OperationYieldNum'] = row['numYield']
+				mapRowSuffix['LockStats'] = [:]
+				mapRowSuffix['LockStats']['TimeLockedMicros'] = [:]
+				mapRowSuffix['LockStats']['TimeLockedMicros']['ReadLockNum'] = row['lockStats']['timeLockedMicros']['r']
+				mapRowSuffix['LockStats']['TimeLockedMicros']['WriteLockNum'] = row['lockStats']['timeLockedMicros']['w']
+				mapRowSuffix['LockStats']['TimeAcquiringMicros'] = [:]
+				mapRowSuffix['LockStats']['TimeAcquiringMicros']['ReadLockNum'] = row['lockStats']['timeAcquiringMicros']['r']
+				mapRowSuffix['LockStats']['TimeAcquiringMicros']['WriteLockNum'] = row['lockStats']['timeAcquiringMicros']['w']
+				mapRowSuffix['DecumentsReturnedNum'] = row['nreturned']
+				mapRowSuffix['ResponseLengthNum'] = row['responseLength']
+				mapRowSuffix['TimeOperationMs'] = row['millis']
+				mapRowSuffix['TsTm'] = row['ts']
+				mapRowSuffix['ClientStr'] = row['client']
+				mapRowSuffix['AllUsers'] = row['allUsers']
+				mapRowSuffix['UserStr'] = row['user']
+				finalData.add(mapRowSuffix)
+			}
+		}
+	}
+	return finalData
+}
+
+SENDTYPE = "Store"
+DBTYPE = "@MONGO"
+DEST = parameters.dest

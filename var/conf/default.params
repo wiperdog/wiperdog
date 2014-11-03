@@ -7,7 +7,8 @@
    "@MSSQL-MSSQLSERVER2008": [dbconnstr: "jdbc:sqlserver://localhost:1433", user: "sa", dbHostId:"localhost", dbSid: "MSSQLSERVER2008" ],
    "@MSSQL": [dbconnstr: "jdbc:sqlserver://localhost:1433", user: "sa", dbHostId:"localhost", dbSid: "MSSQLSERVER2008" ],
    "@MARIA": [dbconnstr: "jdbc:mysql://localhost:3308/information_schema", user: "root", dbHostId: "localhost", dbSid: "information_schema"],
-   "localhost-@MARIA-information_schema": [dbconnstr: "jdbc:mysql://localhost:3308/information_schema", user: "root", dbHostId: "localhost", dbSid: "information_schema"]
+   "localhost-@MARIA-information_schema": [dbconnstr: "jdbc:mysql://localhost:3308/information_schema", user: "root", dbHostId: "localhost", dbSid: "information_schema"],
+   "@MONGO": [ host: "localhost", port: "27017", db: "wiperdog", user: "", pass: "" ]
   ],
   dest: [ [ file: "stdout" ], [mongoDB: "localhost:27017/wiperdog" ] ],
    datadirectory: [				

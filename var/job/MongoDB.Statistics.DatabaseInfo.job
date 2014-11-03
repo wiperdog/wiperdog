@@ -1,0 +1,48 @@
+JOB = [ name: "MongoDB.Statistics.DatabaseInfo" ]	
+
+FETCHACTION={
+	// Get information of database
+	def dbMongo = gmongo.getDB("admin")
+	def listDatabases = dbMongo.command("listDatabases")		
+	def mapDBInfo
+	def tmpData
+	def listDBInfo = []
+	// get data of each database
+	listDatabases.databases.each{
+		tmpData = [:]
+		dbmongo = gmongo.getDB(it.name)
+		mapDBInfo = dbmongo.command("dbStats")
+		tmpData['DatabaseName'] = mapDBInfo['db']
+		tmpData['CollectionsInt'] = mapDBInfo['collections']
+		tmpData['ObjectsInt'] = mapDBInfo['objects']
+		tmpData['AvgObjSizeBytes'] = mapDBInfo['avgObjSize']
+		tmpData['DataSizeBytes'] = mapDBInfo['dataSize']
+		tmpData['StorageSizeBytes'] = mapDBInfo['storageSize']
+		tmpData['NumExtentsInt'] = mapDBInfo['numExtents']
+		tmpData['IndexesInt'] = mapDBInfo['indexes']
+		tmpData['IndexSizeBytes'] = mapDBInfo['indexSize']
+		tmpData['FileSizeBytes'] = mapDBInfo['fileSize']
+		tmpData['NameSpaceSizeMB'] = mapDBInfo['nsSizeMB']
+		def mapDataFileVersion = [:]
+		if(mapDBInfo['dataFileVersion'] != null) {
+			mapDataFileVersion['MajorNum'] = (mapDBInfo['dataFileVersion']['major'] != null) ? mapDBInfo['dataFileVersion']['major'] : 0
+			mapDataFileVersion['MinorNum'] = (mapDBInfo['dataFileVersion']['minor'] != null) ? mapDBInfo['dataFileVersion']['minor'] : 0
+		}
+		tmpData['DataFileVersion'] = mapDataFileVersion
+		listDBInfo.add(tmpData)
+	}
+	return listDBInfo
+}
+
+KEYEXPR = ['_root':['DatabaseName'],'_sequence':['CollectionsInt','DataSizeBytes','NameSpaceSizeMB']]
+KEYEXPR._unit = ["CollectionsInt":"count", "ObjectsInt":"count", "AvgObjSizeBytes":"bytes", "DataSizeBytes":"bytes", "StorageSizeBytes":"bytes", "NumExtentsInt":"count", "IndexesInt":"count", "IndexSizeBytes":"bytes", "FileSizeBytes":"bytes", "NameSpaceSizeMB":"MB"]
+KEYEXPR._chart = [
+    [
+        "type": "pie",
+        "name": "Database Information",
+        "chart_columns": ["AvgObjSizeBytes", "DataSizeBytes", "StorageSizeBytes", "IndexSizeBytes", "FileSizeBytes"]
+    ]
+]
+SENDTYPE = "Store"
+DBTYPE = "@MONGO"
+DEST = parameters.dest

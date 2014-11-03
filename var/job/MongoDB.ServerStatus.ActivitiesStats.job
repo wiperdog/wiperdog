@@ -1,0 +1,46 @@
+JOB = [ name: "MongoDB.ServerStatus.ActivitiesStats" ]	
+
+FETCHACTION={
+	def finalData = []
+	// Get information of server
+	def mapDataServerStatus = sql.command("serverStatus")
+	
+	def tmpOperationsInstanceCounter = [:]
+	if(mapDataServerStatus['opcounters'] != null) {
+		tmpOperationsInstanceCounter['OpCounterNm'] = "Instance"
+		tmpOperationsInstanceCounter['InsertCnt'] = mapDataServerStatus['opcounters']['insert']
+		tmpOperationsInstanceCounter['QueryCnt'] = mapDataServerStatus['opcounters']['query']
+		tmpOperationsInstanceCounter['UpdateCnt'] = mapDataServerStatus['opcounters']['update'] 
+		tmpOperationsInstanceCounter['DeleteCnt'] = mapDataServerStatus['opcounters']['delete']
+		tmpOperationsInstanceCounter['GetmoreCnt'] = mapDataServerStatus['opcounters']['getmore'] 
+		tmpOperationsInstanceCounter['CommandCnt'] = mapDataServerStatus['opcounters']['command']
+	}
+	finalData.add(tmpOperationsInstanceCounter)
+	
+	def tmpOperationsReplicatedCounter = [:]
+	if(mapDataServerStatus['opcountersRepl'] != null) {
+		tmpOperationsReplicatedCounter['OpCounterNm'] = "Replicated"
+		tmpOperationsReplicatedCounter['InsertCnt'] = mapDataServerStatus['opcountersRepl']['insert']
+		tmpOperationsReplicatedCounter['QueryCnt'] = mapDataServerStatus['opcountersRepl']['query'] 
+		tmpOperationsReplicatedCounter['UpdateCnt'] = mapDataServerStatus['opcountersRepl']['update'] 
+		tmpOperationsReplicatedCounter['DeleteCnt'] = mapDataServerStatus['opcountersRepl']['delete'] 
+		tmpOperationsReplicatedCounter['GetmoreCnt'] = mapDataServerStatus['opcountersRepl']['getmore'] 
+		tmpOperationsReplicatedCounter['CommandCnt'] = mapDataServerStatus['opcountersRepl']['command'] 
+	}
+	finalData.add(tmpOperationsReplicatedCounter)
+	return finalData
+}
+
+KEYEXPR = ['_root':['OpCounterNm'],'_sequence':['QueryCnt','InsertCnt','UpdateCnt']]
+KEYEXPR._unit = ["InsertCnt":"count", "QueryCnt":"count", "UpdateCnt":"count", "DeleteCnt":"count", "GetmoreCnt":"count", "CommandCnt":"count"]
+KEYEXPR._chart = [
+    [
+        "type": "pie",
+        "name": "Activities Statistics Information",
+        "chart_columns": ["InsertCnt", "QueryCnt", "UpdateCnt", "DeleteCnt", "GetmoreCnt", "CommandCnt"]
+    ]
+]
+SENDTYPE = "Store"
+DBTYPE = "@MONGO"
+DEST = parameters.dest
+

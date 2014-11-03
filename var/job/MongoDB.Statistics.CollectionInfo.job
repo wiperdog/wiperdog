@@ -1,0 +1,43 @@
+JOB = [ name: "MongoDB.Statistics.CollectionInfo" ]	
+FETCHACTION = {
+	def finalData = []
+	def listDatabases = sql.command("listDatabases")
+	listDatabases['databases'].each {dbName ->
+		def dbMongo = gmongo.getDB(dbName['name'])
+		// Get list collection of each database
+		def listCollections = dbMongo.getCollectionNames();
+		// Corresponding each collection, get information of it
+		listCollections.each {collName ->
+			def coll = dbMongo.getCollection(collName)
+			def collInfo = coll.getStats()
+			def mapCollectionsInfo = [:]
+			mapCollectionsInfo['ServerUsedStr'] = collInfo['serverUsed']
+			mapCollectionsInfo['NsStr'] = collInfo['ns']
+			mapCollectionsInfo['Count'] = collInfo['count']
+			mapCollectionsInfo['SizeBytes'] = collInfo['size']
+			mapCollectionsInfo['AvgObjSizeBytes'] = collInfo['avgObjSize']
+			mapCollectionsInfo['StorageSizeBytes'] = collInfo['storageSize']
+			mapCollectionsInfo['NumExtentsNum'] = collInfo['numExtents']
+			mapCollectionsInfo['NindexesNum'] = collInfo['nindexes']
+			mapCollectionsInfo['LastExtentSizeBytes'] = collInfo['lastExtentSize']
+			mapCollectionsInfo['PaddingFactorNum'] = collInfo['paddingFactor']
+			mapCollectionsInfo['TotalIndexSizeBytes'] = collInfo['totalIndexSize']
+			mapCollectionsInfo['IndexSizesBytes'] = collInfo['indexSizes']
+			finalData.add(mapCollectionsInfo)
+		}
+	}
+	return finalData
+}
+
+KEYEXPR = ['_root':['ServerUsedStr', 'NsStr'],'_sequence':['TotalIndexSizeBytes','AvgObjSizeBytes','SizeBytes']]
+KEYEXPR._unit = ["Count":"count", "SizeBytes":"bytes", "AvgObjSizeBytes":"bytes", "StorageSizeBytes":"bytes", "NumExtentsNum":"bytes", "NindexesNum":"bytes", "LastExtentSizeBytes":"bytes", "PaddingFactorNum":"bytes", "TotalIndexSizeBytes":"bytes"]
+KEYEXPR._chart = [
+    [
+        "type": "pie",
+        "name": "Collections Information",
+        "chart_columns": ["SizeBytes", "AvgObjSizeBytes", "StorageSizeBytes", "LastExtentSizeBytes", "TotalIndexSizeBytes"]
+    ]
+]
+SENDTYPE = "Store"
+DBTYPE = "@MONGO"
+DEST = parameters.dest
