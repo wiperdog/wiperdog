@@ -1,0 +1,18 @@
+JOB = [ name: "MongoDB.HostInfo.Os" ]
+
+FETCHACTION={
+	def finalData = []
+	def tmpData = [:]
+	def mapDataHostInfo = sql.command("hostInfo")
+	if(mapDataHostInfo['os'] != null) {
+		tmpData['NameNm'] = (mapDataHostInfo['os']['name'] != null) ? mapDataHostInfo['os']['name'] : ""
+		tmpData['TypeStr'] = (mapDataHostInfo['os']['type'] != null) ? mapDataHostInfo['os']['type'] : ""
+		tmpData['VersionStr'] = (mapDataHostInfo['os']['version'] != null) ? mapDataHostInfo['os']['version'] : ""
+	}
+	finalData.add(tmpData)
+	return finalData
+}
+
+SENDTYPE = "Store"
+DBTYPE = "@MONGO"
+DEST = parameters.dest

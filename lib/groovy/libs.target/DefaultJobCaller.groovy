@@ -357,19 +357,25 @@ class DefaultJobCaller {
 					strDbTypeDriver = ResourceConstants.DEF_SQLS_DRIVER
 				}
 			}
-			// Get DBInfo
-			dbInfo = getDbInfo(paramsJob, strDbType, strHostId, strSid)
-			if (dbInfo != null) {
+			// Get DBInfo			
+			if (strDbType == ResourceConstants.MONGODB) {
+				dbInfo = getMongoInfo(paramsJob, strDbType)
 				dbInfo['strDbType'] = strDbType
-				dbInfo['strDbTypeDriver'] = strDbTypeDriver
-				//Get DBCONNSTR
-				strCon = dbInfo.dbconnstr
-				//Get DB user
-				strUser = dbInfo.user
-				//If DB user haven't set, get default user
-				if (strUser == null && strDbType != null) {
-					strUser = iDBConnectionSource.getDefaultUser(dbInfo)
-					dbInfo.user = strUser
+				dbInfo['dbconnstr'] = dbInfo.host + ":" + dbInfo.port
+			} else {
+				dbInfo = getDbInfo(paramsJob, strDbType, strHostId, strSid)
+				if (dbInfo != null) {
+					dbInfo['strDbType'] = strDbType
+					dbInfo['strDbTypeDriver'] = strDbTypeDriver
+					//Get DBCONNSTR
+					strCon = dbInfo.dbconnstr
+					//Get DB user
+					strUser = dbInfo.user
+					//If DB user haven't set, get default user
+					if (strUser == null && strDbType != null) {
+						strUser = iDBConnectionSource.getDefaultUser(dbInfo)
+						dbInfo.user = strUser
+					}
 				}
 			}
 			if (cFetchAction == null && strCommand != null) {
@@ -805,6 +811,30 @@ class DefaultJobCaller {
 			dbInformation.dbSid = sidString
 		}
 		return dbInformation
+	}
+	
+	/**
+	 * getMongoInfo: get connect MONGODB information
+	 * @param paramsJob params of Job
+	 * @param strDbType type of DB was configed in Job
+	 * @return connect MONGODB information
+	 */
+	def getMongoInfo(paramsJob, strDbType) {
+		def mongoInfomation = [:]
+		if ( paramsJob.host != null && paramsJob.host != "" ) {// get data in job.params file
+			mongoInfomation['host']	= paramsJob.host
+			mongoInfomation['port']	= (paramsJob.port != null && paramsJob.port != "") ? paramsJob.port : "27017"
+			mongoInfomation['db'] = paramsJob.db
+			mongoInfomation['user']	= paramsJob.user
+			mongoInfomation['pass']	= paramsJob.pass
+		} else {// get data in default.params
+			mongoInfomation['host']	= paramsJob.dbinfo[strDbType].host
+			mongoInfomation['port']	= (paramsJob.dbinfo[strDbType].port != null && paramsJob.dbinfo[strDbType].port != "") ? paramsJob.dbinfo[strDbType].port : "27017"
+			mongoInfomation['db'] = paramsJob.dbinfo[strDbType].db
+			mongoInfomation['user']	= paramsJob.dbinfo[strDbType].user
+			mongoInfomation['pass']	= paramsJob.dbinfo[strDbType].pass
+		}
+		return mongoInfomation
 	}
 }
 

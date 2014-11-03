@@ -1,0 +1,27 @@
+JOB = [ name: "MongoDB.HostInfo.Extra" ]
+
+FETCHACTION={
+	def finalData = []
+	def tmpData = [:]
+	def mapDataHostInfo = sql.command("hostInfo")
+	if(mapDataHostInfo['extra'] != null) {
+		def pageSize = (mapDataHostInfo['extra']['pageSize'] != null) ? mapDataHostInfo['extra']['pageSize'] : 0
+		tmpData['PagesNum'] = (mapDataHostInfo['extra']['numPages'] != null) ? mapDataHostInfo['extra']['numPages'] : 0
+		tmpData['PageSizeKb'] = pageSize / 1024
+	}
+	finalData.add(tmpData)
+	return finalData
+}
+
+KEYEXPR = ['_root':['DatabaseName','FileId'],'_sequence':['PagesNum','PageSizeKb']]
+KEYEXPR._unit = ["PagesNum":"count", "PageSizeKb":"KB"]
+KEYEXPR._chart = [
+    [
+        "type": "line",
+        "name": "Page Information",
+        "chart_columns": ["PagesNum","PageSizeKb"]
+    ]
+]
+SENDTYPE = "Store"
+DBTYPE = "@MONGO"
+DEST = parameters.dest

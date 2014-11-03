@@ -1,0 +1,37 @@
+JOB = [ name: "MongoDB.ServerStatus.LockInfo" ]	
+
+FETCHACTION={
+	def finalData = [:]
+	def tmpCurrentQueue = [:]
+	def tmpActiveClients = [:]
+	// Get information of server
+	def mapDataServerStatus = sql.command("serverStatus")
+	
+	if(mapDataServerStatus['globalLock'] != null) {
+		def totalTime = (mapDataServerStatus['globalLock']['totalTime'] != null) ? mapDataServerStatus['globalLock']['totalTime'] : 0
+		def lockTime = (mapDataServerStatus['globalLock']['lockTime'] != null) ? mapDataServerStatus['globalLock']['lockTime'] : 0
+		finalData['TotalTimeMs'] = totalTime / 1000
+		finalData['LockTimeMs'] = lockTime / 1000
+		
+		if(mapDataServerStatus['globalLock']['currentQueue'] != null) {
+			tmpCurrentQueue['TotalInt'] = mapDataServerStatus['globalLock']['currentQueue']['total']
+			tmpCurrentQueue['ReadersInt'] = mapDataServerStatus['globalLock']['currentQueue']['readers']
+			tmpCurrentQueue['WritesInt'] = mapDataServerStatus['globalLock']['currentQueue']['writers']
+		}
+		
+		finalData['CurrentQueue'] = tmpCurrentQueue
+		
+		if(mapDataServerStatus['globalLock']['activeClients'] != null) {
+			tmpActiveClients['TotalInt'] = mapDataServerStatus['globalLock']['activeClients']['total']
+			tmpActiveClients['ReadersInt'] = mapDataServerStatus['globalLock']['activeClients']['readers']
+			tmpActiveClients['WritesInt'] = mapDataServerStatus['globalLock']['activeClients']['writers']
+		}
+
+		finalData['ActiveClients'] = tmpActiveClients
+	}
+	return finalData
+}
+
+SENDTYPE = "Gathered"
+DBTYPE = "@MONGO"
+DEST = parameters.dest

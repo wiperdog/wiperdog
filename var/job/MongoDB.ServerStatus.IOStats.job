@@ -1,0 +1,30 @@
+JOB = [ name: "MongoDB.ServerStatus.IOStats" ]
+
+FETCHACTION={
+	def finalData = [:]
+	def mapDataServerStatus = sql.command("serverStatus")
+	def mapBackgroundFlushing = [:]
+	def mapRecordStats = [:]
+	mapBackgroundFlushing['FlushesNum'] = mapDataServerStatus['backgroundFlushing']['flushes']
+	mapBackgroundFlushing['TotalMsNum'] = mapDataServerStatus['backgroundFlushing']['total_ms']
+	mapBackgroundFlushing['AverageNum'] = mapDataServerStatus['backgroundFlushing']['average']
+	mapBackgroundFlushing['LastMsNum'] = mapDataServerStatus['backgroundFlushing']['last_ms']
+	mapBackgroundFlushing['LastFinishedNum'] = mapDataServerStatus['backgroundFlushing']['last_finished']
+	finalData['BackgroundFlushing'] = mapBackgroundFlushing
+	mapRecordStats['AccessesNotInMemoryNum'] = mapDataServerStatus['recordStats']['accessesNotInMemory']
+	mapRecordStats['PageFaultExceptionsThrownNum'] = mapDataServerStatus['recordStats']['pageFaultExceptionsThrown']
+	mapDataServerStatus['recordStats'].each {key, value ->
+		if (key != "accessesNotInMemory" && key != "pageFaultExceptionsThrown") {
+			def mapDB = [:]
+			mapDB['AccessesNotInMemoryNum'] = value['accessesNotInMemory']
+			mapDB['PageFaultExceptionsThrownNum'] = value['pageFaultExceptionsThrown']
+			mapRecordStats[key] = mapDB
+		}
+	}
+	finalData['RecordStats'] = mapRecordStats
+	return finalData
+}
+
+SENDTYPE = "Gathered"
+DBTYPE = "@MONGO"
+DEST = parameters.dest

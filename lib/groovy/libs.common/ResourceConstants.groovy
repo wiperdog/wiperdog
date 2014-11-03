@@ -58,6 +58,7 @@ class ResourceConstants{
 	public static final String MARIA= "@MARIA"
 	public static final String POSTGRES = "@PGSQL"
 	public static final String SQLS = "@MSSQL"	
+	public static final String MONGODB = "@MONGO"
 	public static final String DEFAULTUSER = "#DEFAULTUSER"	
 	public static final String DEF_ACCUMULATE = "ACCUMULATE"	
 	public static final String DEF_GROUPKEY = "GROUPKEY"	

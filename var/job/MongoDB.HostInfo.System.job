@@ -1,0 +1,22 @@
+JOB = [ name: "MongoDB.HostInfo.System" ]
+
+FETCHACTION = {
+	def finalData = []
+	def tmpData = [:]
+	def mapDataHostInfo = sql.command("hostInfo")
+	if(mapDataHostInfo['system'] != null) {
+		tmpData['CurrentTimeTm'] = (mapDataHostInfo['system']['currentTime'] != null) ? mapDataHostInfo['system']['currentTime'] : 0
+		tmpData['HostNameNm'] = (mapDataHostInfo['system']['hostname'] != null) ? mapDataHostInfo['system']['hostname'] : ""
+		tmpData['CpuAddrSizeNum'] = (mapDataHostInfo['system']['cpuAddrSize'] != null) ? mapDataHostInfo['system']['cpuAddrSize'] : 0
+		tmpData['MemSizeMB'] = (mapDataHostInfo['system']['memSizeMB'] != null) ? mapDataHostInfo['system']['memSizeMB'] : 0
+		tmpData['NumCoresNum'] = (mapDataHostInfo['system']['numCores'] != null) ? mapDataHostInfo['system']['numCores'] : 0
+		tmpData['CpuArchStr'] = (mapDataHostInfo['system']['cpuArch'] != null) ? mapDataHostInfo['system']['cpuArch'] : ""
+		tmpData['NumaEnabledBol'] = (mapDataHostInfo['system']['numaEnabled'] != null) ? mapDataHostInfo['system']['numaEnabled'] : ""
+	}
+	finalData.add(tmpData)
+	return finalData
+}
+
+SENDTYPE = "Store"
+DBTYPE = "@MONGO"
+DEST = parameters.dest
